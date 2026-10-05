@@ -111,6 +111,39 @@ point such as (1.0, 1.2). See `experiments/figures/posterior_kin_K16_s0.png`.
 Test y\* are drawn from the prior, so the averaged Err_resim hides this. The K
 sweep and a longer schedule should test whether it improves.
 
+## Sensitivity of Err_post to the evaluation settings
+
+Checked with the cached ground truth, using the same K=16 models and
+1000 samples per y\*. Values are mean Err_post, unbiased unless marked.
+
+| Variant | Kin MDN | Kin prior | Bal MDN | Bal prior |
+|---|---|---|---|---|
+| Shared setting: IMQ (.05, .2, .9), raw x | 0.0030 | 0.242 | 0.0071 | 0.105 |
+| same, biased estimator | 0.0077 | 0.246 | 0.0127 | 0.111 |
+| same, x standardized by prior std | 0.0033 | 0.172 | 0.0010 | 0.068 |
+| IMQ bandwidths ×2, raw | 0.0028 | 0.265 | 0.0076 | 0.175 |
+| IMQ bandwidths ÷2, raw | 0.0030 | 0.176 | 0.0076 | 0.051 |
+| Gaussian h = 0.2, raw | 0.0017 | 0.071 | 0.0069 | 0.011 |
+| Bal: MDN v0 samples rounded to integers, raw | | | 0.0012 | |
+
+Findings:
+- **The MDN's Err_post barely depends on the bandwidths** (0.0028–0.0034 on
+  kinematics, 0.0069–0.0076 on ballistics). The kernel scale alone does not
+  explain the gap to the paper. Of the variants above, only the biased
+  estimator comes close to the paper's kinematics number (0.0077 vs 0.007).
+- **The kernel choice does change how well the metric separates models.** A
+  narrow Gaussian kernel puts the prior only 1.6× above the MDN on ballistics,
+  against 15× with the shared IMQ setting.
+- **On ballistics, over 80% of the MDN's Err_post comes from v0 being
+  integer-valued.** Every ground-truth v0 is an integer (Poisson prior), while
+  the MDN outputs continuous values. Rounding only the MDN's v0 drops
+  Err_post from 0.0071 to 0.0012. Standardizing x (0.0010) has nearly the
+  same effect, because it shrinks the v0 axis by 3.9×. This affects every
+  continuous model (INN, cINN, ...) equally, but it means the raw-unit
+  ballistics Err_post mostly measures "is v0 an integer". The team should
+  decide on standardization, rounding or dequantization *before* comparing
+  models on ballistics.
+
 ## Caveats to discuss
 
 - **Ballistics `x₄ = v0` is Poisson, so it is integer-valued.** `x₂` is clipped at 0,
