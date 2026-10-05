@@ -49,7 +49,7 @@ def pick_device(name):
         return torch.device(name)
     if torch.cuda.is_available():
         return torch.device('cuda')
-    return torch.device('cpu')  # MPS lacks some ops we use (solve_triangular); CPU is fine at this size
+    return torch.device('cpu')  # MPS also works (--device mps); speed not compared yet
 
 
 def sync(device):

@@ -12,6 +12,7 @@ technical report (Kruse 2020, arXiv:2003.05739, Sec. 2).
 | `tests/test_mdn.py` | Numerical checks, incl. equivalence with FrEIA's `GaussianMixtureModel` |
 | `experiments/plot_data.py` | Step 1: prior / forward-process plots → `experiments/figures/data_overview.png` |
 | `experiments/toy_2d_sanity.py` | Step 5: tilted 2-D mixture recovery → `experiments/figures/toy_2d_sanity.png` |
+| `experiments/plot_posterior.py` | Posterior samples for a few y* of a trained kinematics run |
 | `experiments/train_mdn.py` | Training + timing + provisional re-simulation error; outputs in `experiments/runs/` (git-ignored) |
 
 Setup:
@@ -73,6 +74,32 @@ The report says `U ∈ R^{b×K×N(N−1)/2}`. That is a typo. FrEIA expects
 | Warm-up | 500 steps of `jensen`, then `exact` | |
 | Data | 1M train, 20k val, 1000 test y*, disjoint seeds | **Placeholder until the team agrees on a schedule** |
 | Epochs / batch | 50 / 1000 | **Placeholder** |
+
+## Results so far (K=16, seed 0, provisional metrics)
+
+| Benchmark | test NLL | Err_resim (provisional) | Paper Err_resim | Inference | Train time |
+|---|---|---|---|---|---|
+| Kinematics | −7.02 | 0.00064 | 0.012 | 0.29 s for 4000 samples × 1000 y* (M4 CPU) | 18 min (M4 CPU) |
+| Ballistics | −0.56 | 0.0012 | 0.184 | 0.36 s, unreliable: measured while another job held the CPU | 21 min (M4 CPU) |
+
+Hardware is an Apple M4, CPU only. `--device mps` also runs end to end; we
+have not compared its speed.
+
+**Our Err_resim values are 20× (kinematics) and 150× (ballistics) below the
+paper's. Treat that as a red flag, not a win**, until the shared evaluation
+code reproduces it. Likely causes are a different Err_resim definition or
+sample count, or a longer or bigger schedule than the paper's. A bug in our
+provisional metric is also possible.
+
+Not comparable to the paper yet. Err_post needs the shared MMD/ground-truth
+code, and our Err_resim may not use the paper's exact definition (see below).
+
+**Known weakness: low-density y\*.** At y\* = (1.5, 0), the paper's own
+example point, only 115 of 1M training points lie within 0.05. There, about
+55% of MDN samples re-simulate to within 0.05 of y\*, against 97% at a dense
+point such as (1.0, 1.2). See `experiments/figures/posterior_kin_K16_s0.png`.
+Test y\* are drawn from the prior, so the averaged Err_resim hides this. The K
+sweep and a longer schedule should test whether it improves.
 
 ## Caveats to discuss
 
