@@ -1,0 +1,7 @@
+torch>=2.2
+numpy>=1.26
+scipy>=1.11
+matplotlib>=3.8
+pytest>=8
+# Reference implementation of the full-covariance MDN, pinned to the commit we checked against.
+FrEIA @ git+https://github.com/vislearn/FrEIA.git@421249652c478b3f240f124f69eb5777b6a76bf2
