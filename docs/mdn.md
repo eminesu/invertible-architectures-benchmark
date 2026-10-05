@@ -75,24 +75,34 @@ The report says `U ∈ R^{b×K×N(N−1)/2}`. That is a typo. FrEIA expects
 | Data | 1M train, 20k val, 1000 test y*, disjoint seeds | **Placeholder until the team agrees on a schedule** |
 | Epochs / batch | 50 / 1000 | **Placeholder** |
 
-## Results so far (K=16, seed 0, provisional metrics)
+## Results (K=16, seed 0, shared metrics from `emine-metrics`)
 
-| Benchmark | test NLL | Err_resim (provisional) | Paper Err_resim | Inference | Train time |
-|---|---|---|---|---|---|
-| Kinematics | −7.02 | 0.00064 | 0.012 | 0.29 s for 4000 samples × 1000 y* (M4 CPU) | 18 min (M4 CPU) |
-| Ballistics | −0.56 | 0.0012 | 0.184 | 0.36 s, unreliable: measured while another job held the CPU | 21 min (M4 CPU) |
+Scored with `metrics.evaluate` (uncommitted on `emine-metrics` as of 2026-10-05):
+the same 1000 test y\* and cached rejection-sampling ground truth as every
+other model, 1000 samples per y\*, unbiased MMD² (biased in brackets).
 
-Hardware is an Apple M4, CPU only. `--device mps` also runs end to end; we
-have not compared its speed.
+| Benchmark | Err_post | Err_resim (median [q1, q3]) | Inference, 1000 y\* × 1000 samples | Paper (Err_post / Err_resim / ms) |
+|---|---|---|---|---|
+| Kinematics | 0.0031 (0.0077) | 0.0007 (0.0003 [0.0002, 0.0006]) | 75 ms | 0.007 / 0.012 / 601 |
+| Ballistics | 0.0071 (0.0127) | 0.0012 (0.0011 [0.0009, 0.0014]) | 74 ms | 0.048 / 0.184 / 175 |
 
-**Our Err_resim values are 20× (kinematics) and 150× (ballistics) below the
-paper's. Treat that as a red flag, not a win**, until the shared evaluation
-code reproduces it. Likely causes are a different Err_resim definition or
-sample count, or a longer or bigger schedule than the paper's. A bug in our
-provisional metric is also possible.
+Prior-only baseline for scale: Err_post 0.242 / 0.105, Err_resim 2.73 / 19.5.
+On ballistics no sample was without a ground impact (`resim_failed` = 0).
 
-Not comparable to the paper yet. Err_post needs the shared MMD/ground-truth
-code, and our Err_resim may not use the paper's exact definition (see below).
+Hardware: Apple M4, CPU, idle machine. Training took 18 / 28 min. Timings are
+only comparable with other models measured on the same machine.
+
+**We beat the paper's MDN on every metric, by 2–7× on Err_post and 15–150× on
+Err_resim. This is not explained yet.** Our provisional Err_resim from
+`train_mdn.py` agrees with the shared code, so it is not a metric bug on our
+side. Candidate explanations, none of them checked:
+- The paper's Err_post may use the biased estimator. Kinematics biased (0.0077)
+  is close to the paper's 0.007, but ballistics (0.0127 vs 0.048) is not.
+- A different kernel, ground-truth tolerance or sample count in the paper.
+- A longer schedule or more data than the paper's. Ours is 1M samples × 50 epochs,
+  still a placeholder.
+- The paper notes its ballistics means are distorted by extreme outliers. Our
+  model has none (median ≈ mean).
 
 **Known weakness: low-density y\*.** At y\* = (1.5, 0), the paper's own
 example point, only 115 of 1M training points lie within 0.05. There, about
@@ -115,11 +125,10 @@ sweep and a longer schedule should test whether it improves.
   that start below ground, upstream (and so our copy) reports the impact at the
   apex. This only matters for re-simulation of out-of-prior samples.
 - **Re-simulation error in `train_mdn.py` is provisional**: it is the mean
-  squared Euclidean distance over 4000 samples × 1000 y*. The shared evaluation
-  code should be the one we report. Posterior mismatch (MMD against
-  rejection-sampled ground truth) is not implemented here, because it belongs
-  to the shared code.
-- **Inference time** = wall time to draw `n-eval-samples` posterior samples for
-  each of 1000 y*, in batches of 100 y*, median of 5 runs after warm-up. The
-  paper does not say exactly what its ms figure measures or what sample count
-  it used. Compare relative to the other models on the same machine.
+  squared Euclidean distance over 4000 samples × 1000 y*, used only to compare
+  runs during development. Report the shared `metrics.evaluate` numbers.
+- **Inference time**: the reported number is from `metrics.evaluate`, which is
+  one call for all 1000 y* after warm-up. `train_mdn.py` logs its own
+  variant (batches of 100 y*, median of 5). The paper does not say exactly
+  what its ms figure measures. Compare against other models on the same
+  machine only.
