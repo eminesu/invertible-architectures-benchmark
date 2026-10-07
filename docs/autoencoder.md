@@ -11,8 +11,8 @@ sweeps) are for Berker. Every open choice is marked `TODO(berker)` in the code:
 grep -rn "TODO(berker)" models/ experiments/
 ```
 
-> ⚠️ **Read first — two findings from the first shared-metrics evaluation**
-> (details in [First evaluation with the shared metrics](#first-evaluation-with-the-shared-metrics-kinematics-10-epochs)):
+> ⚠️ **Read first: findings from the first shared-metrics evaluation**
+> (10-epoch models; details in [First evaluation with the shared metrics](#first-evaluation-with-the-shared-metrics-10-epochs)):
 >
 > 1. **Accuracy is already better than the paper's autoencoder, but worse than our
 >    MDN.** Err_post is ~2.6× lower than the paper's AE, but the mean is ~2.6× the
@@ -21,6 +21,10 @@ grep -rn "TODO(berker)" models/ experiments/
 >    the MDN** (8.2 s vs 75 ms). This is expected from the architecture, not a bug.
 >    **Inference time must be measured on a GPU**, with every model timed on the
 >    same machine and in the same way, before any speed claim is made.
+> 3. **Ballistics: almost level with our MDN on Err_post** (0.0086 vs 0.0071) and
+>    ~5.7× better than the paper's AE (0.049). But raw-unit ballistics Err_post
+>    mostly measures whether v0 is an integer (`docs/mdn.md`), and training was
+>    still unstable and improving at epoch 10.
 
 ## Files
 
@@ -29,6 +33,7 @@ grep -rn "TODO(berker)" models/ experiments/
 | `models/autoencoder.py` | Encoder / decoder MLPs, `(ŷ, z)` split, the three losses, `sample(y_star, n)` |
 | `metrics/mmd.py` → `mmd_torch` | Differentiable twin of the shared `mmd`; same kernel object, tested equal (`tests/test_metrics.py`) |
 | `experiments/train_autoencoder.py` | Training; writes `experiments/runs/<run>/` (git-ignored), like `train_mdn.py` |
+| `experiments/evaluate_autoencoder.py` | Scores a run with the shared `metrics.evaluate` (`--device cuda` for timing) |
 | `experiments/plot_autoencoder_sanity.py` | Step 4: arm plot for fixed y\*, plus encoder-z and reconstruction diagnostics |
 | `tests/test_autoencoder.py` | Shapes / split, parameter budget, gradient routing of L_z, `sample` = D(y\*, z) |
 | `data/toy_data.py`, `experiments/plot_data.py` | Step 1, shared with the MDN (already on `main`) |
@@ -144,17 +149,19 @@ On a typical y\* the autoencoder is close to the MDN, but it has a heavy tail
 (mean ≈ 3× median). The paper has the same ordering (AE 0.037 vs MDN 0.007).
 The full 50-epoch schedule and the b sweep are the first things to try on the tail.
 
-## First evaluation with the shared metrics (kinematics, 10 epochs)
+## First evaluation with the shared metrics (10 epochs)
 
 Official `metrics.evaluate`: all 1000 test y\* × 1000 samples, unbiased MMD²,
-cached ground truth. Model: the 10-epoch sanity run `kin_ae_sanity_s0`, so
-these are **not final numbers** (the full schedule is 50 epochs). Ballistics has
-not been trained yet. Output: `metrics/results/kinematics_ae_sanity10ep_s0.{json,npz}`.
+cached ground truth. Models: the 10-epoch runs `kin_ae_sanity_s0` and
+`bal_ae_sanity_s0`, so these are **not final numbers** (the full schedule is
+50 epochs). Output: `metrics/results/<benchmark>_ae_sanity10ep_s0.{json,npz}`.
 
-```python
-from metrics.evaluate import evaluate
-evaluate(model.sample, 'kinematics', name='ae_sanity10ep_s0')
+```bash
+.venv/bin/python experiments/evaluate_autoencoder.py kin_ae_sanity_s0 --name ae_sanity10ep_s0
+.venv/bin/python experiments/evaluate_autoencoder.py bal_ae_sanity_s0 --name ae_sanity10ep_s0
 ```
+
+### Kinematics
 
 | Model | Err_post (median [q1, q3]) | Err_resim (median [q1, q3]) | Inference, 1000 y\* × 1000 samples |
 |---|---|---|---|
@@ -176,10 +183,43 @@ Biased-estimator Err_post: 0.0187. Hardware: Apple M4, CPU.
   sanity plot. **This tail is the first target** for the full 50-epoch schedule
   and the b sweep. Report median and quartiles next to the mean.
 
+### Ballistics
+
+| Model | Err_post (median [q1, q3]) | Err_resim (median [q1, q3]) | Inference, 1000 y\* × 1000 samples |
+|---|---|---|---|
+| **Autoencoder, 10 epochs** | **0.0086** (0.0071 [0.0045, 0.0104]) | **0.0034** (0.0020 [0.0017, 0.0027]) | **8.2 s** (CPU) |
+| Our MDN K=16, 50 epochs | 0.0071 (0.0065 [0.0034, 0.0099]) | 0.0012 (0.0011 [0.0009, 0.0014]) | 74 ms (CPU) |
+| Paper autoencoder (Table 2) | 0.049 | confirm from Table 2 | < 1 ms (1080 Ti) |
+| Paper MDN (Table 2) | 0.048 | 0.184 | 175 ms (1080 Ti) |
+
+Biased-estimator Err_post: 0.0141. Re-simulation undefined (no ground impact)
+for 0.02% of samples (MDN: 0%). No clamping was needed (all values < 10).
+
+### ⚠️ Finding 3: ballistics is almost level with the MDN, read with care
+
+- **Err_post 0.0086 vs our MDN's 0.0071**: much closer than on kinematics, and
+  **~5.7× better than the paper's autoencoder** (0.049).
+- **The Err_post tail is mild** (mean ≈ 1.2× median), unlike kinematics.
+  **Err_resim has a few large outliers**: max 0.27 against a median of 0.002.
+  This is the outlier pattern the paper mentions for ballistics (Sec. 4.2), so
+  report the median next to the mean.
+- **Caveat: on ballistics, raw-unit Err_post mostly measures v0 integrality.** v0
+  ~ Poisson(15) is always an integer in the ground truth, while the autoencoder
+  (like every continuous model) outputs real values. For the MDN this was over
+  80% of its Err_post (`docs/mdn.md`). So "close to the MDN" here partly means
+  "both pay the same v0 penalty". The team's decision on standardization,
+  rounding or dequantization must come before this comparison is final.
+- **Training was unstable and still improving at epoch 10.** The provisional
+  val resim jumped up in epochs 1–4 (0.048 → 0.065 → 0.041 → 0.069) and only
+  settled after epoch 5 (0.0038 at epoch 9). The cosine schedule over 50 epochs
+  should help; if the jumps persist, lower lr or grad-clip are the first knobs.
+
 ### ⚠️ Finding 2: on CPU the autoencoder is ~110× SLOWER than the MDN
 
 The spec expected the autoencoder to be the fastest model in the study. On our
 CPU measurement it is the opposite: **8.2 s vs 75 ms for the MDN**.
+
+The same holds on ballistics: 8.2 s vs 74 ms.
 
 **Why (architecture, not a bug):** the decoder pushes *every* sample through the
 full 3M-parameter network: 1000 y\* × 1000 samples = 10⁶ forward passes, about
