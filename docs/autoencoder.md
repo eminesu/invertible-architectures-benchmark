@@ -4,27 +4,33 @@ Plain-autoencoder baseline of Kruse et al. (2021), arXiv:2101.10763, Sec. 2
 (Eqs. 3, 7–8). Ordinary PyTorch, no FrEIA.
 
 **Status: hand-off point.** Build-order steps 1–4 are done (data, networks,
-losses, sanity plot). Steps 5–7 (full training on both benchmarks, evaluation,
-sweeps) are for Berker. Every open choice is marked `TODO(berker)` in the code:
+losses, sanity plot). Step 5 (training on both benchmarks) and a first pass of
+step 6 (evaluation) are also done with the placeholder schedule, see
+[Results (50 epochs)](#results-50-epochs-placeholder-schedule). Left for Berker:
+GPU timing, sweeps (step 7) and the final table, once the team fixes the shared
+schedule. Every open choice is marked `TODO(berker)` in the code:
 
 ```bash
 grep -rn "TODO(berker)" models/ experiments/
 ```
 
-> ⚠️ **Read first: findings from the first shared-metrics evaluation**
-> (10-epoch models; details in [First evaluation with the shared metrics](#first-evaluation-with-the-shared-metrics-10-epochs)):
+> ⚠️ **Read first: findings from the shared-metrics evaluation**
+> (50-epoch numbers in [Results (50 epochs)](#results-50-epochs-placeholder-schedule);
+> the findings were first seen on 10-epoch models, see
+> [First evaluation](#first-evaluation-with-the-shared-metrics-10-epochs)):
 >
-> 1. **Accuracy is already better than the paper's autoencoder, but worse than our
->    MDN.** Err_post is ~2.6× lower than the paper's AE, but the mean is ~2.6× the
->    median: a few hard y\* in low-density regions carry most of the error.
+> 1. **Accuracy is far better than the paper's autoencoder and close to our MDN.**
+>    Kinematics Err_post 0.0053 (paper AE 0.037, our MDN 0.0031); Err_resim
+>    0.0004 is even *lower* than our MDN's 0.0007. A tail of hard y\* remains
+>    (mean ≈ 3.3× median).
 > 2. **On CPU the autoencoder is NOT the fastest model: it is ~110× slower than
 >    the MDN** (8.2 s vs 75 ms). This is expected from the architecture, not a bug.
 >    **Inference time must be measured on a GPU**, with every model timed on the
 >    same machine and in the same way, before any speed claim is made.
-> 3. **Ballistics: almost level with our MDN on Err_post** (0.0086 vs 0.0071) and
->    ~5.7× better than the paper's AE (0.049). But raw-unit ballistics Err_post
->    mostly measures whether v0 is an integer (`docs/mdn.md`), and training was
->    still unstable and improving at epoch 10.
+> 3. **Ballistics: almost level with our MDN on Err_post** (0.0081 vs 0.0071) and
+>    ~6× better than the paper's AE (0.049). But raw-unit ballistics Err_post
+>    mostly measures whether v0 is an integer (`docs/mdn.md`): 5× more training
+>    barely moved it (0.0086 → 0.0081) while Err_resim kept falling.
 
 ## Files
 
@@ -149,6 +155,74 @@ On a typical y\* the autoencoder is close to the MDN, but it has a heavy tail
 (mean ≈ 3× median). The paper has the same ordering (AE 0.037 vs MDN 0.007).
 The full 50-epoch schedule and the b sweep are the first things to try on the tail.
 
+## Results (50 epochs, placeholder schedule)
+
+Runs `kin_ae_s0` and `bal_ae_s0`: all defaults (1M train samples, 50 epochs,
+batch 1000, a = 1, b = 100, joint latent MMD, seed 0). Same data seeds and
+schedule as our MDN runs, so the two are directly comparable. Training took
+35 / 37 min on an Apple M4 CPU. Scored with the shared `metrics.evaluate`
+(1000 test y\* × 1000 samples, unbiased MMD²):
+
+```bash
+.venv/bin/python experiments/train_autoencoder.py --problem kinematics --run-name kin_ae_s0
+.venv/bin/python experiments/evaluate_autoencoder.py kin_ae_s0 --name ae_s0
+```
+
+These are **not final**: the schedule is still the shared placeholder, a and b
+are unswept, and inference time is from a CPU (Finding 2).
+
+### Kinematics
+
+| Model | Err_post (median [q1, q3]) | Err_resim (median [q1, q3]) | Inference, 1000 y\* × 1000 (CPU) |
+|---|---|---|---|
+| **Autoencoder, 50 epochs** | **0.0053** (0.0016 [0.0003, 0.0040]) | **0.0004** (0.0001 [0.0001, 0.0003]) | 7.9 s |
+| Autoencoder, 10 epochs | 0.0141 (0.0054) | 0.0034 (0.0019) | 8.2 s |
+| Our MDN K=16, 50 epochs | 0.0031 | 0.0007 (0.0003) | 75 ms |
+| Paper autoencoder (Table 1) | 0.037 | 0.012 | < 1 ms (1080 Ti) |
+| Paper MDN (Table 1) | 0.007 | 0.012 | 601 ms (1080 Ti) |
+
+Biased-estimator Err_post: 0.0099. Max per-y\* Err_post 0.126, Err_resim 0.029.
+
+- **~7× better than the paper's autoencoder on Err_post and ~30× on Err_resim.**
+- **Close to our MDN**: Err_post 0.0053 vs 0.0031, and **Err_resim is lower
+  than the MDN's** (0.0004 vs 0.0007). The paper's ordering (MDN ahead on
+  Err_post) still holds, but the gap shrank from ~4.5× at 10 epochs to ~1.7×.
+- **The low-density tail is smaller but not gone**: mean ≈ 3.3× median. At the
+  hard point y\* = (1.5, 0), the provisional resim dropped from 0.035 to 0.005
+  ([plot](../experiments/figures/autoencoder_sanity_kin_ae_s0.png)).
+- Encoder z still matches the prior (mean ≤ 0.006, std 0.995 / 0.996,
+  corr −0.007), and the reconstruction RMS halved (0.012 → 0.0065) with
+  zero-median errors.
+- Val losses were still slowly falling at epoch 50 (resim 0.0008 at epoch 30,
+  0.0004 at epoch 40 and 50).
+
+### Ballistics
+
+| Model | Err_post (median [q1, q3]) | Err_resim (median [q1, q3]) | Inference, 1000 y\* × 1000 (CPU) |
+|---|---|---|---|
+| **Autoencoder, 50 epochs** | **0.0081** (0.0068 [0.0042, 0.0103]) | **0.0024** (0.0016 [0.0014, 0.0020]) | 8.0 s |
+| Autoencoder, 10 epochs | 0.0086 (0.0071) | 0.0034 (0.0020) | 8.2 s |
+| Our MDN K=16, 50 epochs | 0.0071 (0.0065) | 0.0012 (0.0011) | 74 ms |
+| Paper autoencoder (Table 2) | 0.049 | confirm from Table 2 | < 1 ms (1080 Ti) |
+| Paper MDN (Table 2) | 0.048 | 0.184 | 175 ms (1080 Ti) |
+
+Biased-estimator Err_post: 0.0136. Re-simulation undefined for 0.01% of
+samples. Max per-y\* Err_post 0.164, Err_resim 0.165 (no clamping needed).
+
+- **~6× better than the paper's autoencoder on Err_post**, and only ~14% above
+  our MDN.
+- **Err_post barely moved with 5× more training (0.0086 → 0.0081), while
+  Err_resim fell by 30%.** This fits the v0 caveat (Finding 3): most of the
+  raw-unit ballistics Err_post is the integer-v0 penalty that every continuous
+  model pays, so it hides real improvements. Decide the v0 handling before
+  ranking models on ballistics.
+- **Err_resim is 2× the MDN's, with outliers** (max 0.165 vs median 0.0016).
+- **Not converged**: provisional val resim was still halving every 10 epochs
+  (0.0087 → 0.0044 → 0.0020 at epochs 30 / 40 / 50). A longer schedule would
+  likely help ballistics more than kinematics; worth raising when the team
+  fixes the shared schedule.
+- The early instability seen at 10 epochs did not hurt the final model.
+
 ## First evaluation with the shared metrics (10 epochs)
 
 Official `metrics.evaluate`: all 1000 test y\* × 1000 samples, unbiased MMD²,
@@ -242,7 +316,9 @@ representative.
 ## Hand-off to Berker: what is left
 
 1. **Full training** on both benchmarks with the team's agreed schedule
-   (`--n-train/--epochs/--batch-size`; currently the MDN placeholders):
+   (`--n-train/--epochs/--batch-size`). Already done once with the MDN
+   placeholders (`kin_ae_s0`, `bal_ae_s0`, see Results); rerun when the
+   schedule is fixed:
    ```bash
    .venv/bin/python experiments/train_autoencoder.py --problem kinematics --run-name kin_ae_s0
    .venv/bin/python experiments/train_autoencoder.py --problem ballistics --run-name bal_ae_s0
