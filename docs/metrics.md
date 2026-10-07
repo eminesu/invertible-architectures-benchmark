@@ -42,8 +42,13 @@ Prior-only sanity baseline (must score badly):
 ### Why these choices
 
 - **Kernel.** Neither the paper nor `inn_toy_data` pins one. The multi-scale IMQ
-  with h ∈ {0.05, 0.2, 0.9} is what the same group's INN code (Ardizzone et al.
-  2019 / FrEIA toy demos) uses.
+  with h ∈ {0.05, 0.2, 0.9} comes from the same group's older INN code
+  (`MMD_multiscale` in FrEIA's `experiments/toy_8-modes` notebook). That code
+  was **removed from FrEIA in February 2020** (commit 3b2979c, "moved all
+  experiments to separate repositories"), a year before the benchmark paper.
+  The same removed commit also has a different, configurable kernel family in
+  `experiments/inverse_problems_science/losses.py`. So the paper's actual
+  kernel is unknown. Its code is not public.
 - **σ.** The forward processes are deterministic, so y | x ~ N(f(x), σ²I) is
   imposed. Ground-truth samples then have their own re-simulation error dim_y·σ²
   (2e-4 kinematics, 4e-4 ballistics), well below the best paper numbers
@@ -75,19 +80,30 @@ Kinematics, 1000 y* × 1000 samples:
 | MDN K=16 (`emine-mdn`, `kin_K16_s0`) | 0.0031 | 0.0077 | 0.0007 |
 | Paper MDN, Table 1 | 0.007 | | 0.012 |
 
-Ballistics (no trained model yet):
+Ballistics:
 
 | Model | Err_post (unbiased) | Err_post (biased) | Err_resim mean | Err_resim median [q1, q3] |
 |---|---|---|---|---|
 | prior (ignores y*) | 0.105 | 0.110 | 19.5 | 14.8 [11.0, 22.9] |
+| MDN K=16 (`emine-mdn`, `bal_K16_s0`) | 0.0071 | 0.0127 | 0.0012 | 0.0011 [0.0009, 0.0014] |
 | Paper MDN, Table 2 | 0.048 | | 0.184 | |
 
-On ballistics the prior's Err_post is only ~2× the paper's MDN, while its
-Err_resim is ~100× worse. In raw x units the kernel distance is dominated by
-v0 (prior std ≈ 3.9, vs. ≈ 0.5 for the other coordinates), and the
-posterior over v0 for a given impact point is broad. Check this once a
-ballistics model is trained; if Err_post separates models poorly, the team
-may want to standardize x before the MMD (for all models).
+## Sensitivity of Err_post (checked with the MDN, details in `docs/mdn.md`)
+
+- **Bandwidths barely matter for the score.** Halving or doubling all three
+  h moves the MDN's Err_post by under 10% on both benchmarks. The kernel scale
+  alone does not explain why our numbers are below the paper's.
+- **The kernel does matter for separating models.** A single narrow Gaussian
+  (h = 0.2) puts the prior only 1.6× above the MDN on ballistics, against 15×
+  with the shared IMQ setting.
+- **On ballistics, Err_post in raw units mostly measures whether v0 is an
+  integer.** x₄ = v0 is the launch speed. The paper's prior is
+  x₄ ~ Poisson(15) (Sec. 3.2), so every ground-truth v0 is an integer, while
+  continuous models (MDN, INN, cINN, …) output real values. Rounding only the
+  MDN's v0 to integers drops its Err_post from 0.0071 to 0.0012, so over 80% of
+  the score is this effect. Standardizing x by the prior std (v0 std ≈ 3.9,
+  the others ≈ 0.36–0.5) gives 0.0010 and also improves the separation from the
+  prior (15× → 65×).
 
 Sanity plots of one y*: `experiments/figures/ground_truth_{kinematics,ballistics}_0.png`
 (`experiments/plot_ground_truth.py`).
@@ -96,6 +112,10 @@ Sanity plots of one y*: `experiments/figures/ground_truth_{kinematics,ballistics
 
 - Agree on the unbiased vs. biased MMD² headline number (the paper does not say).
 - Agree on the ballistics clamp value (the paper clamps but gives no value).
-- Decide whether to standardize x before the MMD on ballistics (see above).
+- Decide how to handle the integer-valued v0 on ballistics *before* comparing
+  models there: standardize x before the MMD, round v0 in model samples, or
+  dequantize v0 in the training data. See "Sensitivity" above.
+- The kernel bandwidths have no confirmed source for the 2021 paper (see
+  "Why these choices"). Asking the authors would settle it.
 - σ, kernel and sample counts above must not change between models; changing
   any of them invalidates every number already reported.
