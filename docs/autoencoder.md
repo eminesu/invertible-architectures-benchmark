@@ -223,6 +223,23 @@ samples. Max per-y\* Err_post 0.164, Err_resim 0.165 (no clamping needed).
   fixes the shared schedule.
 - The early instability seen at 10 epochs did not hurt the final model.
 
+### Shared result files (committed)
+
+`metrics/results/` and `experiments/runs/` are git-ignored, so the files
+below were force-added (`git add -f`) to keep the reported numbers
+reproducible without retraining. New runs stay ignored unless added the same
+way. Model weights (`model.pt`, ~12 MB each) are **not** in git; they have to
+be shared separately.
+
+| Files | Content |
+|---|---|
+| `metrics/results/{kinematics,ballistics}_ae_s0.{json,npz}` | 50-epoch AE: summary + per-y\* Err_post / Err_resim (for the Fig. 4–5 boxplots) |
+| `metrics/results/{kinematics,ballistics}_ae_sanity10ep_s0.{json,npz}` | 10-epoch AE, same format |
+| `metrics/results/{kinematics,ballistics}_mdn_K16_s0.{json,npz}` | MDN K=16, same format |
+| `experiments/runs/{kin,bal}_ae_s0/`, `{kin,bal}_ae_sanity_s0/`, `{kin,bal}_K16_s0/` | `config.json`, `log.csv`, `summary.json` of each run |
+
+Boxplots: `metrics.evaluate.boxplot([...npz], 'fig.png')`.
+
 ## First evaluation with the shared metrics (10 epochs)
 
 Official `metrics.evaluate`: all 1000 test y\* × 1000 samples, unbiased MMD²,

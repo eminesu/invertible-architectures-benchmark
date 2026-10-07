@@ -1,0 +1,15 @@
+{
+  "run": "bal_K16_s0",
+  "problem": "ballistics",
+  "components": 16,
+  "n_params": 2994238,
+  "hidden": 959,
+  "layers": 4,
+  "val_nll": -0.681077629327774,
+  "test_nll": -0.5624794960021973,
+  "err_resim_provisional": 0.0011987208175870156,
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.36486566698295064,
+  "inference_setup": "4000 samples for each of 1000 y*, device=cpu",
+  "train_seconds": 1687.0589151382446
+}

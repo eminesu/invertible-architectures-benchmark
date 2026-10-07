@@ -111,6 +111,11 @@ point such as (1.0, 1.2). See `experiments/figures/posterior_kin_K16_s0.png`.
 Test y\* are drawn from the prior, so the averaged Err_resim hides this. The K
 sweep and a longer schedule should test whether it improves.
 
+The result files of these runs are committed (force-added despite
+`.gitignore`): `metrics/results/{kinematics,ballistics}_mdn_K16_s0.{json,npz}`
+and `experiments/runs/{kin,bal}_K16_s0/{config.json,log.csv,summary.json}`.
+Model weights are not in git.
+
 ## Sensitivity of Err_post to the evaluation settings
 
 Checked with the cached ground truth, using the same K=16 models and
