@@ -95,3 +95,12 @@ def test_prior_scores_worse_than_posterior():
     post_bad, _ = err_post(bad, gt)
     assert np.all(post_bad > 10 * np.abs(post_good))
     assert err_resim(bad, y_star, f)[1] > 100 * err_resim(model, y_star, f)[1]
+
+
+@pytest.mark.parametrize('unbiased', [True, False])
+def test_mmd_torch_matches_numpy(rng, unbiased):
+    torch = pytest.importorskip('torch')
+    from metrics.mmd import mmd_torch
+    a, b = rng.randn(300, 3), rng.randn(200, 3) * 1.2 + 0.1
+    ours = mmd_torch(torch.from_numpy(a), torch.from_numpy(b), unbiased=unbiased).item()
+    assert np.isclose(ours, mmd(a, b, unbiased=unbiased), rtol=1e-10, atol=1e-12)
