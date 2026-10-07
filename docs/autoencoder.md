@@ -11,6 +11,17 @@ sweeps) are for Berker. Every open choice is marked `TODO(berker)` in the code:
 grep -rn "TODO(berker)" models/ experiments/
 ```
 
+> ⚠️ **Read first — two findings from the first shared-metrics evaluation**
+> (details in [First evaluation with the shared metrics](#first-evaluation-with-the-shared-metrics-kinematics-10-epochs)):
+>
+> 1. **Accuracy is already better than the paper's autoencoder, but worse than our
+>    MDN.** Err_post is ~2.6× lower than the paper's AE, but the mean is ~2.6× the
+>    median: a few hard y\* in low-density regions carry most of the error.
+> 2. **On CPU the autoencoder is NOT the fastest model: it is ~110× slower than
+>    the MDN** (8.2 s vs 75 ms). This is expected from the architecture, not a bug.
+>    **Inference time must be measured on a GPU**, with every model timed on the
+>    same machine and in the same way, before any speed claim is made.
+
 ## Files
 
 | Path | Purpose |
@@ -133,6 +144,61 @@ On a typical y\* the autoencoder is close to the MDN, but it has a heavy tail
 (mean ≈ 3× median). The paper has the same ordering (AE 0.037 vs MDN 0.007).
 The full 50-epoch schedule and the b sweep are the first things to try on the tail.
 
+## First evaluation with the shared metrics (kinematics, 10 epochs)
+
+Official `metrics.evaluate`: all 1000 test y\* × 1000 samples, unbiased MMD²,
+cached ground truth. Model: the 10-epoch sanity run `kin_ae_sanity_s0`, so
+these are **not final numbers** (the full schedule is 50 epochs). Ballistics has
+not been trained yet. Output: `metrics/results/kinematics_ae_sanity10ep_s0.{json,npz}`.
+
+```python
+from metrics.evaluate import evaluate
+evaluate(model.sample, 'kinematics', name='ae_sanity10ep_s0')
+```
+
+| Model | Err_post (median [q1, q3]) | Err_resim (median [q1, q3]) | Inference, 1000 y\* × 1000 samples |
+|---|---|---|---|
+| **Autoencoder, 10 epochs** | **0.0141** (0.0054 [0.0024, 0.0132]) | **0.0034** (0.0019 [0.0004, 0.0036]) | **8.2 s** (CPU) |
+| Our MDN K=16, 50 epochs | 0.0031 | 0.0007 | 75 ms (CPU) |
+| Paper autoencoder (Table 1) | 0.037 | 0.012 | < 1 ms (1080 Ti) |
+| Paper MDN (Table 1) | 0.007 | 0.012 | 601 ms (1080 Ti) |
+
+Biased-estimator Err_post: 0.0187. Hardware: Apple M4, CPU.
+
+### ⚠️ Finding 1: accuracy beats the paper's AE, but there is a heavy tail
+
+- The 10-epoch model is already **~2.6× better than the paper's autoencoder on
+  Err_post and ~3.5× better on Err_resim**.
+- It is **behind our MDN** (0.0141 vs 0.0031). The paper has the same ordering
+  (AE 0.037 vs MDN 0.007).
+- **Mean ≈ 2.6× median** (max 0.18): most of the error comes from a small
+  number of hard y\* in low-density regions of p(y), e.g. y\* = (1.5, 0) in the
+  sanity plot. **This tail is the first target** for the full 50-epoch schedule
+  and the b sweep. Report median and quartiles next to the mean.
+
+### ⚠️ Finding 2: on CPU the autoencoder is ~110× SLOWER than the MDN
+
+The spec expected the autoencoder to be the fastest model in the study. On our
+CPU measurement it is the opposite: **8.2 s vs 75 ms for the MDN**.
+
+**Why (architecture, not a bug):** the decoder pushes *every* sample through the
+full 3M-parameter network: 1000 y\* × 1000 samples = 10⁶ forward passes, about
+3·10¹² FLOPs. The MDN runs its big network **once per y\*** (1000 passes), and
+drawing samples from the resulting Gaussian mixture is cheap. The more samples
+per y\*, the bigger the gap.
+
+The paper's "< 1 ms" was measured on a GTX 1080 Ti, and the paper does not say
+exactly what was timed (per sample? per y\*? which batch size?). A batched MLP
+forward pass is exactly what a GPU is good at, so the CPU number is not
+representative.
+
+**Decision: measure inference time on a GPU.** Rules for a fair comparison:
+- time every model (AE, MDN, INN, cINN, …) **on the same GPU** with the same
+  `metrics.evaluate.timed_sampling` call (1000 y\* × 1000 samples, after warm-up);
+- report the GPU model and the batch layout next to the number;
+- **do not compare our times with the paper's ms figures**, only with each other;
+- keep the CPU numbers above as a secondary data point and say why they differ.
+
 ## Hand-off to Berker: what is left
 
 1. **Full training** on both benchmarks with the team's agreed schedule
@@ -148,8 +214,10 @@ The full 50-epoch schedule and the b sweep are the first things to try on the ta
    from metrics.evaluate import evaluate
    evaluate(model.sample, 'kinematics', name='ae_s0')   # model loaded as in plot_autoencoder_sanity.load()
    ```
-   Report Err_post, Err_resim and the inference time. This is a single decoder
-   pass, so it should be the fastest model in the study and is the speed baseline.
+   Report Err_post, Err_resim and the inference time. **Measure inference time
+   on a GPU**: on CPU the autoencoder is ~110× slower than the MDN (see
+   Finding 2 above). Time every model on the same GPU in the same way, then
+   check whether the "fastest model / speed baseline" claim actually holds.
 3. **Sweeps**, logging every run: b, a, `--latent-mmd joint|marginal`, depth /
    activation at a fixed 3M budget, larger dim z, decoding from true y in L_recon.
 4. **Ballistics specifics** (see `docs/mdn.md`, "Caveats"): v0 is
