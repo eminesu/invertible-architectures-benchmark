@@ -1,7 +1,7 @@
-.venv/
+.venv
 __pycache__/
 *.pyc
 .pytest_cache/
-experiments/runs/
-metrics/cache/
-metrics/results/
+experiments/runs
+metrics/cache
+metrics/results
