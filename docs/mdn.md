@@ -77,7 +77,7 @@ The report says `U ∈ R^{b×K×N(N−1)/2}`. That is a typo. FrEIA expects
 
 ## Results (K=16, seed 0, shared metrics from `emine-metrics`)
 
-Scored with `metrics.evaluate` (uncommitted on `emine-metrics` as of 2026-10-05):
+Scored with `metrics.evaluate` (`emine-metrics`, commit b0f43d8):
 the same 1000 test y\* and cached rejection-sampling ground truth as every
 other model, 1000 samples per y\*, unbiased MMD² (biased in brackets).
 
@@ -146,12 +146,22 @@ Findings:
 
 ## Caveats to discuss
 
-- **Ballistics `x₄ = v0` is Poisson, so it is integer-valued.** `x₂` is clipped at 0,
-  so it has a point mass there. A continuous density can put arbitrarily narrow
-  spikes on such points, so the exact NLL is unbounded below. Check whether
-  validation NLL keeps falling while re-simulation error does not improve. If
-  so, consider dequantizing `v0` (add U(−½, ½)), and agree with the team so all
-  models see the same data.
+- **Ballistics `x₄ = v0` is integer-valued.** The parameters are
+  x = (x₁, x₂) launch position, x₃ launch angle, x₄ = v0 initial speed. The
+  paper defines the prior as x₄ ~ Poisson(15) (Sec. 3.2), and upstream
+  implements it with `np.random.poisson(15)`, so every training and
+  ground-truth v0 is a whole number (mostly 9–21). The paper gives no reason
+  for this choice. Also, upstream clips x₂ at 0, which the paper does not
+  mention, so x₂ has a point mass at 0 (about 0.1% of draws).
+  Two consequences:
+  1. **Training.** A continuous density can put arbitrarily narrow spikes on
+     integer values, so the exact NLL is unbounded below. In the K=16 run this
+     did not happen: train and validation NLL stayed level and Err_resim is
+     good. Watch for it at larger K or with longer schedules. The fix would be
+     dequantization (add U(−½, ½) to v0 in the training data), agreed with the
+     team so every model sees the same data.
+  2. **Evaluation.** See "Sensitivity" above: over 80% of the MDN's raw-unit
+     ballistics Err_post comes from this.
 - **Upstream ballistics `forward_process` silently drops rows** when a
   trajectory has no ground impact in t ∈ [0, 6], which would misalign x and y.
   Our copy raises in strict mode and returns NaN otherwise. For model samples
