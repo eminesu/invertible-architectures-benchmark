@@ -1,0 +1,44 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_bf_fmpe_s0_tsit5xadaptive",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.0016330975581149599,
+    "mean_clamped": 0.0016330975581149599,
+    "median": 0.00013743153670475738,
+    "q1": -0.00044281873228141366,
+    "q3": 0.0010491812094177155,
+    "max": 0.21812188915752273,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.006235547191994028,
+    "mean_clamped": 0.006235547191994028,
+    "median": 0.00480375881199635,
+    "q1": 0.004233168481590166,
+    "q3": 0.005651822850310184,
+    "max": 0.22122230713663393,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 1.8457869401461955e-05,
+    "mean_clamped": 1.8457869401461955e-05,
+    "median": 8.500117542052656e-06,
+    "q1": 5.794527425404635e-06,
+    "q3": 1.4375161557914272e-05,
+    "max": 0.001268261795651887,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 6158.683253665979,
+  "inference_ms_per_condition": 6158.683253665978,
+  "clamp": 10.0,
+  "method": "tsit5",
+  "steps": "adaptive",
+  "nfe": 331,
+  "n_params": 2994309,
+  "device": "cpu",
+  "implementation": "bayesflow 2.0.14"
+}
