@@ -86,8 +86,15 @@ its torch device (MPS) at import time, so timing on CPU needs
      paper's formula), density ∝ t^(−α/(1+α)). For α > 0 this favours the
      **noise** end t = 0, the opposite of the paper and dingo, and BayesFlow's
      default is α = 0.5 (E[t] = 0.40 instead of 0.5).
-   - We use dingo's convention with α = 0 (uniform), where all three agree. The
-     BayesFlow cross-check keeps its library default α = 0.5. Worth reporting
+   - `models/fmpe.py` now follows dingo's convention. **The headline runs
+     `kin_fmpe_s0` / `bal_fmpe_s0` were, however, trained with p(t) ∝ t**, i.e.
+     dingo α = 1, not the uniform prior their `config.json` (`"alpha": 0.0`) suggests:
+     they started before the switch to dingo's convention, under the earlier
+     sampler t = u^((1+α)/(2+α)), which is u^0.5 at α = 0. A rerun with
+     `--alpha 1` reproduces their training log digit for digit. Both
+     `config.json` files carry `alpha_effective: 1.0`. The BayesFlow cross-check
+     keeps its library default α = 0.5 (noise-heavy in its convention), so the two
+     implementations also differ in time prior. Worth reporting
      upstream to BayesFlow, if confirmed by the team.
 2. **The ODE solver matters more than NFE, and RK4 is the wrong default.** At
    equal NFE, midpoint and Euler beat RK4 by a wide margin (table below; e.g.
@@ -130,7 +137,7 @@ its torch device (MPS) at import time, so timing on CPU needs
 | Network | input Linear(t, x_t, y → 497), 6 gated residual blocks (2 × Linear 497 + GLU gate on (t, x_t)), SiLU, Linear(497 → 4) | 2,993,932 params (kinematics), 2,993,435 (ballistics) |
 | Output init | zero weights and bias | initial field v = 0 |
 | σ_min | 1e-4 | |
-| Time prior | α = 0 (uniform) | sweep α later |
+| Time prior | p(t) ∝ t (dingo α = 1) for the headline runs, see Finding 1 | α ∈ {0, 4} sweep: `experiments/sweep_alpha.sh` |
 | Normalization | x and y standardized with training-set statistics | as MDN |
 | Optimizer | Adam, lr 1e-3, weight decay 1e-5, cosine, grad-clip 10 | as MDN |
 | Data / schedule | 1M train, 20k val, seeds 10000+s / 20000+s; 50 epochs, batch 1000 | as MDN; **team placeholder** |
@@ -245,7 +252,7 @@ from 0.3 at t = 0.5 to 4.6 (kin) / 2.9 (bal) at t = 1: large, but not the
 - **Solver choice** goes into the comparison: midpoint (or Euler) at 8–32 NFE,
   not RK4 and not BayesFlow's adaptive default. Worth agreeing before anyone
   reports a flow-matching number.
-- **Time prior α.** Only α = 0 was run. The paper sweeps α ∈ {−0.5 … 4}; also
+- **Time prior α.** The headline runs use α = 1 (Finding 1); α = 0 and 4 are in `experiments/sweep_alpha.sh`. The paper sweeps α ∈ {−0.5 … 4}; also
   confirm the BayesFlow sign issue (Finding 1) and report it upstream.
 - **Exact density / calibration.** FMPE can give log p(x | y\*) via the divergence
   of v (not implemented). Decide whether calibration metrics are wanted.

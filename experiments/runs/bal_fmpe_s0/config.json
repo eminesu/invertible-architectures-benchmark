@@ -19,5 +19,7 @@
   "hidden_resolved": 497,
   "n_params": 2993435,
   "device_resolved": "cpu",
-  "torch": "2.14.1"
+  "torch": "2.14.1",
+  "alpha_effective": 1.0,
+  "alpha_note": "Trained before models/fmpe.py switched to dingo's time prior: the sampler was t = u^((1+alpha)/(2+alpha)), i.e. p(t) \u221d t at alpha = 0, which is dingo alpha = 1."
 }
