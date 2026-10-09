@@ -1,0 +1,50 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_bf_npse_s0_rk45x2",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.02757375198215366,
+    "mean_clamped": 0.02757375198215366,
+    "median": 0.019112489838263635,
+    "q1": 0.01369875188499009,
+    "q3": 0.03229713081963431,
+    "max": 0.1331638940297818,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.03223863578885073,
+    "mean_clamped": 0.03223863578885073,
+    "median": 0.02387116675465395,
+    "q1": 0.018489030778541193,
+    "q3": 0.03683654363998795,
+    "max": 0.1380628446109179,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.12492811857852638,
+    "mean_clamped": 0.12492811857852638,
+    "median": 0.11413372350407142,
+    "q1": 0.09903252049197539,
+    "q3": 0.13301835732624437,
+    "max": 0.4358352388000422,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 215.92109612497734,
+  "inference_ms_per_condition": 215.92109612497734,
+  "clamp": 10.0,
+  "method": "rk45",
+  "steps": 2,
+  "nfe": 12,
+  "n_params": 2994309,
+  "device": "cpu",
+  "implementation": "bayesflow 2.0.14",
+  "load_avg_before": [
+    3.28173828125,
+    3.8671875,
+    3.65283203125
+  ],
+  "seconds_per_nfe": 17.993424677081446
+}
