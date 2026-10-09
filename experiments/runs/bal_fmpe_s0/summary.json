@@ -1,0 +1,13 @@
+{
+  "run": "bal_fmpe_s0",
+  "problem": "ballistics",
+  "n_params": 2993435,
+  "hidden": 497,
+  "blocks": 6,
+  "train_loss": 4.690692142009735,
+  "val_loss": 4.680129766464233,
+  "err_resim_provisional": 0.001639660464150078,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, rk4 16 steps (64 NFE)",
+  "train_seconds": 3995.1131689548492
+}

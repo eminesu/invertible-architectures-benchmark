@@ -1,0 +1,23 @@
+{
+  "problem": "kinematics",
+  "param_budget": 3000000,
+  "alpha": 0.5,
+  "n_train": 1000000,
+  "n_val": 20000,
+  "epochs": 50,
+  "batch_size": 1000,
+  "lr": 0.001,
+  "weight_decay": 1e-05,
+  "grad_clip": 10.0,
+  "seed": 0,
+  "solver": [],
+  "evaluate_only": false,
+  "device": "mps",
+  "run_name": null,
+  "width_resolved": 409,
+  "n_params": 2994309,
+  "bayesflow": "2.0.14",
+  "keras": "3.15.1",
+  "torch": "2.14.1",
+  "train_seconds": 4574.990013360977
+}
