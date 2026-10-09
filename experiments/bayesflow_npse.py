@@ -132,7 +132,7 @@ def main():
         json.dump(cfg, open(os.path.join(out, 'config.json'), 'w'), indent=2)
         print(f'{run_name}: TimeMLP width {width} x 5 blocks, {n_params:,} trainable parameters')
 
-        # Same data seeds as train_mdn.py / train_fmpe.py / train_npse.py.
+        # Same data seeds as train_mdn.py / train_fmpe.py.
         x_tr, y_tr = make_dataset(args.problem, args.n_train, seed=10_000 + args.seed)
         x_va, y_va = make_dataset(args.problem, args.n_val, seed=20_000 + args.seed)
         train = bf.datasets.OfflineDataset({'inference_variables': x_tr, 'inference_conditions': y_tr},
