@@ -12,7 +12,9 @@ network pass per function evaluation (NFE) of the sampler.
 
 | Path | Purpose |
 |---|---|
-| `experiments/bayesflow_npse.py` | Training and evaluation with BayesFlow's `DiffusionModel`; same data / budget / schedule as the baselines; scores with `metrics.evaluate` and stores sampler, steps, counted NFE, parameter count, load average |
+| `models/npse.py` | The model: BayesFlow `DiffusionModel` builder, parameter-budget width solver, NFE counter, and `NPSE.sample(y_star, n)`, the shared interface |
+| `tests/test_npse.py` | Parameter budget, NFE counting, sample interface, loading the trained runs (skipped if `approximator.keras` is not present; the trained weights are not committed) |
+| `experiments/bayesflow_npse.py` | Training and evaluation with `models/npse.py`; same data / budget / schedule as the baselines; scores with `metrics.evaluate` and stores sampler, steps, counted NFE, parameter count, load average |
 | `experiments/plot_npse_posterior.py` | Sanity check (build step 4): samples for a few y\* against the rejection ground truth, plus per-y\* numbers |
 | `experiments/sweep_npse.sh` | Sampling-step sweep (run) and model-size sweep (not run yet) |
 | `experiments/figures/npse_posterior_*.png` | Sanity plots |
@@ -59,7 +61,7 @@ et al. (2025, arXiv:2512.20685). `sbi` is not installed and was not used.
 |---|---|---|
 | Formulation | VP, cosine log-SNR schedule, v-prediction, noise loss | BayesFlow default; fixed on both benchmarks |
 | Network | BayesFlow TimeMLP, 5 residual blocks × width 409, Fourier time embedding, mish | only the width changed from the default (256) to fit the budget |
-| Parameters | 2,994,309 (both benchmarks) | budget ≤ 3M, as the baselines; same width as the FMPE cross-check |
+| Parameters | 2,994,309 (kinematics), 2,993,900 (ballistics, 1-D y) | budget ≤ 3M, as the baselines; same width as the FMPE cross-check |
 | Data / schedule | 1M train, 20k val, seeds 10000+s / 20000+s; 50 epochs, batch 1000; Adam, lr 1e-3, cosine, weight decay 1e-5, clipnorm 10 | as MDN / FMPE; **team placeholder** |
 | Standardization | `standardize='all'` | x and y |
 | Samplers | probability-flow ODE: `euler`, fixed-step `rk45`; reverse SDE: `euler_maruyama` | NFE counted by wrapping `DiffusionModel.velocity` |

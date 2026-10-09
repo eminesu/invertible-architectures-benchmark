@@ -38,50 +38,15 @@ os.environ['KERAS_TORCH_DEVICE'] = _pre.parse_known_args()[0].device
 
 import bayesflow as bf  # noqa: E402
 import keras  # noqa: E402
-import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from data.toy_data import MODELS, make_dataset  # noqa: E402
 from metrics.benchmarks import load_test_conditions  # noqa: E402
 from metrics.evaluate import RESULTS_DIR, evaluate  # noqa: E402
+from models.npse import NPSE, build, width_for_budget  # noqa: E402
 
 RUNS = os.path.join(os.path.dirname(__file__), 'runs')
-
-
-def build(x_dims, y_dims, width):
-    network = bf.networks.DiffusionModel(subnet_kwargs={'widths': (width,) * 5})
-    approximator = bf.ContinuousApproximator(inference_network=network, standardize='all')
-    approximator.build_from_data({'inference_variables': np.zeros((2, x_dims), 'float32'),
-                                  'inference_conditions': np.zeros((2, y_dims), 'float32')})
-    return approximator
-
-
-def count_nfe(approximator, y, method, steps):
-    """Network evaluations per sample, counted by wrapping DiffusionModel.velocity,
-    which both the ODE and the SDE samplers call once per evaluation (adaptive
-    steps: averaged over the given conditions)."""
-    net = approximator.inference_network
-    calls, velocity = [0], net.velocity
-    def counted(*a, **kw):
-        calls[0] += 1
-        return velocity(*a, **kw)
-    net.velocity = counted
-    try:
-        approximator.sample(num_samples=1, conditions={'inference_conditions': y}, method=method, steps=steps)
-    finally:
-        net.velocity = velocity
-    return calls[0]
-
-
-def width_for_budget(x_dims, y_dims, target):
-    def count(w):
-        return sum(int(np.prod(v.shape)) for v in build(x_dims, y_dims, w).trainable_weights)
-    lo, hi = 8, 2048
-    while lo < hi:  # largest width with count <= target
-        mid = (lo + hi + 1) // 2
-        lo, hi = (mid, hi) if count(mid) <= target else (lo, mid - 1)
-    return lo, count(lo)
 
 
 class EpochLog(keras.callbacks.Callback):
@@ -152,25 +117,16 @@ def main():
         json.dump(cfg, open(os.path.join(out, 'config.json'), 'w'), indent=2)
         approximator.save(os.path.join(out, 'approximator.keras'))
 
-    def sampler(method, steps):
-        def sample(y, n):
-            # Chunk the conditions: BayesFlow integrates all M * n states at once.
-            xs = [approximator.sample(num_samples=n, conditions={'inference_conditions': y[s:s + 100]},
-                                      method=method, steps=steps)['inference_variables']
-                  for s in range(0, len(y), 100)]
-            return np.concatenate(xs)
-        return sample
-
     for spec in args.sampler:
         method, steps = spec.split(':')
         steps = steps if steps == 'adaptive' else int(steps)
         name = f'{args.name or run_name}_{method}x{steps}'
-        nfe = count_nfe(approximator, np.asarray(load_test_conditions(args.problem)[0][:100], 'float32'),
-                        method, steps)
+        model = NPSE(approximator, method, steps)
+        nfe = model.nfe(load_test_conditions(args.problem)[0][:100])
         print(f'--- {name}: {nfe} NFE per sample', flush=True)
         torch.manual_seed(args.seed)
         load_before = os.getloadavg()  # timing is only comparable on an otherwise idle machine
-        summary = evaluate(sampler(method, steps), args.problem, name=name)
+        summary = evaluate(model.sample, args.problem, name=name)
         summary.update(method=method, steps=steps, nfe=nfe, n_params=cfg['n_params'], device=args.device,
                        implementation=f"bayesflow {cfg['bayesflow']}", load_avg_before=load_before,
                        seconds_per_nfe=summary['inference_seconds'] / nfe)
