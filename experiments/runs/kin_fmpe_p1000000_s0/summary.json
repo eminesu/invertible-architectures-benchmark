@@ -1,0 +1,13 @@
+{
+  "run": "kin_fmpe_p1000000_s0",
+  "problem": "kinematics",
+  "n_params": 998716,
+  "hidden": 286,
+  "blocks": 6,
+  "train_loss": 3.3031741535663603,
+  "val_loss": 3.3117828369140625,
+  "err_resim_provisional": 0.00018226032737854957,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, rk4 16 steps (64 NFE)",
+  "train_seconds": 705.7090837955475
+}

@@ -1,18 +1,23 @@
 # Diffusion (NPSE) vs Flow Matching (FMPE) — comparison
 
-At 3M parameters and 32 NFE, diffusion and FMPE are statistically tied on both
-benchmarks. FMPE is cheaper: it reaches the converged accuracy at 8 NFE, while
-diffusion needs 32. Seed 0 only; `experiments/sweep_compare.sh` adds seeds,
-model size and the FMPE time prior. Method details: `docs/npse.md`, `docs/fmpe.md`.
+Across three seeds and three model sizes, FMPE matches or beats diffusion at
+every NFE and gets there cheaper. At 32 NFE the gap is small, and a
+300k-parameter FMPE is as accurate as the 3M one at a fifth of the cost.
+Method details: `docs/npse.md`, `docs/fmpe.md`. Sweep: `experiments/sweep_compare.sh`.
 
-- **Kinematics:** both beat the MDN (Err_post 0.0016–0.0018 vs 0.0031, better
-  on 84–85% of test y\*). Diffusion ODE Euler × 32 vs FMPE midpoint × 16: paired
-  Wilcoxon p = 0.18.
-- **Ballistics:** every model, MDN included, scores 0.0071. With the integer-v0
-  effect removed, all three are still tied (0.0010–0.0012), so at 3M this
-  benchmark does not separate them.
-- **Cost:** at 8 NFE FMPE midpoint × 4 scores 0.0017 on kinematics, diffusion
-  Euler × 8 scores 0.0048. Per NFE both cost the same.
+- **Kinematics, 32 NFE:** FMPE midpoint scores 0.0016 on all 3 seeds, diffusion
+  ODE Euler 0.0017–0.0019. FMPE is ahead on every seed, by 0.00013–0.00023
+  (paired p = 0.045–0.21). Both beat the MDN (0.0031).
+- **8 NFE:** FMPE 0.0016–0.0017 against diffusion 0.0043–0.0048 on kinematics,
+  0.0077 against 0.0083–0.0085 on ballistics; FMPE wins on all 3 seeds (p < 0.02).
+- **Model size:** 300k and 1M parameters are as accurate as 3M for both methods.
+  FMPE at 300k and 8 NFE scores 0.0017 in 19 s, against 414 s for the 3M
+  headline. Smaller diffusion is even better at low NFE (0.0032 at 300k vs
+  0.0048 at 3M, 8 NFE).
+- **Ballistics:** every model, size and seed ties at 0.0071 from 16 NFE on; the
+  v0 diagnostic shows the tie is real, not only the integer-v0 floor.
+- **FMPE time prior:** α = 0 and α = 1 are equivalent; α = 4 is worse
+  (kinematics midpoint × 16: 0.0022 vs 0.0016).
 - **Sampler matters more than method:** fixed-step RK4 / RK45 and the reverse
   SDE lose to Euler / midpoint at equal NFE for both families.
 
@@ -108,25 +113,75 @@ continuous v0 (`docs/metrics.md`). Re-scored on all 1000 y\* with fresh samples
 - `experiments/sweep_alpha.sh` never ran (started from a worktree without the
   FMPE scripts); its runs are folded into `sweep_compare.sh`.
 
+## Sweep results (`experiments/sweep_compare.sh`)
+
+20 trainings and 60 evaluations, 2026-10-09 23:13 to 2026-10-10 13:04, no
+failures; every evaluation ran alone on the CPU. FMPE size and seed runs use
+α = 1 like the headline. Numbers are read from
+`metrics/results/*.json`.
+
+### Model size (seed 0; Err_post, CPU time)
+
+| NFE | Diffusion 300k | Diffusion 1M | Diffusion 3M | FMPE 300k | FMPE 1M | FMPE 3M |
+|---|---|---|---|---|---|---|
+| Kin 8 | 0.0032, 30 s | 0.0035, 61 s | 0.0048, 124 s | **0.0017, 19 s** | 0.0016, 40 s | 0.0017, 101 s |
+| Kin 16 | 0.0020, 61 s | 0.0021, 126 s | 0.0024, 249 s | 0.0015, 39 s | 0.0015, 82 s | 0.0015, 181 s |
+| Kin 32 | 0.0017, 127 s | 0.0017, 257 s | 0.0018, 600 s | 0.0016, 80 s | 0.0016, 184 s | 0.0016, 414 s |
+| Kin 64 | 0.0017, 259 s | 0.0017, 519 s | 0.0017, 1105 s | 0.0017, 167 s | 0.0017, 366 s | 0.0017, 728 s |
+| Bal 8 | 0.0085 | 0.0084 | 0.0083 | 0.0077 | 0.0078 | 0.0077 |
+| Bal 16 | 0.0073 | 0.0073 | 0.0072 | 0.0071 | 0.0071 | 0.0071 |
+| Bal 32 | 0.0071 | 0.0071 | 0.0071 | 0.0071 | 0.0071 | 0.0071 |
+
+Diffusion is evaluated with ODE Euler × NFE, FMPE with midpoint × NFE/2.
+Parameters: 297,944 / 992,165 / 2,994,309 (diffusion), 297,604 / 998,716 /
+2,993,932 (FMPE), kinematics.
+
+### Seeds (3M)
+
+Err_post per seed 0 / 1 / 2; paired Wilcoxon p of diffusion against FMPE.
+
+| Benchmark | NFE | Diffusion ODE Euler | FMPE midpoint | FMPE better by | p per seed |
+|---|---|---|---|---|---|
+| Kinematics | 8 | 0.0048 / 0.0046 / 0.0043 | 0.0017 / 0.0016 / 0.0017 | 0.0026–0.0031 | 8e-77 / 8e-80 / 4e-53 |
+| | 32 | 0.0018 / 0.0017 / 0.0019 | 0.0016 / 0.0016 / 0.0016 | 0.00013–0.00023 | 0.18 / 0.21 / 0.045 |
+| Ballistics | 8 | 0.0083 / 0.0084 / 0.0085 | 0.0077 / 0.0078 / 0.0077 | 0.0006–0.0008 | 3e-4 / 0.017 / 2e-4 |
+| | 32 | 0.0071 / 0.0072 / 0.0071 | 0.0071 / 0.0071 / 0.0071 | ≤ 0.00004 | 0.75 / 0.24 / 0.49 |
+
+### FMPE time prior (3M, seed 0)
+
+| Kinematics Err_post | α = 0 (uniform) | α = 1 (headline) | α = 4 |
+|---|---|---|---|
+| Euler × 8 | 0.0084 | 0.0086 | 0.0135 |
+| Euler × 32 | 0.0021 | 0.0022 | 0.0035 |
+| midpoint × 4 (8 NFE) | 0.0016 | 0.0017 | 0.0021 |
+| midpoint × 16 (32 NFE) | 0.0016 | 0.0016 | 0.0022 |
+
+Ballistics, midpoint × 16: 0.0071 / 0.0071 / 0.0072. The paper default α = 0
+is safe to report.
+
+### NFE grid and cost per NFE
+
+- 4 NFE breaks both methods: diffusion Euler × 4 scores 0.0176, FMPE Euler × 4
+  0.0332 and midpoint × 2 0.0105 (kinematics).
+- FMPE's best setting is midpoint × 8 (16 NFE): 0.0015 kinematics, 0.0071
+  ballistics; more steps do not help.
+- Cost per NFE scales with parameters: BayesFlow diffusion 15.5–18.8 s at 3M,
+  3.8–4.3 s at 300k; hand-rolled FMPE 10.4–12.9 s at 3M, 2.4–2.8 s at 300k. The
+  ~1.5× gap between them is BayesFlow overhead, not the method.
+
 ## Caveats
 
-- One training seed; the paired tests measure noise over y\*, not over training.
-- The three flows train with different time priors / schedules (Setup).
-- All flows at 3M parameters; ~6000–8000× the MDN's inference time.
-- Times from different sessions; hand-rolled FMPE is ~1.3× faster per NFE than
-  BayesFlow (library overhead, not the method).
+- **Libraries differ.** Diffusion is BayesFlow, the FMPE headline is hand-rolled
+  PyTorch. Inside BayesFlow, with the same Euler solver, diffusion is slightly
+  ahead of FMPE; the hand-rolled FMPE's lead comes partly from the midpoint
+  solver, which BayesFlow does not offer.
+- **Diffusion samplers.** Only Euler, fixed-step RK45 and Euler–Maruyama were
+  tried; a second-order ODE sampler (Heun / DPM-Solver) would be the fair
+  counterpart of FMPE's midpoint.
+- **Model size was varied at the 3M schedule** (1M pairs, 50 epochs).
+- Timing: one machine, evaluations run alone, ±15% between sessions.
 - Err_resim below ~2e-4 (kinematics) / 4e-4 (ballistics) is under the ground
   truth's own floor and no longer ranks posteriors.
-
-## Planned sweep (`experiments/sweep_compare.sh`)
-
-| Axis | Methods | Settings | New trainings | Evaluated at (NFE) |
-|---|---|---|---|---|
-| Model size | diffusion, FMPE hand-rolled | 300k, 1M params, seed 0 | 8 | 8, 16, 32, 64 |
-| Seeds | diffusion, FMPE hand-rolled | seeds 1, 2 at 3M | 8 | 8, 32 |
-| FMPE time prior | FMPE hand-rolled | α = 0, 4 at 3M, seed 0 | 4 | Euler and midpoint at 8, 16, 32 |
-| NFE grid | existing 3M seed-0 runs | diffusion Euler × 4; FMPE Euler × 4, 16, 64, midpoint × 2, 8, 32 | 0 | 4, 16, 64 |
-
-FMPE size and seed runs use α = 1, like the headline. Training runs on MPS
-(two queues in parallel), then every evaluation runs alone on the CPU.
-Estimate: ~7 h training + ~9 h evaluation.
+- For the team: report FMPE at 300k–1M instead of 3M? Matched 3M budget or
+  best-effort for SOTA methods? Which sampler to report (midpoint × 8 for FMPE,
+  Euler × 32 for diffusion)?

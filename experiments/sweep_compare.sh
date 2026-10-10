@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Diffusion (NPSE) vs FMPE sweep, docs/comparison.md "Planned sweep":
+# Diffusion (NPSE) vs FMPE sweep, results in docs/comparison.md "Sweep results":
 #   1. model size  300k / 1M params, seed 0     (diffusion + hand-rolled FMPE)
 #   2. seeds       1, 2 at 3M                    (diffusion + hand-rolled FMPE)
 #   3. time prior  alpha = 0, 4 at 3M, seed 0    (hand-rolled FMPE; the headline runs are alpha = 1)

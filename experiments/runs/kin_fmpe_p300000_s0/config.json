@@ -1,0 +1,23 @@
+{
+  "problem": "kinematics",
+  "blocks": 6,
+  "hidden": null,
+  "param_budget": 300000,
+  "activation": "silu",
+  "sigma_min": 0.0001,
+  "alpha": 1.0,
+  "n_train": 1000000,
+  "n_val": 20000,
+  "epochs": 50,
+  "batch_size": 1000,
+  "lr": 0.001,
+  "weight_decay": 1e-05,
+  "grad_clip": 10.0,
+  "seed": 0,
+  "device": "mps",
+  "run_name": "kin_fmpe_p300000_s0",
+  "hidden_resolved": 155,
+  "n_params": 297604,
+  "device_resolved": "mps",
+  "torch": "2.14.1"
+}
