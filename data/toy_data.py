@@ -97,7 +97,7 @@ class InverseBallisticsModel:
         impact = xs[np.arange(xs.shape[0]), crossings.argmax(axis=1)]
         return np.where(n_cross == 1, impact, np.nan)
 
-    def forward_process(self, x, strict=True, chunk=100_000):
+    def forward_process(self, x, strict=True, chunk=2_000):
         """strict=True raises if any trajectory lacks exactly one impact (upstream
         would silently drop that row). strict=False returns NaN for those rows,
         which is what re-simulation of model samples needs."""

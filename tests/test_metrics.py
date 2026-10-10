@@ -44,7 +44,9 @@ def test_test_conditions_reproducible():
     for b in ('kinematics', 'ballistics'):
         y_star, x_true = load_test_conditions(b)
         y2, x2 = make_test_conditions(b)
-        assert np.array_equal(y_star, y2) and np.array_equal(x_true, x2)
+        # Transcendentals can differ by a few ulps across OS/BLAS versions.
+        assert np.allclose(y_star, y2, rtol=1e-12, atol=1e-12)
+        assert np.allclose(x_true, x2, rtol=1e-12, atol=1e-12)
         assert np.allclose(forward_fn(b)(x_true), y_star)
         assert y_star.shape == (1000, {'kinematics': 2, 'ballistics': 1}[b])
 
@@ -78,6 +80,13 @@ def test_rejection_samples_hit_target():
         d2 = ((f(s) - y) ** 2).sum(1)
         assert d2.max() < (4 * sigma) ** 2
         assert np.isclose(d2.mean(), 2 * sigma ** 2, rtol=0.3)  # Gaussian likelihood, 2-D
+
+
+def test_rejection_proposal_cap_is_not_overshot():
+    y_star, _ = load_test_conditions('kinematics')
+    _, proposals = rejection_sample('kinematics', y_star[:1], n_gt=10000,
+                                    chunk=1000, max_proposals=1500, verbose=False)
+    assert proposals == 1500
 
 
 def test_prior_scores_worse_than_posterior():

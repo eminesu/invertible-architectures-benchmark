@@ -65,11 +65,15 @@ def width_for_budget(x_dims, n_layers, target):
 
 class Autoencoder(nn.Module):
 
-    def __init__(self, x_dims, y_dims, hidden, n_layers=4, activation='relu', latent_mmd='joint'):
+    def __init__(self, x_dims, y_dims, hidden, n_layers=4, activation='relu', latent_mmd='joint',
+                 z_dims=None, recon_condition='predicted', mmd_scale=1.0):
         super().__init__()
         assert latent_mmd in ('joint', 'marginal')
         self.x_dims, self.y_dims = x_dims, y_dims
-        self.z_dims = x_dims - y_dims  # TODO(berker): split is fixed by "no bottleneck"; sweep a larger z?
+        self.z_dims = x_dims - y_dims if z_dims is None else z_dims
+        if self.z_dims < 1 or recon_condition not in ('predicted', 'true') or mmd_scale <= 0:
+            raise ValueError('Invalid latent dimension, reconstruction condition or MMD scale')
+        self.recon_condition, self.mmd_scale = recon_condition, mmd_scale
         self.latent_mmd = latent_mmd
         self.encoder = mlp(x_dims, y_dims + self.z_dims, hidden, n_layers, activation)
         self.decoder = mlp(y_dims + self.z_dims, x_dims, hidden, n_layers, activation)
@@ -80,8 +84,8 @@ class Autoencoder(nn.Module):
         self.register_buffer('y_std', torch.ones(y_dims))
 
     def set_normalization(self, x, y):
-        self.x_mean.copy_(x.mean(0)); self.x_std.copy_(x.std(0))
-        self.y_mean.copy_(y.mean(0)); self.y_std.copy_(y.std(0))
+        self.x_mean.copy_(x.mean(0)); self.x_std.copy_(x.std(0).clamp_min(1e-6))
+        self.y_mean.copy_(y.mean(0)); self.y_std.copy_(y.std(0).clamp_min(1e-6))
 
     # All of encode / decode / losses work in standardized units.
     def encode(self, x_n):
@@ -98,12 +102,13 @@ class Autoencoder(nn.Module):
         y_hat, z = self.encode(x_n)
         # TODO(berker): decode from y_hat (literal D(E(x)), as here) or from the
         # true y_n? Test time feeds the true y*; the two coincide once L_y -> 0.
-        x_rec = self.decode(y_hat, z)
+        x_rec = self.decode(y_hat if self.recon_condition == 'predicted' else y_n, z)
         eps = torch.randn_like(z)
         if self.latent_mmd == 'joint':
-            l_z = mmd_torch(torch.cat([y_hat.detach(), z], 1), torch.cat([y_n, eps], 1))
+            l_z = mmd_torch(torch.cat([y_hat.detach(), z], 1) / self.mmd_scale,
+                            torch.cat([y_n, eps], 1) / self.mmd_scale)
         else:
-            l_z = mmd_torch(z, eps)
+            l_z = mmd_torch(z / self.mmd_scale, eps / self.mmd_scale)
         return {
             'recon': ((x_rec - x_n) ** 2).sum(1).mean(),
             'y': ((y_hat - y_n) ** 2).sum(1).mean(),
@@ -118,12 +123,14 @@ class Autoencoder(nn.Module):
         units, a tensor on the model's device. This is the `sample(y_star, n)`
         interface metrics.evaluate expects."""
         dev = self.x_mean.device
-        y = torch.as_tensor(np.asarray(y_star, dtype=np.float32) if not torch.is_tensor(y_star) else y_star,
-                            dtype=torch.float32, device=dev)
+        y = torch.as_tensor(np.asarray(y_star) if not torch.is_tensor(y_star) else y_star,
+                            dtype=self.x_mean.dtype, device=dev)
         M = y.shape[0]
         y_n = ((y - self.y_mean) / self.y_std).repeat_interleave(n, dim=0)
-        z = torch.randn(M * n, self.z_dims, device=dev, generator=generator)
-        x_n = self.decode(y_n, z)
+        z = torch.randn(M * n, self.z_dims, device=dev, dtype=y.dtype, generator=generator)
+        # Bound decoder activations for the shared 1000 x 1000 evaluation.
+        x_n = torch.cat([self.decode(y_n[s:s+8192], z[s:s+8192])
+                         for s in range(0, M*n, 8192)], dim=0)
         return (x_n * self.x_std + self.x_mean).view(M, n, self.x_dims)
 
 

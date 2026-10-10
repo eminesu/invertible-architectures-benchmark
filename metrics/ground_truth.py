@@ -67,10 +67,11 @@ def rejection_sample(benchmark, y_star, n_gt=N_GT, sigma=None, seed=GT_SEED,
         pending = np.flatnonzero(counts < n_gt)
         if len(pending) == 0:
             break
-        x = prior(benchmark, chunk, rng)
+        batch = min(chunk, max_proposals - n_proposals)
+        x = prior(benchmark, batch, rng)
         y = f(x)
-        u = rng.rand(chunk)
-        n_proposals += chunk
+        u = rng.rand(batch)
+        n_proposals += batch
         ok = np.isfinite(y).all(1)  # ballistics draws without an impact can never match
         x, y, u = x[ok], y[ok], u[ok]
 
