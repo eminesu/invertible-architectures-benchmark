@@ -155,9 +155,53 @@ Standard AE and cVAE both took about 2.2 seconds to generate one million samples
 
 The full runs have lower Err_resim than the pilot runs for every family. Model size, data size, training duration, and evaluation scope all changed together, so these runs do not isolate the contribution of any one change. Invertible AE's ballistics Err_post is slightly higher in full than in pilot, which also shows why the two evaluation scopes should not be treated as a controlled comparison.
 
+## Comparison with Kruse et al. (2021)
+
+The comparison below uses [Benchmarking Invertible Architectures on Inverse Problems, arXiv:2101.10763v3](https://arxiv.org/pdf/2101.10763v3), Tables 1-2 and Sections 4-5. Our full profile is the closer comparison: approximately three million parameters and 1,000 test conditions, matching the paper's reported scale. The pilot uses a different budget and evaluation scope.
+
+**Agreement is partial.** Our full results support the strength of standard AE and its advantage over invertible AE. The main difference is ballistics cVAE: the distribution collapse reported in the paper is not reproduced in our run. The lower numerical errors below do not establish superiority under the paper's exact protocol.
+
+### Numerical comparison
+
+Paper columns reproduce the published tables; our columns use the [full records](second_trial_of_encoders_full_gpu.json). Lower is better. Our Err_post is unbiased MMD squared and our Err_resim is the plain mean; the paper's ballistics means are clamped, with an unspecified threshold.
+
+| Benchmark | Family | Paper Err_post | Our Err_post | Paper Err_resim | Our Err_resim |
+|---|---|---:|---:|---:|---:|
+| Kinematics | Standard AE | 0.037 | 0.00528 | 0.016 | 0.000532 |
+| Kinematics | cVAE | 0.042 | 0.01694 | 0.019 | 0.000965 |
+| Kinematics | Invertible AE (InvAuto) | 0.062 | 0.02121 | 0.022 | 0.003035 |
+| Ballistics | Standard AE | 0.049 | 0.00806 | 0.052 | 0.002569 |
+| Ballistics | cVAE | 4.359 | 0.00879 | 0.812 | 0.001379 |
+| Ballistics | Invertible AE (InvAuto) | 0.156 | 0.00861 | 0.315 | 0.003877 |
+
+### Agreement and differences
+
+- **Kinematics:** Both metrics give the same ordering among these three families: standard AE, cVAE, then invertible AE. This supports the same qualitative preference, although our error values are lower.
+- **Ballistics:** Err_post retains the ordering standard AE, invertible AE, then cVAE, but our three scores are close. Err_resim changes ordering: our cVAE leads, followed by standard AE and invertible AE. Its failure rate is higher than standard AE's (0.0665% versus 0.0149%), so the lower valid-sample error does not settle the overall choice.
+- **cVAE behavior:** Our ballistics diagnostics show no inactive latent dimensions at the recorded KL threshold; each dimension has KL about 2.6. The mean conditional launch-speed variance is 8.09, close to standard AE's 8.29. Together with the low Err_post, this is evidence against a collapse to one average trajectory in this run, rather than proof of complete posterior recovery. These diagnostics are saved in the full JSON.
+- **Scope:** We evaluated three autoencoder families. INN/cINN are not implemented here, so these runs cannot verify the paper's broader ranking of coupling layers against autoencoders. Our pilot also gives different rankings from the full runs; only the full profile supports the agreement stated above.
+
+### Limits of the numerical comparison
+
+The implementation and evaluation choices below prevent treating the table as an exact replication. Details of our metric choices are documented in [shared evaluation metrics](../metrics.md).
+
+- **MMD:** The paper does not specify the kernel bandwidths, finite-sample estimator, or samples per condition. We use raw-unit IMQ with bandwidths 0.05, 0.2, and 0.9 and 1,000 model samples per condition. Switching our full scores to biased MMD squared adds approximately 0.0046-0.0056; all six remain below the corresponding paper values. Estimator choice alone therefore does not close the observed gap, but the other settings remain unverified.
+- **Reference posterior and test set:** Our Gaussian rejection likelihood uses sigma 0.01/0.02, a target of 1,000 reference samples, proposal caps, and test seed 20210126. Some references are shorter. These are our choices; the paper does not provide enough detail to establish matching reference tolerances or identical test observations.
+- **Ballistics prior:** Section 3.2 states an angle prior of 9-72 degrees and a Gaussian starting height. Our [vendored simulator](../../data/toy_data.py), following the [authors' public code](https://github.com/vislearn/inn_toy_data/blob/master/ballistics.py), instead samples angles in 9-81 degrees and clips negative starting heights to zero. The Poisson(15) speed prior is retained. This is a discrepancy between the written specification and public code; which variant produced the published table is not established. Continuous generated speeds also affect our raw-unit MMD, as the sensitivity check below shows.
+- **Training and model realization:** Our standardized losses, joint latent MMD with detached y_hat, weights (including cVAE beta = 0.01), optimizer schedule, and validation-based checkpoint selection are explicit choices. Their exact equivalence to the authors' training is unverified. Our invertible AE has no orthogonality penalty, and its saved orthogonality errors are nonzero, so its transpose decoder is an approximate inverse. Ablations would be needed to attribute the cVAE difference to a particular choice.
+- **Outliers and failed trajectories:** At our clamp of 10, plain and clamped full means are identical for every family; the maximum per-condition ballistics Err_resim is below 0.21. This checks our aggregation, without recovering the paper's clamp. Undefined impacts are excluded and reported separately here; the paper does not specify equivalent failure handling.
+- **Timing and uncertainty:** The paper uses a GTX 1080 Ti; we use a GTX 1650 Ti and time the entire million-sample workload. Dividing our totals by 1,000 gives about 2.2 ms per condition for AE/cVAE and 4.8 ms for invertible AE, but hardware and timing scope prevent a direct speed comparison. All our configurations use one seed, so the small ballistics Err_post gaps do not establish a stable ranking across runs.
+
 ## Ballistics sensitivity
 
 The training prior gives launch speed v0 integer values, while the models output continuous values. We checked how this affects Err_post using the first eight test conditions in a separate diagnostic of the full models: 256 model samples per condition, a target of 128 reference samples, and a two-million-proposal cap. Standardized scores divide x by the prior standard deviations before calculating MMD.
+
+**These transformations were performed as supplementary checks in `diagnose`; they were not applied to the main full evaluation.**
+
+- **Main `evaluate --scope full`:** Computes Err_post over all 1,000 test conditions in raw x units, without rounding generated launch speeds.
+- **Supplementary `diagnose`:** Uses the same trained models on the first eight test conditions to additionally compute MMD with standardized x and with only the generated v0 rounded to the nearest integer. These checks do not retrain or modify the models.
+
+The supplementary results are saved under `diagnostics.supplemental_v0_sensitivity` in the [full records](second_trial_of_encoders_full_gpu.json). All three columns below, including the raw-unit baseline, belong to this eight-condition diagnostic; the headline full results remain the unstandardized, unrounded scores over 1,000 conditions.
 
 | Family | Raw-unit Err_post | Standardized-x Err_post | Err_post after rounding v0 |
 |---|---:|---:|---:|
