@@ -184,5 +184,5 @@ is safe to report.
   truth's own floor and no longer ranks posteriors.
 - Headline numbers stay at the shared 3M budget for every model. The size
   sweep is a side result on inference cost: the flows' cost comes from network
-  size, not the method. Open for the team: which sampler to report (midpoint × 8
-  for FMPE, Euler × 32 for diffusion)?
+  size, not the method. Every sampler setting is reported; no single one is
+  picked.
