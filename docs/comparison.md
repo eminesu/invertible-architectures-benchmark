@@ -182,6 +182,7 @@ is safe to report.
 - Timing: one machine, evaluations run alone, ±15% between sessions.
 - Err_resim below ~2e-4 (kinematics) / 4e-4 (ballistics) is under the ground
   truth's own floor and no longer ranks posteriors.
-- For the team: report FMPE at 300k–1M instead of 3M? Matched 3M budget or
-  best-effort for SOTA methods? Which sampler to report (midpoint × 8 for FMPE,
-  Euler × 32 for diffusion)?
+- Headline numbers stay at the shared 3M budget for every model. The size
+  sweep is a side result on inference cost: the flows' cost comes from network
+  size, not the method. Open for the team: which sampler to report (midpoint × 8
+  for FMPE, Euler × 32 for diffusion)?
