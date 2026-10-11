@@ -141,7 +141,7 @@ its torch device (MPS) at import time, so timing on CPU needs
 | Normalization | x and y standardized with training-set statistics | as MDN |
 | Optimizer | Adam, lr 1e-3, weight decay 1e-5, cosine, grad-clip 10 | as MDN |
 | Data / schedule | 1M train, 20k val, seeds 10000+s / 20000+s; 50 epochs, batch 1000 | as MDN; **team placeholder** |
-| Solver | fixed-step Euler / midpoint / RK4, NFE = stages × steps | headline at 32 NFE (RK4 × 8) |
+| Solver | fixed-step Euler / midpoint / RK4, NFE = stages × steps | headline at 32 NFE (midpoint × 16) |
 
 Training took 32 min (kinematics, MPS) and 67 min (ballistics, CPU, sharing the
 machine with another run). Final train / val CFM loss: 3.302 / 3.310 and

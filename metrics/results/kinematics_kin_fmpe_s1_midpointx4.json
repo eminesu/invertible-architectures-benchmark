@@ -1,0 +1,43 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_fmpe_s1_midpointx4",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.0016491032204334433,
+    "mean_clamped": 0.0016491032204334433,
+    "median": 0.0004767685603105365,
+    "q1": -0.0002289667096836978,
+    "q3": 0.001435995297752235,
+    "max": 0.18341741841119852,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.0062581108780278534,
+    "mean_clamped": 0.0062581108780278534,
+    "median": 0.005146701239411078,
+    "q1": 0.004436808978791562,
+    "q3": 0.006110054392989006,
+    "max": 0.18656872058654717,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 4.179025080547111e-05,
+    "mean_clamped": 4.179025080547111e-05,
+    "median": 2.6639714169739833e-05,
+    "q1": 2.2493604572039112e-05,
+    "q3": 3.584664307749456e-05,
+    "max": 0.0009965196828497862,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 85.09127924998756,
+  "inference_ms_per_condition": 85.09127924998756,
+  "clamp": 10.0,
+  "method": "midpoint",
+  "steps": 4,
+  "nfe": 8,
+  "n_params": 2993932,
+  "device": "cpu"
+}

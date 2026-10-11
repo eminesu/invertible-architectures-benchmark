@@ -1,0 +1,29 @@
+{
+  "benchmark": "kinematics",
+  "model": "prior",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.24164566223647999,
+    "mean_clamped": 0.24164566223647999,
+    "median": 0.20932184362478967,
+    "q1": 0.13682981312781145,
+    "q3": 0.32507610720285457,
+    "max": 0.8919857892625362,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 2.7313443489131286,
+    "mean_clamped": 1.0,
+    "median": 2.1863429668396885,
+    "q1": 1.6715805320572676,
+    "q3": 3.338526044899904,
+    "max": 11.312824563564755,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.07148250000318512,
+  "inference_ms_per_condition": 0.07148250000318512,
+  "clamp": 1.0
+}
