@@ -56,3 +56,22 @@ def mmd(a, b, kernel=imq_kernel, unbiased=True):
     else:
         term_aa, term_bb = k_aa.mean(), k_bb.mean()
     return float(term_aa + term_bb - 2.0 * k_ab.mean())
+
+
+def mmd_torch(a, b, kernel=imq_kernel, unbiased=True):
+    """Differentiable torch version of `mmd`, for MMD training losses (e.g. the
+    autoencoder's latent loss, Kruse et al. Eq. 3). Same kernel, same estimator;
+    tests/test_metrics.py checks it agrees with `mmd`. Returns a 0-d tensor."""
+    import torch
+
+    def d2(p, q):
+        return torch.clamp((p * p).sum(1)[:, None] + (q * q).sum(1)[None, :] - 2.0 * p @ q.T, min=0.0)
+
+    n, m = len(a), len(b)
+    k_aa, k_bb, k_ab = kernel(d2(a, a)), kernel(d2(b, b)), kernel(d2(a, b))
+    if unbiased:
+        term_aa = (k_aa.sum() - k_aa.diagonal().sum()) / (n * (n - 1))
+        term_bb = (k_bb.sum() - k_bb.diagonal().sum()) / (m * (m - 1))
+    else:
+        term_aa, term_bb = k_aa.mean(), k_bb.mean()
+    return term_aa + term_bb - 2.0 * k_ab.mean()

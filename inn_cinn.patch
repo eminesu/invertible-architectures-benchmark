@@ -1,0 +1,781 @@
+diff --git a/docs/inn.md b/docs/inn.md
+new file mode 100644
+index 0000000..ac76553
+--- /dev/null
++++ b/docs/inn.md
+@@ -0,0 +1,30 @@
++# INN and conditional INN (Kruse et al. 2021, arXiv:2101.10763)
++
++Code: `models/inn.py`, `experiments/train_inn.py`, `experiments/evaluate_inn.py`, `tests/test_inn.py`.
++
++| Paper row | Command |
++|---|---|
++| INN (Eq. 4, max. likelihood) | `python experiments/train_inn.py --problem kinematics --model inn --loss ml` |
++| INN (L2 + MMD, Eq. 3) | `python experiments/train_inn.py --problem kinematics --model inn --loss l2mmd` |
++| cINN (Eq. 5) | `python experiments/train_inn.py --problem kinematics --model cinn` |
++
++Use `--problem ballistics` for the second benchmark. Training writes `experiments/runs/<run>/`; score a run with
++`python experiments/evaluate_inn.py <run>` (shared `metrics.evaluate`, writes `metrics/results/`).
++`experiments/summarize_fmpe.py` (branch `emine-fmpe`) tables those results next to the other models.
++Note `experiments/summarize_runs.py` is MDN-only (reads `components`) and will not accept these runs.
++
++Reused from the repo: `data.toy_data`, `metrics.{benchmarks,evaluate,mmd}`, `models.mdn.count_parameters`,
++`experiments.train_mdn.pick_device`, and the training protocol/seeds of `train_mdn.py`.
++Copied from `emine-autoencoder` (same signatures; import them from there once it is merged):
++`mlp`, `evaluate_losses`, `provisional_resim`.
++
++## Not specified by the paper (all placeholders, all flags)
++subnet depth/width (`--layers 3`, width fitted to `--param-budget 3e6`), `--blocks 8`, `--clamp 2.0`,
++`--sigma-y 0.05` (Eq. 4), `--w-y 1`, `--w-z 100` (alpha, Eq. 3), optimizer and schedule (same as MDN/AE).
++`--latent-mmd joint` (as `models/autoencoder.py`) vs `marginal` (literal Eq. 3).
++`--dequantize-v0` (ballistics, off by default) is a team decision, see `docs/metrics.md`.
++
++## Known behaviour
++Reduced-scale kinematics runs: INN-ML and cINN train stably. INN L2+MMD was unstable early
++(tiny MMD value but heavy-tailed z gives wild inverse samples); expect to tune `--w-z`,
++`--latent-mmd` or the kernel. No paper-comparable numbers exist yet; run the full protocol.
+diff --git a/experiments/evaluate_inn.py b/experiments/evaluate_inn.py
+new file mode 100644
+index 0000000..aed3177
+--- /dev/null
++++ b/experiments/evaluate_inn.py
+@@ -0,0 +1,55 @@
++"""Score a trained INN / cINN run with the shared metrics (metrics.evaluate).
++
++    .venv/bin/python experiments/evaluate_inn.py kin_inn_ml_s0
++    .venv/bin/python experiments/evaluate_inn.py kin_cinn_s0 --name kin_cinn_s0 --device cpu
++
++Rebuilds the model of a train_inn.py run from its config.json + model.pt and writes
++metrics/results/<benchmark>_<name>.{json,npz} (the json gets the parameter count and device
++added), which experiments/summarize_fmpe.py already tables next to the other models.
++Inference time is measured on --device; use cpu to compare with the other models.
++"""
++
++import argparse
++import json
++import os
++import sys
++
++import torch
++
++sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
++from data.toy_data import MODELS
++from experiments.train_inn import build_model
++from metrics.evaluate import RESULTS_DIR, evaluate
++from models.inn import count_parameters
++
++RUNS = os.path.join(os.path.dirname(__file__), 'runs')
++
++
++def load_run(run, device='cpu'):
++    """Rebuild the model of a train_inn.py run from its config.json + model.pt."""
++    cfg = json.load(open(os.path.join(RUNS, run, 'config.json')))
++    problem = MODELS[cfg['problem']]()
++    model = build_model(cfg, problem.n_parameters, problem.n_observations)
++    model.load_state_dict(torch.load(os.path.join(RUNS, run, 'model.pt'), map_location=device))
++    return model.to(device).eval(), cfg
++
++
++def main():
++    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
++    p.add_argument('run')
++    p.add_argument('--name', default=None, help='result name; default: the run name')
++    p.add_argument('--device', default='cpu')
++    p.add_argument('--seed', type=int, default=0, help='seed for the z draws')
++    args = p.parse_args()
++
++    model, cfg = load_run(args.run, args.device)
++    torch.manual_seed(args.seed)
++    name = args.name or args.run
++    summary = evaluate(lambda y, n: model.sample(torch.as_tensor(y, dtype=torch.float32, device=args.device), n),
++                       cfg['problem'], name=name)
++    summary.update(n_params=count_parameters(model), device=args.device)
++    (RESULTS_DIR / f"{cfg['problem']}_{name}.json").write_text(json.dumps(summary, indent=2))
++
++
++if __name__ == '__main__':
++    main()
+diff --git a/experiments/train_inn.py b/experiments/train_inn.py
+new file mode 100644
+index 0000000..b00055a
+--- /dev/null
++++ b/experiments/train_inn.py
+@@ -0,0 +1,201 @@
++"""Train the INN or the conditional INN on one benchmark problem.
++
++    .venv/bin/python experiments/train_inn.py --model inn   --loss ml    --problem kinematics
++    .venv/bin/python experiments/train_inn.py --model inn   --loss l2mmd --problem kinematics
++    .venv/bin/python experiments/train_inn.py --model cinn               --problem ballistics
++
++These are the three paper rows "INN", "INN (L2 + MMD)" and "CINN" (Tables 1-2).
++Every run writes to experiments/runs/<run-name>/:
++    config.json     all arguments + derived sizes (subnet width, parameter count)
++    log.csv         per-epoch train / val loss terms + provisional val re-simulation error
++    summary.json    final losses, parameter count, provisional re-simulation error
++    model.pt        state dict
++
++Same data, schedule and optimizer defaults as train_mdn.py / train_autoencoder.py, so
++all models see identical training data and the same number of steps. Every default
++marked TODO is a placeholder: the paper gives no value. See docs/inn.md.
++Final numbers come from experiments/evaluate_inn.py (metrics.evaluate), not from the
++provisional re-simulation error. Reused from the repo: data.toy_data, metrics.benchmarks,
++metrics.mmd.mmd_torch, models.mdn.count_parameters, train_mdn.pick_device.
++"""
++
++import argparse
++import csv
++import json
++import os
++import sys
++import time
++
++import numpy as np
++import torch
++
++sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
++from data.toy_data import MODELS, make_dataset
++from metrics.benchmarks import forward_fn
++from experiments.train_mdn import pick_device
++from models.inn import CINN, INN, count_parameters, width_for_budget
++
++RUNS = os.path.join(os.path.dirname(__file__), 'runs')
++V0 = 3  # index of the integer-valued launch speed x4 on ballistics
++
++
++def build_model(cfg, x_dims, y_dims):
++    """Model for a config dict (command-line arguments, or a saved config.json)."""
++    common = dict(n_blocks=cfg['blocks'], hidden=cfg['hidden_resolved'], n_layers=cfg['layers'],
++                  activation=cfg['activation'], clamp=cfg['clamp'], perm_seed=cfg['seed'])
++    if cfg['model'] == 'cinn':
++        return CINN(x_dims, y_dims, **common)
++    return INN(x_dims, y_dims, loss=cfg['loss'], sigma_y=cfg['sigma_y'], latent_mmd=cfg['latent_mmd'], **common)
++
++
++def dequantize(x, gen=None):
++    """Add U(-1/2, 1/2) to the integer-valued v0 (ballistics). Opt-in, see docs/inn.md."""
++    x = x.clone()
++    x[:, V0] += torch.rand(len(x), device=x.device, generator=gen) - 0.5
++    return x
++
++
++@torch.no_grad()
++def evaluate_losses(model, x, y, batch_size, weights):
++    """Mean loss terms on held-out data (the MMD term is a per-batch estimate)."""
++    totals, total = {}, 0.0
++    for s in range(0, len(x), batch_size):
++        n = len(x[s:s + batch_size])
++        terms = model.losses(x[s:s + batch_size], y[s:s + batch_size])
++        for k, v in terms.items():
++            totals[k] = totals.get(k, 0.0) + v.item() * n
++        total += sum(weights[k] * terms[k] for k in model.loss_terms).item() * n
++    return {k: v / len(x) for k, v in totals.items()}, total / len(x)
++
++
++@torch.no_grad()
++def provisional_resim(model, problem, y, n_conditions=200, n_samples=100):
++    """Mean ||f(x) - y||^2 over a few validation y and x ~ model: a cheap progress
++    signal. Report metrics.evaluate numbers, not this."""
++    y = y[:n_conditions]
++    x = model.sample(y, n_samples).cpu().numpy().reshape(-1, model.x_dims)
++    y_resim = forward_fn(problem)(x).reshape(len(y), n_samples, -1)
++    sq = ((y_resim - y.cpu().numpy()[:, None, :]) ** 2).sum(-1)
++    return float(np.nanmean(sq)), float(np.isnan(sq).mean())
++
++
++def main():
++    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
++    p.add_argument('--problem', choices=list(MODELS), required=True)
++    p.add_argument('--model', choices=['inn', 'cinn'], required=True)
++    p.add_argument('--loss', choices=['ml', 'l2mmd'], default='ml',
++                   help='INN only: Eq. (4) maximum likelihood or Eq. (3) L2 + MMD; the cINN always uses Eq. (5)')
++    # Architecture. TODO: the paper only fixes ~3M trainable parameters.
++    p.add_argument('--blocks', type=int, default=8, help='coupling blocks')
++    p.add_argument('--layers', type=int, default=3, help='hidden layers per coupling subnet')
++    p.add_argument('--hidden', type=int, default=None, help='subnet width; default: fit --param-budget')
++    p.add_argument('--param-budget', type=int, default=3_000_000)
++    p.add_argument('--activation', default='relu', choices=['relu', 'silu', 'tanh', 'leaky_relu'])
++    p.add_argument('--clamp', type=float, default=2.0, help='soft clamp of the coupling log-scales')
++    # Loss. TODO: sigma, w_y, w_z are not given in the paper.
++    p.add_argument('--sigma-y', type=float, default=0.05,
++                   help='Eq. (4): std of y around y_gt, in standardized y units')
++    p.add_argument('--w-y', type=float, default=1.0, help='Eq. (3): weight of L2(y)')
++    p.add_argument('--w-z', type=float, default=100.0, help='Eq. (3): alpha, weight of the latent MMD')
++    p.add_argument('--latent-mmd', choices=['joint', 'marginal'], default='joint',
++                   help="MMD on [y_hat, z] vs [y, eps] ('joint', as models/autoencoder.py) or on z vs eps alone ('marginal', literal Eq. 3)")
++    p.add_argument('--dequantize-v0', action='store_true',
++                   help='ballistics: add U(-.5,.5) to the integer launch speed in training/validation data')
++    # Schedule: same placeholders as the MDN and the autoencoder.
++    p.add_argument('--n-train', type=int, default=1_000_000)
++    p.add_argument('--n-val', type=int, default=20_000)
++    p.add_argument('--epochs', type=int, default=50)
++    p.add_argument('--batch-size', type=int, default=1000)
++    p.add_argument('--lr', type=float, default=1e-3)
++    p.add_argument('--weight-decay', type=float, default=1e-5)
++    p.add_argument('--grad-clip', type=float, default=10.0)
++    p.add_argument('--seed', type=int, default=0)
++    p.add_argument('--device', default='auto')
++    p.add_argument('--run-name', default=None)
++    args = p.parse_args()
++    if args.dequantize_v0 and args.problem != 'ballistics':
++        p.error('--dequantize-v0 only applies to ballistics')
++
++    torch.manual_seed(args.seed)
++    device = pick_device(args.device)
++    problem = MODELS[args.problem]()
++    x_dims, y_dims = problem.n_parameters, problem.n_observations
++    cond_dim = y_dims if args.model == 'cinn' else 0
++
++    hidden = args.hidden or width_for_budget(x_dims, cond_dim, args.blocks, args.layers, args.param_budget)
++    cfg = {**vars(args), 'hidden_resolved': hidden}
++    model = build_model(cfg, x_dims, y_dims)
++    n_params = count_parameters(model)
++    weights = {'nll': 1.0, 'y': args.w_y, 'z': args.w_z}
++
++    tag = 'cinn' if args.model == 'cinn' else f'inn_{args.loss}'
++    run_name = args.run_name or f'{args.problem}_{tag}_s{args.seed}_{time.strftime("%Y%m%d-%H%M%S")}'
++    out = os.path.join(RUNS, run_name)
++    os.makedirs(out, exist_ok=True)
++    config = {**cfg, 'z_dims': model.z_dims, 'n_params': n_params, 'device_resolved': str(device),
++              'torch': torch.__version__}
++    json.dump(config, open(os.path.join(out, 'config.json'), 'w'), indent=2)
++    print(f'{run_name}: subnet width={hidden}, dim z={model.z_dims}, {n_params:,} trainable parameters, device={device}')
++
++    # Same split seeds as the MDN and the autoencoder, so all models see identical data.
++    t = time.time()
++    x_tr, y_tr = (torch.from_numpy(a) for a in make_dataset(args.problem, args.n_train, seed=10_000 + args.seed))
++    x_va, y_va = (torch.from_numpy(a) for a in make_dataset(args.problem, args.n_val, seed=20_000 + args.seed))
++    print(f'data generated in {time.time() - t:.0f}s')
++
++    model.set_normalization(x_tr, y_tr)  # statistics of the raw (not dequantized) training data
++    model.to(device)
++    x_tr, y_tr, x_va, y_va = x_tr.to(device), y_tr.to(device), x_va.to(device), y_va.to(device)
++    if args.dequantize_v0:  # fixed noise for validation so the curves are comparable across epochs
++        x_va = dequantize(x_va, torch.Generator(device=device).manual_seed(args.seed))
++
++    opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
++    steps_per_epoch = args.n_train // args.batch_size
++    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs * steps_per_epoch)
++
++    terms_logged = sorted({'nll', 'y', 'z'} & set(model.losses(x_va[:8], y_va[:8]).keys()))
++    log = csv.writer(open(os.path.join(out, 'log.csv'), 'w', newline=''))
++    log.writerow(['epoch', 'step', 'train_loss', 'val_loss'] + [f'val_{k}' for k in terms_logged]
++                 + ['val_resim', 'val_resim_failed', 'lr', 'seconds'])
++    step, t0 = 0, time.time()
++    for epoch in range(args.epochs):
++        model.train()
++        perm = torch.randperm(args.n_train, device=device)
++        running = 0.0
++        for b in range(steps_per_epoch):
++            idx = perm[b * args.batch_size:(b + 1) * args.batch_size]
++            x_b = dequantize(x_tr[idx]) if args.dequantize_v0 else x_tr[idx]
++            terms = model.losses(x_b, y_tr[idx])
++            loss = sum(weights[k] * terms[k] for k in model.loss_terms)
++            if not torch.isfinite(loss):
++                raise RuntimeError(f'non-finite loss at step {step}: { {k: v.item() for k, v in terms.items()} }')
++            opt.zero_grad(set_to_none=True)
++            loss.backward()
++            torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
++            opt.step(); sched.step()
++            running += loss.item(); step += 1
++        model.eval()
++        val, val_loss = evaluate_losses(model, x_va, y_va, args.batch_size, weights)
++        resim, failed = provisional_resim(model, args.problem, y_va)
++        log.writerow([epoch, step, running / steps_per_epoch, val_loss] + [val[k] for k in terms_logged]
++                     + [resim, failed, sched.get_last_lr()[0], time.time() - t0])
++        print(f'epoch {epoch:3d}  train {running / steps_per_epoch:+.4f}  val {val_loss:+.4f}  '
++              + '  '.join(f'{k} {val[k]:+.4f}' for k in terms_logged)
++              + f'  resim {resim:.4f}  ({time.time() - t0:.0f}s)', flush=True)
++
++    torch.save(model.state_dict(), os.path.join(out, 'model.pt'))
++    summary = {'run': run_name, 'problem': args.problem, 'model': tag, 'n_params': n_params,
++               'hidden': hidden, 'blocks': args.blocks, 'layers': args.layers, 'z_dims': model.z_dims,
++               'val_loss': val_loss, **{f'val_{k}': v for k, v in val.items()},
++               'err_resim_provisional': resim, 'resim_failed_fraction': failed,
++               'train_seconds': time.time() - t0}
++    if args.model == 'cinn':  # raw-space NLL of x | y, comparable with the MDN's test NLL
++        x_te, y_te = (torch.from_numpy(a).to(device) for a in make_dataset(args.problem, 20_000, seed=30_000 + args.seed))
++        summary['test_nll'] = model.nll_raw(x_te, y_te).mean().item()
++
++    json.dump(summary, open(os.path.join(out, 'summary.json'), 'w'), indent=2)
++    print(json.dumps(summary, indent=2))
++
++
++if __name__ == '__main__':
++    main()
+diff --git a/metrics/mmd.py b/metrics/mmd.py
+index 9602db6..096c6bb 100644
+--- a/metrics/mmd.py
++++ b/metrics/mmd.py
+@@ -56,3 +56,22 @@ def mmd(a, b, kernel=imq_kernel, unbiased=True):
+     else:
+         term_aa, term_bb = k_aa.mean(), k_bb.mean()
+     return float(term_aa + term_bb - 2.0 * k_ab.mean())
++
++
++def mmd_torch(a, b, kernel=imq_kernel, unbiased=True):
++    """Differentiable torch version of `mmd`, for MMD training losses (e.g. the
++    autoencoder's latent loss, Kruse et al. Eq. 3). Same kernel, same estimator;
++    tests/test_metrics.py checks it agrees with `mmd`. Returns a 0-d tensor."""
++    import torch
++
++    def d2(p, q):
++        return torch.clamp((p * p).sum(1)[:, None] + (q * q).sum(1)[None, :] - 2.0 * p @ q.T, min=0.0)
++
++    n, m = len(a), len(b)
++    k_aa, k_bb, k_ab = kernel(d2(a, a)), kernel(d2(b, b)), kernel(d2(a, b))
++    if unbiased:
++        term_aa = (k_aa.sum() - k_aa.diagonal().sum()) / (n * (n - 1))
++        term_bb = (k_bb.sum() - k_bb.diagonal().sum()) / (m * (m - 1))
++    else:
++        term_aa, term_bb = k_aa.mean(), k_bb.mean()
++    return term_aa + term_bb - 2.0 * k_ab.mean()
+diff --git a/models/inn.py b/models/inn.py
+new file mode 100644
+index 0000000..81dcd97
+--- /dev/null
++++ b/models/inn.py
+@@ -0,0 +1,259 @@
++"""Invertible Neural Network (INN) and conditional INN (cINN), Kruse et al. (2021),
++arXiv:2101.10763, Sec. 2, Eqs. (1)-(5). Both are RealNVP-style flows built from
++affine coupling layers (Dinh et al. 2016); the INN follows Ardizzone et al. (2019).
++
++Building block: a GLOW-style coupling block (the same family as FrEIA's
++`GLOWCouplingBlock`). Both halves of the input are transformed per block,
++
++    v1 = u1 * exp(s2(u2, c)) + t2(u2, c)
++    v2 = u2 * exp(s1(v1, c)) + t1(v1, c)
++
++with soft-clamped log-scales  s = clamp * 0.636 * atan(s_raw)  (|s| <= clamp), a fixed
++random permutation between blocks, and every subnet a plain MLP whose last layer is
++zero-initialised, so the flow starts as the identity. `c` is the condition; it is
++empty for the INN and the standardized observation y for the cINN, where it is fed
++to *every* subnet in both the forward and the inverse pass (paper Sec. 2, "Conditional
++INNs").
++
++INN       x -> [y_hat, z]   dim(y_hat) = dim(y), dim(z) = dim(x) - dim(y)
++          (no zero padding: the table in the paper gives dim(z) = 2 on kinematics and
++          3 on ballistics, i.e. dim(x) - dim(y)). Two training losses:
++            'ml'     Eq. (4): 1/2 (|y_hat - y|^2 / sigma^2 + |z|^2) - log|det J|
++            'l2mmd'  Eq. (3): L2(y) + alpha * MMD(z)           (alpha = weight w_z)
++cINN      x -> z | y        dim(z) = dim(x)
++          loss Eq. (5): 1/2 |z|^2 - log|det J|
++
++All losses are computed in standardized x / y units (training-set mean / std), like
++models/mdn.py and models/autoencoder.py. `sample` takes and returns raw units.
++
++Test time: z ~ N(0, I) and, for the INN, y_hat fixed to y*; x = f^{-1}([y*, z])
++resp. f^{-1}(z; y*). Not specified by the paper (see docs/inn.md): subnet depth and
++width, number of blocks, clamp, sigma, alpha, optimizer.
++"""
++
++import math
++
++import torch
++import torch.nn as nn
++
++from metrics.mmd import mmd_torch
++from models.mdn import count_parameters  # noqa: F401  (shared helper, re-exported for the training scripts)
++
++ACTIVATIONS = {'relu': nn.ReLU, 'silu': nn.SiLU, 'tanh': nn.Tanh, 'leaky_relu': nn.LeakyReLU}
++
++
++def mlp(d_in, d_out, hidden, n_layers, activation):
++    """n_layers hidden Linear+activation layers, then a linear output layer."""
++    act = ACTIVATIONS[activation]
++    layers, d = [], d_in
++    for _ in range(n_layers):
++        layers += [nn.Linear(d, hidden), act()]
++        d = hidden
++    layers.append(nn.Linear(d, d_out))
++    return nn.Sequential(*layers)
++
++
++def mlp_params(d_in, d_out, hidden, n_layers):
++    return (d_in * hidden + hidden) + (n_layers - 1) * (hidden * hidden + hidden) + hidden * d_out + d_out
++
++
++def flow_params(dim, cond_dim, n_blocks, hidden, n_layers):
++    """Trainable parameters of a Flow, in closed form (checked in tests)."""
++    d1, d2 = dim // 2, dim - dim // 2
++    per_block = (mlp_params(d2 + cond_dim, 2 * d1, hidden, n_layers)
++                 + mlp_params(d1 + cond_dim, 2 * d2, hidden, n_layers))
++    return n_blocks * per_block
++
++
++def width_for_budget(dim, cond_dim, n_blocks, n_layers, target):
++    """Largest subnet width such that the whole flow stays at or under `target`."""
++    h = 1
++    while flow_params(dim, cond_dim, n_blocks, h + 1, n_layers) <= target:
++        h += 1
++    return h
++
++
++class CouplingBlock(nn.Module):
++    """GLOW-style affine coupling block; see the module docstring."""
++
++    def __init__(self, dim, cond_dim, hidden, n_layers, activation, clamp):
++        super().__init__()
++        self.d1, self.d2 = dim // 2, dim - dim // 2
++        self.clamp = clamp
++        self.subnet1 = mlp(self.d1 + cond_dim, 2 * self.d2, hidden, n_layers, activation)  # v1 (+c) -> params of u2
++        self.subnet2 = mlp(self.d2 + cond_dim, 2 * self.d1, hidden, n_layers, activation)  # u2 (+c) -> params of u1
++        for net in (self.subnet1, self.subnet2):  # identity at initialisation
++            nn.init.zeros_(net[-1].weight)
++            nn.init.zeros_(net[-1].bias)
++
++    def _params(self, net, inp, cond, d_out):
++        if cond is not None:
++            inp = torch.cat([inp, cond], dim=1)
++        out = net(inp)
++        s, t = out[:, :d_out], out[:, d_out:]
++        return self.clamp * 0.636 * torch.atan(s), t  # soft clamp, as in FrEIA
++
++    def forward(self, u, cond=None):
++        u1, u2 = u[:, :self.d1], u[:, self.d1:]
++        s2, t2 = self._params(self.subnet2, u2, cond, self.d1)
++        v1 = u1 * s2.exp() + t2
++        s1, t1 = self._params(self.subnet1, v1, cond, self.d2)
++        v2 = u2 * s1.exp() + t1
++        return torch.cat([v1, v2], dim=1), s1.sum(1) + s2.sum(1)
++
++    def inverse(self, v, cond=None):
++        v1, v2 = v[:, :self.d1], v[:, self.d1:]
++        s1, t1 = self._params(self.subnet1, v1, cond, self.d2)
++        u2 = (v2 - t1) * (-s1).exp()
++        s2, t2 = self._params(self.subnet2, u2, cond, self.d1)
++        u1 = (v1 - t2) * (-s2).exp()
++        return torch.cat([u1, u2], dim=1)
++
++
++class Flow(nn.Module):
++    """Stack of coupling blocks with fixed random permutations in between
++    (none after the last block, so the output layout is not scrambled)."""
++
++    def __init__(self, dim, cond_dim=0, n_blocks=8, hidden=256, n_layers=3, activation='relu',
++                 clamp=2.0, perm_seed=0):
++        super().__init__()
++        self.dim, self.cond_dim = dim, cond_dim
++        self.blocks = nn.ModuleList(
++            CouplingBlock(dim, cond_dim, hidden, n_layers, activation, clamp) for _ in range(n_blocks))
++        g = torch.Generator().manual_seed(perm_seed)
++        for i in range(n_blocks - 1):
++            perm = torch.randperm(dim, generator=g)
++            self.register_buffer(f'perm{i}', perm)
++            self.register_buffer(f'inv_perm{i}', torch.argsort(perm))
++
++    def forward(self, u, cond=None):
++        """u (B, dim) -> (v (B, dim), log|det dv/du| (B,))."""
++        log_det = u.new_zeros(len(u))
++        for i, block in enumerate(self.blocks):
++            u, ld = block(u, cond)
++            log_det = log_det + ld
++            if i < len(self.blocks) - 1:
++                u = u[:, getattr(self, f'perm{i}')]
++        return u, log_det
++
++    def inverse(self, v, cond=None):
++        for i in reversed(range(len(self.blocks))):
++            if i < len(self.blocks) - 1:
++                v = v[:, getattr(self, f'inv_perm{i}')]
++            v = self.blocks[i].inverse(v, cond)
++        return v
++
++
++class _FlowModel(nn.Module):
++    """Shared plumbing: standardization buffers and chunked sampling."""
++
++    def __init__(self, x_dims, y_dims):
++        super().__init__()
++        self.x_dims, self.y_dims = x_dims, y_dims
++        self.register_buffer('y_mean', torch.zeros(y_dims))
++        self.register_buffer('y_std', torch.ones(y_dims))
++        self.register_buffer('x_mean', torch.zeros(x_dims))
++        self.register_buffer('x_std', torch.ones(x_dims))
++
++    def set_normalization(self, x, y):
++        self.x_mean.copy_(x.mean(0)); self.x_std.copy_(x.std(0))
++        self.y_mean.copy_(y.mean(0)); self.y_std.copy_(y.std(0))
++
++    def _norm(self, x, y):
++        return (x - self.x_mean) / self.x_std, (y - self.y_mean) / self.y_std
++
++    def _decode(self, y_n, z):
++        """Standardized (y, z) rows -> standardized x. Implemented by subclasses."""
++        raise NotImplementedError
++
++    @torch.no_grad()
++    def sample(self, y, n_samples=1, generator=None, chunk=65_536):
++        """Draw n_samples x ~ p(x | y) for each row of y, z ~ N(0, I). Returns
++        (B, n_samples, N) in raw x-space. Rows are processed in chunks to bound memory."""
++        B = len(y)
++        y_n = ((y - self.y_mean) / self.y_std).repeat_interleave(n_samples, dim=0)  # (B*n, dim_y)
++        out = []
++        for s in range(0, len(y_n), chunk):
++            y_c = y_n[s:s + chunk]
++            z = torch.randn(len(y_c), self.z_dims, device=y.device, dtype=y.dtype, generator=generator)
++            out.append(self._decode(y_c, z))
++        x_n = torch.cat(out).view(B, n_samples, self.x_dims)
++        return x_n * self.x_std + self.x_mean
++
++
++class INN(_FlowModel):
++    """x -> [y_hat, z] with an unconditional flow; see the module docstring.
++
++    loss='ml'     terms: nll (Eq. 4, constants dropped); y, z are logged only
++    loss='l2mmd'  terms: y (Eq. 1), z (MMD, Eq. 2); combine as w_y * y + w_z * z (Eq. 3)
++    latent_mmd='joint' takes the MMD on [y_hat, z] vs [y, eps] (y_hat detached) like
++    models/autoencoder.py, 'marginal' on z vs eps alone, as literally written in Eq. (3).
++    """
++
++    def __init__(self, x_dims, y_dims, n_blocks=8, hidden=256, n_layers=3, activation='relu',
++                 clamp=2.0, loss='ml', sigma_y=0.05, latent_mmd='joint', perm_seed=0):
++        super().__init__(x_dims, y_dims)
++        assert loss in ('ml', 'l2mmd') and latent_mmd in ('joint', 'marginal')
++        self.z_dims = x_dims - y_dims
++        self.loss_kind, self.sigma_y, self.latent_mmd = loss, sigma_y, latent_mmd
++        self.loss_terms = ('nll',) if loss == 'ml' else ('y', 'z')
++        self.flow = Flow(x_dims, 0, n_blocks, hidden, n_layers, activation, clamp, perm_seed)
++
++    def forward(self, x):
++        """Raw x -> (y_hat_n, z, log_det), the first two in standardized units."""
++        x_n = (x - self.x_mean) / self.x_std
++        out, log_det = self.flow(x_n)
++        return out[:, :self.y_dims], out[:, self.y_dims:], log_det
++
++    def losses(self, x, y):
++        x_n, y_n = self._norm(x, y)
++        out, log_det = self.flow(x_n)
++        y_hat, z = out[:, :self.y_dims], out[:, self.y_dims:]
++        y_err = ((y_hat - y_n) ** 2).sum(1).mean()
++        if self.loss_kind == 'ml':
++            nll = (0.5 * (((y_hat - y_n) ** 2).sum(1) / self.sigma_y ** 2 + (z ** 2).sum(1)) - log_det).mean()
++            return {'nll': nll, 'y': y_err.detach(), 'z': (z ** 2).sum(1).mean().detach()}
++        eps = torch.randn_like(z)
++        if self.latent_mmd == 'joint':
++            a, b = torch.cat([y_hat.detach(), z], 1), torch.cat([y_n, eps], 1)
++        else:
++            a, b = z, eps
++        return {'y': y_err, 'z': mmd_torch(a, b)}
++
++    def _decode(self, y_n, z):
++        return self.flow.inverse(torch.cat([y_n, z], dim=1))
++
++
++class CINN(_FlowModel):
++    """x -> z | y with a conditional flow, loss Eq. (5); see the module docstring."""
++
++    loss_terms = ('nll',)
++
++    def __init__(self, x_dims, y_dims, n_blocks=8, hidden=256, n_layers=3, activation='relu',
++                 clamp=2.0, perm_seed=0):
++        super().__init__(x_dims, y_dims)
++        self.z_dims = x_dims
++        self.flow = Flow(x_dims, y_dims, n_blocks, hidden, n_layers, activation, clamp, perm_seed)
++
++    def forward(self, x, y):
++        """Raw (x, y) -> (z, log_det) with z in the latent space and log_det the
++        log-Jacobian of the *standardized* x -> z map."""
++        x_n, y_n = self._norm(x, y)
++        return self.flow(x_n, y_n)
++
++    def losses(self, x, y):
++        z, log_det = self(x, y)
++        return {'nll': (0.5 * (z ** 2).sum(1) - log_det).mean()}
++
++    @torch.no_grad()
++    def nll_raw(self, x, y):
++        """Per-sample -log p(x | y) in raw x-space, a true density: includes the
++        0.5 N log(2 pi) constant and the log x_std change of variables. Comparable
++        with the MDN's reported NLL (experiments/train_mdn.py::evaluate_nll)."""
++        z, log_det = self(x, y)
++        return (0.5 * (z ** 2).sum(1) + 0.5 * self.x_dims * math.log(2 * math.pi)
++                - log_det + self.x_std.log().sum())
++
++    def _decode(self, y_n, z):
++        return self.flow.inverse(z, y_n)
++
+diff --git a/tests/test_inn.py b/tests/test_inn.py
+new file mode 100644
+index 0000000..8671de9
+--- /dev/null
++++ b/tests/test_inn.py
+@@ -0,0 +1,179 @@
++import math
++
++import numpy as np
++import pytest
++import torch
++
++from metrics.mmd import mmd, mmd_torch
++from models.inn import (CINN, INN, Flow, count_parameters, flow_params, width_for_budget)
++
++N, DY, B = 4, 2, 12
++
++
++def randomize(model, seed=0, scale=0.3):
++    """The zero-initialised last layers make a fresh flow the identity; give every
++    parameter random values so the tests exercise the real transformation."""
++    g = torch.Generator().manual_seed(seed)
++    with torch.no_grad():
++        for p in model.parameters():
++            p.copy_(scale * torch.randn(p.shape, generator=g, dtype=p.dtype))
++    return model
++
++
++def make_flow(cond_dim, dtype=torch.float64):
++    flow = Flow(N, cond_dim, n_blocks=3, hidden=16, n_layers=2, perm_seed=1).to(dtype)
++    return randomize(flow)
++
++
++def rand(*shape, seed=0, dtype=torch.float64):
++    return torch.randn(*shape, generator=torch.Generator().manual_seed(seed), dtype=dtype)
++
++
++@pytest.mark.parametrize('cond_dim', [0, 2])
++def test_fresh_flow_is_identity(cond_dim):
++    flow = Flow(N, cond_dim, n_blocks=3, hidden=16, n_layers=2)
++    u = rand(B, N, dtype=torch.float32)
++    c = rand(B, cond_dim, seed=1, dtype=torch.float32) if cond_dim else None
++    v, log_det = flow(u, c)
++    # permutations reorder the coordinates, but values and the log-det are untouched
++    assert torch.equal(v.sort(1).values, u.sort(1).values)
++    assert torch.equal(log_det, torch.zeros(B))
++
++
++@pytest.mark.parametrize('cond_dim', [0, 2])
++def test_inverse_is_exact(cond_dim):
++    flow = make_flow(cond_dim)
++    u = rand(B, N)
++    c = rand(B, cond_dim, seed=1) if cond_dim else None
++    v, _ = flow(u, c)
++    assert torch.allclose(flow.inverse(v, c), u, atol=1e-10)
++    # and the other way round
++    assert torch.allclose(flow(flow.inverse(u, c), c)[0], u, atol=1e-10)
++
++
++@pytest.mark.parametrize('cond_dim', [0, 2])
++def test_log_det_matches_autograd_jacobian(cond_dim):
++    flow = make_flow(cond_dim)
++    u = rand(5, N)
++    c = rand(5, cond_dim, seed=1) if cond_dim else None
++    _, log_det = flow(u, c)
++    for i in range(len(u)):
++        ci = None if c is None else c[i:i + 1]
++        J = torch.autograd.functional.jacobian(lambda w: flow(w[None], ci)[0][0], u[i])
++        assert torch.allclose(log_det[i], torch.linalg.slogdet(J)[1], atol=1e-9)
++
++
++def test_condition_changes_the_latent_code():
++    flow = make_flow(2)
++    u = rand(B, N)
++    z_a, _ = flow(u, rand(B, 2, seed=1))
++    z_b, _ = flow(u, rand(B, 2, seed=2))
++    assert not torch.allclose(z_a, z_b)
++
++
++def test_soft_clamp_bounds_the_log_scale():
++    flow = make_flow(0)
++    flow.blocks[0].clamp = 0.5
++    with torch.no_grad():
++        for p in flow.blocks[0].parameters():
++            p.mul_(50)
++    _, ld = flow.blocks[0](rand(1000, N) * 10)
++    assert ld.abs().max() <= 0.5 * 0.636 * (math.pi / 2) * N + 1e-9  # N scale entries per block
++
++
++def test_flow_params_formula_and_budget():
++    for cond_dim in (0, 2):
++        flow = Flow(N, cond_dim, n_blocks=4, hidden=37, n_layers=3)
++        assert count_parameters(flow) == flow_params(N, cond_dim, 4, 37, 3)
++    h = width_for_budget(N, 2, 8, 3, 3_000_000)
++    assert flow_params(N, 2, 8, h, 3) <= 3_000_000 < flow_params(N, 2, 8, h + 1, 3)
++
++
++def small_inn(loss, **kw):
++    return randomize(INN(N, DY, n_blocks=3, hidden=16, n_layers=2, loss=loss, **kw))
++
++
++def test_inn_ml_loss_matches_eq4():
++    m = small_inn('ml', sigma_y=0.1).double()
++    x, y = rand(B, N), rand(B, DY, seed=1)
++    out, ld = m.flow(x)
++    y_hat, z = out[:, :DY], out[:, DY:]
++    ref = (0.5 * (((y_hat - y) ** 2).sum(1) / 0.1 ** 2 + (z ** 2).sum(1)) - ld).mean()
++    assert torch.allclose(m.losses(x, y)['nll'], ref)
++
++
++def test_inn_dim_z_matches_paper_table():
++    assert INN(4, 2, n_blocks=2, hidden=8, n_layers=2).z_dims == 2   # kinematics
++    assert INN(4, 1, n_blocks=2, hidden=8, n_layers=2).z_dims == 3   # ballistics
++
++
++@pytest.mark.parametrize('latent_mmd', ['joint', 'marginal'])
++def test_inn_l2mmd_terms_are_finite_and_differentiable(latent_mmd):
++    m = small_inn('l2mmd', latent_mmd=latent_mmd)
++    t = m.losses(rand(64, N, dtype=torch.float32), rand(64, DY, seed=1, dtype=torch.float32))
++    (t['y'] + t['z']).backward()
++    assert all(torch.isfinite(v) for v in t.values())
++    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in m.parameters())
++
++
++def test_cinn_nll_matches_eq5_and_normalizes():
++    m = randomize(CINN(N, DY, n_blocks=3, hidden=16, n_layers=2)).double()
++    x, y = rand(B, N), rand(B, DY, seed=1)
++    z, ld = m(x, y)
++    assert torch.allclose(m.losses(x, y)['nll'], (0.5 * (z ** 2).sum(1) - ld).mean())
++
++    # nll_raw is a proper density on raw x: with x_std != 1 it differs from the
++    # standardized loss by exactly the constant and the log x_std change of variables.
++    m.x_std.copy_(torch.tensor([0.5, 2.0, 1.0, 3.0]))
++    ref = 0.5 * (z ** 2).sum(1) - ld
++    raw = m.nll_raw(x, y)
++    z2, ld2 = m(x, y)
++    assert torch.allclose(raw, 0.5 * (z2 ** 2).sum(1) - ld2 + 0.5 * N * math.log(2 * math.pi)
++                          + m.x_std.log().sum())
++    assert torch.isfinite(ref).all()
++
++
++def test_cinn_1d_gaussian_density_integrates_to_one():
++    """For x_dims = 2 the density exp(-nll_raw) over a grid should integrate to ~1
++    for a fixed condition. Catches a wrong log-det sign or missing constant."""
++    m = randomize(CINN(2, 1, n_blocks=3, hidden=16, n_layers=2), scale=0.2).double()
++    m.x_std.copy_(torch.tensor([0.7, 1.3]))
++    ax = torch.linspace(-12, 12, 600, dtype=torch.float64)
++    xx = torch.stack(torch.meshgrid(ax, ax, indexing='ij'), -1).reshape(-1, 2)
++    y = torch.full((len(xx), 1), 0.4, dtype=torch.float64)
++    dens = (-m.nll_raw(xx, y)).exp()
++    cell = (ax[1] - ax[0]) ** 2
++    assert abs(dens.sum().item() * cell.item() - 1.0) < 2e-2
++
++
++@pytest.mark.parametrize('kind', ['inn', 'cinn'])
++def test_sample_shape_and_roundtrip(kind):
++    m = (small_inn('ml') if kind == 'inn' else randomize(CINN(N, DY, n_blocks=3, hidden=16, n_layers=2))).double()
++    m.x_mean.copy_(torch.tensor([0.1, -0.2, 0.3, 5.0])); m.x_std.copy_(torch.tensor([0.5, 1.0, 2.0, 4.0]))
++    m.y_mean.copy_(torch.tensor([1.0, -1.0])); m.y_std.copy_(torch.tensor([2.0, 0.5]))
++    y = rand(3, DY, seed=5)
++    g = torch.Generator().manual_seed(0)
++    x = m.sample(y, n_samples=7, generator=g, chunk=10)   # chunk < B*n exercises the loop
++    assert x.shape == (3, 7, N)
++    flat, y_rep = x.reshape(-1, N), y.repeat_interleave(7, 0)
++    if kind == 'inn':
++        y_hat_n, _, _ = m(flat)
++        assert torch.allclose(y_hat_n * m.y_std + m.y_mean, y_rep, atol=1e-8)   # y part is pinned to y*
++    else:
++        z, _ = m(flat, y_rep)
++        assert abs(z.mean().item()) < 0.5 and 0.5 < z.std().item() < 1.6      # z ~ N(0, I) coarsely (21 draws)
++
++
++def test_sampling_is_reproducible_with_generator():
++    m = small_inn('ml')
++    y = rand(2, DY, seed=3, dtype=torch.float32)
++    a = m.sample(y, 5, generator=torch.Generator().manual_seed(7))
++    b = m.sample(y, 5, generator=torch.Generator().manual_seed(7))
++    assert torch.equal(a, b)
++
++
++def test_mmd_torch_matches_numpy_mmd():
++    a, b = rand(200, 3).numpy(), (rand(150, 3, seed=1) * 1.5 + 0.2).numpy()
++    for unbiased in (True, False):
++        assert np.isclose(mmd_torch(torch.from_numpy(a), torch.from_numpy(b), unbiased=unbiased).item(),
++                          mmd(a, b, unbiased=unbiased))
