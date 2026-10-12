@@ -179,9 +179,6 @@ Paper columns reproduce the published tables; our columns use the [full records]
 - **Kinematics:** Both metrics give the same ordering among these three families: standard AE, cVAE, then invertible AE. This supports the same qualitative preference, although our error values are lower.
 - **Ballistics:** Err_post retains the ordering standard AE, invertible AE, then cVAE, but our three scores are close. Err_resim changes ordering: our cVAE leads, followed by standard AE and invertible AE. Its failure rate is higher than standard AE's (0.0665% versus 0.0149%), so the lower valid-sample error does not settle the overall choice.
 - **cVAE behavior:** Our ballistics diagnostics show no inactive latent dimensions at the recorded KL threshold; each dimension has KL about 2.6. The mean conditional launch-speed variance is 8.09, close to standard AE's 8.29. Together with the low Err_post, this is evidence against a collapse to one average trajectory in this run, rather than proof of complete posterior recovery. These diagnostics are saved in the full JSON.
-- **Scope:** We evaluated three autoencoder families. INN/cINN are not implemented here, so these runs cannot verify the paper's broader ranking of coupling layers against autoencoders. Our pilot also gives different rankings from the full runs; only the full profile supports the agreement stated above.
-
-### Limits of the numerical comparison
 
 The implementation and evaluation choices below prevent treating the table as an exact replication. Details of our metric choices are documented in [shared evaluation metrics](../metrics.md).
 
