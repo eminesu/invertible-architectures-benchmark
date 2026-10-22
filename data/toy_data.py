@@ -13,6 +13,11 @@ One addition: `InverseBallisticsModel.forward_process` checks that every
 trajectory produces exactly one ground impact inside the simulated time window
 and raises (or returns NaN with strict=False) otherwise. Upstream silently
 returns fewer rows than inputs in that case, which would misalign x and y.
+
+A second addition for the prior-conditioned FMPE (docs/conditional_fmpe.md):
+the Poisson rate of v0, lambda (upstream: fixed 15), is an argument of
+`InverseBallisticsModel.sample_prior`, and `make_conditional_dataset` draws a
+lambda per sample. With the default lambda = 15 the draws are unchanged.
 """
 
 import numpy as np
@@ -65,12 +70,16 @@ class InverseBallisticsModel:
         self.xy_mu = np.array((0, 1.5))
         self.xy_std = np.array((0.5, 0.5))
 
-    def sample_prior(self, n, rng=np.random):
+    default_lam = 15  # Poisson rate of v0 in the benchmark prior
+
+    def sample_prior(self, n, rng=np.random, lam=None):
+        """lam: Poisson rate of v0, a scalar or an (n, 1) array (one rate per
+        sample); None is the benchmark prior, lam = 15."""
         x = rng.randn(n, 1) * self.xy_std[0] + self.xy_mu[0]
         y = rng.randn(n, 1) * self.xy_std[1] + self.xy_mu[1]
         y = np.maximum(y, 0)
         angle = rng.rand(n, 1) * np.pi / 2 * 0.8 + np.pi / 2 * 0.1
-        v0 = rng.poisson(15, (n, 1))
+        v0 = rng.poisson(self.default_lam if lam is None else lam, (n, 1))
         return np.concatenate([x, y, angle, v0], axis=1)
 
     def trajectories_from_parameters(self, x):
@@ -122,3 +131,19 @@ def make_dataset(problem, n, seed):
     x = model.sample_prior(n, rng)
     y = model.forward_process(x)
     return x.astype(np.float32), y.astype(np.float32)
+
+
+# Training range of the ballistics prior parameter lambda (Poisson rate of v0)
+# for the prior-conditioned FMPE; contains the benchmark value 15.
+LAM_RANGE = (10.0, 20.0)
+
+
+def make_conditional_dataset(n, seed, lam_range=LAM_RANGE):
+    """Ballistics (x, y, lam) triples: lam ~ U[lam_range], v0 ~ Poisson(lam),
+    x ~ prior given lam, y = f(x). float32 arrays of shape (n, 4), (n, 1), (n, 1)."""
+    model = InverseBallisticsModel()
+    rng = np.random.RandomState(seed)
+    lam = rng.uniform(*lam_range, (n, 1))
+    x = model.sample_prior(n, rng, lam=lam)
+    y = model.forward_process(x)
+    return x.astype(np.float32), y.astype(np.float32), lam.astype(np.float32)

@@ -23,9 +23,13 @@ def get_model(benchmark):
     return MODELS[benchmark]()
 
 
-def prior(benchmark, n, rng):
-    """n samples x ~ p(x), shape (n, 4)."""
-    return get_model(benchmark).sample_prior(n, rng)
+def prior(benchmark, n, rng, lam=None):
+    """n samples x ~ p(x), shape (n, 4). lam (ballistics only): Poisson rate of
+    v0; None is the benchmark prior."""
+    if lam is None:
+        return get_model(benchmark).sample_prior(n, rng)
+    assert benchmark == 'ballistics', 'lam is the ballistics v0 rate'
+    return get_model(benchmark).sample_prior(n, rng, lam=lam)
 
 
 def forward_fn(benchmark):

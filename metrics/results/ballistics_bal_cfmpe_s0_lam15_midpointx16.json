@@ -1,0 +1,48 @@
+{
+  "benchmark": "ballistics",
+  "model": "bal_cfmpe_s0_lam15_midpointx16",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 111,
+  "err_post": {
+    "mean": 0.007126684252656798,
+    "mean_clamped": 0.007126684252656798,
+    "median": 0.006559303881860212,
+    "q1": 0.0034757146750043766,
+    "q3": 0.00980797425609034,
+    "max": 0.021763976441624977,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.012688547888664232,
+    "mean_clamped": 0.012688547888664232,
+    "median": 0.012099146961427332,
+    "q1": 0.009143938096445925,
+    "q3": 0.015252247970853727,
+    "max": 0.045855156175334866,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 5.656713826646059e-05,
+    "mean_clamped": 5.656713826646059e-05,
+    "median": 4.4400120027872876e-05,
+    "q1": 4.065615614970262e-05,
+    "q3": 5.2797334339003575e-05,
+    "max": 0.0018525204145245007,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 402.3096900000237,
+  "inference_ms_per_condition": 402.3096900000237,
+  "clamp": 10.0,
+  "lam": 15.0,
+  "method": "midpoint",
+  "steps": 16,
+  "nfe": 32,
+  "n_params": 2993932,
+  "device": "cpu",
+  "lam_range": [
+    10.0,
+    20.0
+  ]
+}
