@@ -1,0 +1,19 @@
+{
+  "run": "bal_fff_s0",
+  "problem": "ballistics",
+  "manifold": "euclidean",
+  "beta": 100.0,
+  "y_noise": 0.02,
+  "n_params": 2989192,
+  "hidden": 352,
+  "blocks": 6,
+  "train_loss": 1.7171695492863654,
+  "val_loss": 1.7582916617393494,
+  "train_recon": 0.00018633969602524302,
+  "val_recon": 0.00020547673557302915,
+  "val_nll": -0.08182847900390625,
+  "err_resim_provisional": 0.001125394138221152,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, one decoder pass",
+  "train_seconds": 3420.5277450084686
+}
