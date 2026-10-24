@@ -1,0 +1,49 @@
+{
+  "run": "ae_suite_ballistics_standard_baseline_pilot_s0",
+  "profile": "pilot",
+  "diagnostic_seed": 0,
+  "forward_y_mse_standardized": 0.005010008811950684,
+  "joint_latent_mmd": 0.0006008651773532492,
+  "reconstruction_rmse_raw": 0.146333247423172,
+  "reconstruction_median_raw": [
+    -0.00047478865599259734,
+    0.008522804826498032,
+    0.008741214871406555,
+    -0.1845693290233612
+  ],
+  "latent_mean": [
+    -0.050568051636219025,
+    -0.003492295276373625,
+    -0.057987309992313385
+  ],
+  "latent_std": [
+    1.0252708196640015,
+    0.9817680716514587,
+    0.9904180765151978
+  ],
+  "max_abs_latent_y_correlation": 0.0913712587589904,
+  "resim": {
+    "mean": 0.2912396310207013,
+    "mean_clamped": 0.2912396310207013,
+    "median": 0.14073008761861955,
+    "q1": 0.05834725299797475,
+    "q3": 0.3304970047968002,
+    "max": 1.8894694961152025,
+    "n_finite": 64
+  },
+  "failed_fraction": 0.0001220703125,
+  "posterior_variance_raw_mean": [
+    0.22426695628792806,
+    0.24279014619830236,
+    0.07814781947127743,
+    8.079822124264185
+  ],
+  "mean_distance_v0_to_integer": 0.25029578001704067,
+  "negative_launch_height_fraction": 0.0009765625,
+  "supplemental_v0_sensitivity": {
+    "n_conditions": 8,
+    "raw": 0.010872490309743743,
+    "standardized": 0.0038794533271737097,
+    "rounded_v0": 0.0051519356938196925
+  }
+}

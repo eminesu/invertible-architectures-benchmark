@@ -1,0 +1,40 @@
+{
+  "run": "first_trial_of_encoders_gpu_kinematics_standard_baseline_pilot_s0",
+  "profile": "pilot",
+  "diagnostic_seed": 0,
+  "forward_y_mse_standardized": 0.01907040923833847,
+  "joint_latent_mmd": -0.0006708874042681279,
+  "reconstruction_rmse_raw": 0.04619693383574486,
+  "reconstruction_median_raw": [
+    0.002339976839721203,
+    0.002352365292608738,
+    -0.004414671566337347,
+    0.003753931727260351
+  ],
+  "latent_mean": [
+    0.04283064231276512,
+    -0.05728210136294365
+  ],
+  "latent_std": [
+    0.99538654088974,
+    0.9937582612037659
+  ],
+  "max_abs_latent_y_correlation": 0.057624419040095055,
+  "resim": {
+    "mean": 0.021234850165111528,
+    "mean_clamped": 0.021234850165111528,
+    "median": 0.01317547451156225,
+    "q1": 0.0070531554372590295,
+    "q3": 0.020626955294581747,
+    "max": 0.1768965159078904,
+    "n_finite": 65
+  },
+  "failed_fraction": 0.0,
+  "posterior_variance_raw_mean": [
+    0.019948754319977002,
+    0.1178294878863757,
+    0.16370856353757712,
+    0.20885926669492755
+  ],
+  "hard_target_resim": 0.17182137196585753
+}
