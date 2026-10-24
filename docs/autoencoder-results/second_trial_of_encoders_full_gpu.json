@@ -1,0 +1,1102 @@
+[
+  {
+    "run": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+    "problem": "kinematics",
+    "family": "standard",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete",
+    "config": {
+      "family": "standard",
+      "problem": "kinematics",
+      "profile": "full",
+      "run_name": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+      "device": "cuda",
+      "param_budget": 3000000,
+      "hidden": null,
+      "layers": 4,
+      "activation": "relu",
+      "z_dims": 2,
+      "latent_mmd": "joint",
+      "recon_condition": "predicted",
+      "mmd_scale": 1.0,
+      "w_y": 1.0,
+      "w_z": 100.0,
+      "beta": 0.01,
+      "slope": 2.0,
+      "orth_weight": 0.0,
+      "n_train": 1000000,
+      "n_val": 20000,
+      "epochs": 50,
+      "batch_size": 1000,
+      "lr": 0.001,
+      "weight_decay": 1e-05,
+      "grad_clip": 10.0,
+      "seed": 0,
+      "threads": 4,
+      "hidden_resolved": 705,
+      "n_params": 2999078,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "data_seeds": {
+        "train": 10000,
+        "validation": 20000
+      },
+      "ballistics_handling": "original prior; no rounding or dequantization",
+      "effective_activation": "relu",
+      "checkpoint_selection": {
+        "split": "validation",
+        "conditions": 64,
+        "samples": 32,
+        "invalid_penalty": 100.0,
+        "draw_seed": 991
+      }
+    },
+    "training": {
+      "run": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+      "profile": "full",
+      "best_epoch": 50,
+      "validation_selection_score": 0.0002975780214447857,
+      "train_seconds": 1243.6031603999436,
+      "n_params": 2999078,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      }
+    },
+    "evaluation": {
+      "benchmark": "kinematics",
+      "model": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+      "n_conditions": 1000,
+      "n_samples": 1000,
+      "n_gt_min": 444,
+      "err_post": {
+        "mean": 0.005281070392279957,
+        "mean_clamped": 0.005281070392279957,
+        "median": 0.0016002616271009185,
+        "q1": 0.0003166674821225568,
+        "q3": 0.004349285796025837,
+        "max": 0.16060593945263024,
+        "n_finite": 1000
+      },
+      "err_post_biased": {
+        "mean": 0.009901184524994602,
+        "mean_clamped": 0.009901184524994602,
+        "median": 0.006210988285066721,
+        "q1": 0.004936579626726445,
+        "q3": 0.00903998242317508,
+        "max": 0.1644145603074132,
+        "n_finite": 1000
+      },
+      "err_resim": {
+        "mean": 0.0005323399295828091,
+        "mean_clamped": 0.0005323399295828091,
+        "median": 0.00018310378257001842,
+        "q1": 0.00011697719441946528,
+        "q3": 0.0004258609438387097,
+        "max": 0.01246661775301526,
+        "n_finite": 1000
+      },
+      "resim_failed_fraction": 0.0,
+      "inference_seconds": 2.173891199985519,
+      "inference_ms_per_condition": 2.173891199985519,
+      "clamp": 10.0,
+      "evaluation_scope": "full",
+      "gt_options": {},
+      "training_profile": "full",
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "evaluation_seed": 0,
+      "metric_settings": {
+        "kernel": "IMQ",
+        "bandwidths": [
+          0.05,
+          0.2,
+          0.9
+        ],
+        "units": "raw",
+        "ballistics_clamp": 10,
+        "sigma": 0.01
+      }
+    },
+    "diagnostics": {
+      "run": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+      "profile": "full",
+      "diagnostic_seed": 0,
+      "forward_y_mse_standardized": 0.00044214000809006393,
+      "joint_latent_mmd": -0.00042817849200782465,
+      "reconstruction_rmse_raw": 0.006592349149286747,
+      "reconstruction_median_raw": [
+        -9.208052688336466e-06,
+        0.00020256992138456553,
+        -0.00031478534219786525,
+        0.00015818211250007153
+      ],
+      "latent_mean": [
+        0.03593750298023224,
+        -0.008053009398281574
+      ],
+      "latent_std": [
+        1.0082604885101318,
+        1.0184086561203003
+      ],
+      "max_abs_latent_y_correlation": 0.058178240922903274,
+      "resim": {
+        "mean": 0.0006040281468979582,
+        "mean_clamped": 0.0006040281468979582,
+        "median": 0.00017149285344169633,
+        "q1": 0.00010993839205090844,
+        "q3": 0.0003630799019636727,
+        "max": 0.009855758356823565,
+        "n_finite": 65
+      },
+      "failed_fraction": 0.0,
+      "posterior_variance_raw_mean": [
+        0.03700729487823616,
+        0.12859458525018583,
+        0.18400306869094926,
+        0.24133498078675086
+      ],
+      "hard_target_resim": 0.006891791142771662
+    }
+  },
+  {
+    "run": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+    "problem": "kinematics",
+    "family": "cvae",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete",
+    "config": {
+      "family": "cvae",
+      "problem": "kinematics",
+      "profile": "full",
+      "run_name": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+      "device": "cuda",
+      "param_budget": 3000000,
+      "hidden": null,
+      "layers": 4,
+      "activation": "relu",
+      "z_dims": 2,
+      "latent_mmd": "joint",
+      "recon_condition": "predicted",
+      "mmd_scale": 1.0,
+      "w_y": 1.0,
+      "w_z": 100.0,
+      "beta": 0.01,
+      "slope": 2.0,
+      "orth_weight": 0.0,
+      "n_train": 1000000,
+      "n_val": 20000,
+      "epochs": 50,
+      "batch_size": 1000,
+      "lr": 0.001,
+      "weight_decay": 1e-05,
+      "grad_clip": 10.0,
+      "seed": 0,
+      "threads": 4,
+      "hidden_resolved": 704,
+      "n_params": 2992008,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "data_seeds": {
+        "train": 10000,
+        "validation": 20000
+      },
+      "ballistics_handling": "original prior; no rounding or dequantization",
+      "effective_activation": "relu",
+      "checkpoint_selection": {
+        "split": "validation",
+        "conditions": 64,
+        "samples": 32,
+        "invalid_penalty": 100.0,
+        "draw_seed": 991
+      }
+    },
+    "training": {
+      "run": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+      "profile": "full",
+      "best_epoch": 27,
+      "validation_selection_score": 0.00040034363807667857,
+      "train_seconds": 844.2280387000646,
+      "n_params": 2992008,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      }
+    },
+    "evaluation": {
+      "benchmark": "kinematics",
+      "model": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+      "n_conditions": 1000,
+      "n_samples": 1000,
+      "n_gt_min": 444,
+      "err_post": {
+        "mean": 0.016944543282522827,
+        "mean_clamped": 0.016944543282522827,
+        "median": 0.006217190776732329,
+        "q1": 0.002897779766115327,
+        "q3": 0.01352413529112867,
+        "max": 0.3202816465840971,
+        "n_finite": 1000
+      },
+      "err_post_biased": {
+        "mean": 0.021585453254079137,
+        "mean_clamped": 0.021585453254079137,
+        "median": 0.01079633686154402,
+        "q1": 0.007594426656733266,
+        "q3": 0.018215140210388586,
+        "max": 0.3254365900632694,
+        "n_finite": 1000
+      },
+      "err_resim": {
+        "mean": 0.0009647583156904288,
+        "mean_clamped": 0.0009647583156904288,
+        "median": 0.00015727286006812042,
+        "q1": 9.455850146191188e-05,
+        "q3": 0.0005547655735426349,
+        "max": 0.06347127682841198,
+        "n_finite": 1000
+      },
+      "resim_failed_fraction": 0.0,
+      "inference_seconds": 2.1718192999251187,
+      "inference_ms_per_condition": 2.1718192999251187,
+      "clamp": 10.0,
+      "evaluation_scope": "full",
+      "gt_options": {},
+      "training_profile": "full",
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "evaluation_seed": 0,
+      "metric_settings": {
+        "kernel": "IMQ",
+        "bandwidths": [
+          0.05,
+          0.2,
+          0.9
+        ],
+        "units": "raw",
+        "ballistics_clamp": 10,
+        "sigma": 0.01
+      }
+    },
+    "diagnostics": {
+      "run": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+      "profile": "full",
+      "diagnostic_seed": 0,
+      "kl_per_dimension": [
+        2.815554618835449,
+        2.776700258255005
+      ],
+      "inactive_latent_dimensions_kl_below_0_01": 0,
+      "reconstruction_kind": "posterior mean latent (not stochastic training loss)",
+      "reconstruction_rmse_raw": 0.01039403397589922,
+      "reconstruction_median_raw": [
+        0.0021484587341547012,
+        -0.001978606451302767,
+        -0.0032768440432846546,
+        0.0025002886541187763
+      ],
+      "latent_mean": [
+        0.04407940432429314,
+        0.06833014637231827
+      ],
+      "latent_std": [
+        1.0056308507919312,
+        0.9771963953971863
+      ],
+      "max_abs_latent_y_correlation": 0.15093805218638837,
+      "resim": {
+        "mean": 0.0010194687267445395,
+        "mean_clamped": 0.0010194687267445395,
+        "median": 0.00020549774504836313,
+        "q1": 0.00010749509082242043,
+        "q3": 0.000501764249605763,
+        "max": 0.023455341692923883,
+        "n_finite": 65
+      },
+      "failed_fraction": 0.0,
+      "posterior_variance_raw_mean": [
+        0.04309980412642586,
+        0.16205683453341246,
+        0.2531331090887809,
+        0.27503668605715625
+      ],
+      "hard_target_resim": 0.0017229552402681348
+    }
+  },
+  {
+    "run": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+    "problem": "kinematics",
+    "family": "invertible",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete",
+    "config": {
+      "family": "invertible",
+      "problem": "kinematics",
+      "profile": "full",
+      "run_name": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+      "device": "cuda",
+      "param_budget": 3000000,
+      "hidden": null,
+      "layers": 4,
+      "activation": "relu",
+      "z_dims": 2,
+      "latent_mmd": "joint",
+      "recon_condition": "predicted",
+      "mmd_scale": 1.0,
+      "w_y": 1.0,
+      "w_z": 100.0,
+      "beta": 0.01,
+      "slope": 2.0,
+      "orth_weight": 0.0,
+      "n_train": 1000000,
+      "n_val": 20000,
+      "epochs": 50,
+      "batch_size": 1000,
+      "lr": 0.001,
+      "weight_decay": 1e-05,
+      "grad_clip": 10.0,
+      "seed": 0,
+      "threads": 4,
+      "hidden_resolved": 998,
+      "n_params": 2999992,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "data_seeds": {
+        "train": 10000,
+        "validation": 20000
+      },
+      "ballistics_handling": "original prior; no rounding or dequantization",
+      "effective_activation": "modified_leaky_relu",
+      "checkpoint_selection": {
+        "split": "validation",
+        "conditions": 64,
+        "samples": 32,
+        "invalid_penalty": 100.0,
+        "draw_seed": 991
+      }
+    },
+    "training": {
+      "run": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+      "profile": "full",
+      "best_epoch": 43,
+      "validation_selection_score": 0.0019145888273457588,
+      "train_seconds": 1996.779247699771,
+      "n_params": 2999992,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      }
+    },
+    "evaluation": {
+      "benchmark": "kinematics",
+      "model": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+      "n_conditions": 1000,
+      "n_samples": 1000,
+      "n_gt_min": 444,
+      "err_post": {
+        "mean": 0.02120702197464725,
+        "mean_clamped": 0.02120702197464725,
+        "median": 0.005928334850651695,
+        "q1": 0.0024390853644774,
+        "q3": 0.019026135494922602,
+        "max": 0.6492950325655988,
+        "n_finite": 1000
+      },
+      "err_post_biased": {
+        "mean": 0.025839838853315804,
+        "mean_clamped": 0.025839838853315804,
+        "median": 0.010595137483164652,
+        "q1": 0.007071692745162339,
+        "q3": 0.02374297426327099,
+        "max": 0.6533688942475411,
+        "n_finite": 1000
+      },
+      "err_resim": {
+        "mean": 0.003035200257407967,
+        "mean_clamped": 0.003035200257407967,
+        "median": 0.0009461996539570955,
+        "q1": 0.0004567502507126144,
+        "q3": 0.0025139959474906864,
+        "max": 0.10116620001330179,
+        "n_finite": 1000
+      },
+      "resim_failed_fraction": 0.0,
+      "inference_seconds": 4.8271484998986125,
+      "inference_ms_per_condition": 4.8271484998986125,
+      "clamp": 10.0,
+      "evaluation_scope": "full",
+      "gt_options": {},
+      "training_profile": "full",
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "evaluation_seed": 0,
+      "metric_settings": {
+        "kernel": "IMQ",
+        "bandwidths": [
+          0.05,
+          0.2,
+          0.9
+        ],
+        "units": "raw",
+        "ballistics_clamp": 10,
+        "sigma": 0.01
+      }
+    },
+    "diagnostics": {
+      "run": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+      "profile": "full",
+      "diagnostic_seed": 0,
+      "forward_y_mse_standardized": 0.0012474809773266315,
+      "joint_latent_mmd": -0.0011481663236446726,
+      "reconstruction_rmse_raw": 0.010388738475739956,
+      "reconstruction_median_raw": [
+        0.0005077029345557094,
+        -0.0006436539115384221,
+        0.0005826401174999774,
+        0.000931267102714628
+      ],
+      "latent_mean": [
+        0.01133533101528883,
+        -0.045863207429647446
+      ],
+      "latent_std": [
+        1.0042314529418945,
+        0.9913468360900879
+      ],
+      "max_abs_latent_y_correlation": 0.07132202685411076,
+      "orthogonality_error_per_layer": [
+        3322.39404296875,
+        4.2454352378845215,
+        0.9811919927597046,
+        0.9768652319908142,
+        0.932828426361084
+      ],
+      "resim": {
+        "mean": 0.002965142048378048,
+        "mean_clamped": 0.002965142048378048,
+        "median": 0.0009100552200080182,
+        "q1": 0.0004099518856891918,
+        "q3": 0.003171472572536295,
+        "max": 0.04073226040596836,
+        "n_finite": 65
+      },
+      "failed_fraction": 0.0,
+      "posterior_variance_raw_mean": [
+        0.044243413341135816,
+        0.1226250165379575,
+        0.1930980907582246,
+        0.21760810084334822
+      ],
+      "hard_target_resim": 0.013726681549290997
+    }
+  },
+  {
+    "run": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+    "problem": "ballistics",
+    "family": "standard",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete",
+    "config": {
+      "family": "standard",
+      "problem": "ballistics",
+      "profile": "full",
+      "run_name": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+      "device": "cuda",
+      "param_budget": 3000000,
+      "hidden": null,
+      "layers": 4,
+      "activation": "relu",
+      "z_dims": 3,
+      "latent_mmd": "joint",
+      "recon_condition": "predicted",
+      "mmd_scale": 1.0,
+      "w_y": 1.0,
+      "w_z": 100.0,
+      "beta": 0.01,
+      "slope": 2.0,
+      "orth_weight": 0.0,
+      "n_train": 1000000,
+      "n_val": 20000,
+      "epochs": 50,
+      "batch_size": 1000,
+      "lr": 0.001,
+      "weight_decay": 1e-05,
+      "grad_clip": 10.0,
+      "seed": 0,
+      "threads": 4,
+      "hidden_resolved": 705,
+      "n_params": 2999078,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "data_seeds": {
+        "train": 10000,
+        "validation": 20000
+      },
+      "ballistics_handling": "original prior; no rounding or dequantization",
+      "effective_activation": "relu",
+      "checkpoint_selection": {
+        "split": "validation",
+        "conditions": 64,
+        "samples": 32,
+        "invalid_penalty": 100.0,
+        "draw_seed": 991
+      }
+    },
+    "training": {
+      "run": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+      "profile": "full",
+      "best_epoch": 46,
+      "validation_selection_score": 0.003991889983150164,
+      "train_seconds": 1179.6004139001016,
+      "n_params": 2999078,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      }
+    },
+    "evaluation": {
+      "benchmark": "ballistics",
+      "model": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+      "n_conditions": 1000,
+      "n_samples": 1000,
+      "n_gt_min": 111,
+      "err_post": {
+        "mean": 0.008057663636317129,
+        "mean_clamped": 0.008057663636317129,
+        "median": 0.006795789884303072,
+        "q1": 0.00403669197566324,
+        "q3": 0.010158475716055548,
+        "max": 0.1599864570469393,
+        "n_finite": 1000
+      },
+      "err_post_biased": {
+        "mean": 0.013622859725901491,
+        "mean_clamped": 0.013622859725901491,
+        "median": 0.012322429220864933,
+        "q1": 0.009702604839967932,
+        "q3": 0.015597604800269046,
+        "max": 0.16559092276339282,
+        "n_finite": 1000
+      },
+      "err_resim": {
+        "mean": 0.002569038115461261,
+        "mean_clamped": 0.002569038115461261,
+        "median": 0.0016607973804302167,
+        "q1": 0.0014545358869072652,
+        "q3": 0.0021195592764044584,
+        "max": 0.20805750904125417,
+        "n_finite": 1000
+      },
+      "resim_failed_fraction": 0.00014900000000000002,
+      "inference_seconds": 2.176937500014901,
+      "inference_ms_per_condition": 2.176937500014901,
+      "clamp": 10.0,
+      "evaluation_scope": "full",
+      "gt_options": {},
+      "training_profile": "full",
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "evaluation_seed": 0,
+      "metric_settings": {
+        "kernel": "IMQ",
+        "bandwidths": [
+          0.05,
+          0.2,
+          0.9
+        ],
+        "units": "raw",
+        "ballistics_clamp": 10,
+        "sigma": 0.02
+      }
+    },
+    "diagnostics": {
+      "run": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+      "profile": "full",
+      "diagnostic_seed": 0,
+      "forward_y_mse_standardized": 0.00017452894826419652,
+      "joint_latent_mmd": -0.0001229917977021433,
+      "reconstruction_rmse_raw": 0.02585623227059841,
+      "reconstruction_median_raw": [
+        -0.00014635668776463717,
+        2.610543742775917e-05,
+        -0.00035661994479596615,
+        -0.0025923065841197968
+      ],
+      "latent_mean": [
+        -0.007288004271686077,
+        -0.025069206953048706,
+        0.020741889253258705
+      ],
+      "latent_std": [
+        0.9754936695098877,
+        1.0109689235687256,
+        1.0019874572753906
+      ],
+      "max_abs_latent_y_correlation": 0.043566221388560165,
+      "resim": {
+        "mean": 0.0019327745306448485,
+        "mean_clamped": 0.0019327745306448485,
+        "median": 0.0015612909518860994,
+        "q1": 0.0013952698431578675,
+        "q3": 0.001990684758113371,
+        "max": 0.008796446977532981,
+        "n_finite": 64
+      },
+      "failed_fraction": 0.0,
+      "posterior_variance_raw_mean": [
+        0.23937360346113667,
+        0.2541969824894706,
+        0.07364979290521367,
+        8.288207546779384
+      ],
+      "mean_distance_v0_to_integer": 0.2515819230757188,
+      "negative_launch_height_fraction": 0.00115966796875,
+      "supplemental_v0_sensitivity": {
+        "n_conditions": 8,
+        "raw": 0.007562234006165992,
+        "standardized": 0.0011221211834953268,
+        "rounded_v0": 0.0022259581275223886
+      }
+    }
+  },
+  {
+    "run": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+    "problem": "ballistics",
+    "family": "cvae",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete",
+    "config": {
+      "family": "cvae",
+      "problem": "ballistics",
+      "profile": "full",
+      "run_name": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+      "device": "cuda",
+      "param_budget": 3000000,
+      "hidden": null,
+      "layers": 4,
+      "activation": "relu",
+      "z_dims": 3,
+      "latent_mmd": "joint",
+      "recon_condition": "predicted",
+      "mmd_scale": 1.0,
+      "w_y": 1.0,
+      "w_z": 100.0,
+      "beta": 0.01,
+      "slope": 2.0,
+      "orth_weight": 0.0,
+      "n_train": 1000000,
+      "n_val": 20000,
+      "epochs": 50,
+      "batch_size": 1000,
+      "lr": 0.001,
+      "weight_decay": 1e-05,
+      "grad_clip": 10.0,
+      "seed": 0,
+      "threads": 4,
+      "hidden_resolved": 704,
+      "n_params": 2992714,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "data_seeds": {
+        "train": 10000,
+        "validation": 20000
+      },
+      "ballistics_handling": "original prior; no rounding or dequantization",
+      "effective_activation": "relu",
+      "checkpoint_selection": {
+        "split": "validation",
+        "conditions": 64,
+        "samples": 32,
+        "invalid_penalty": 100.0,
+        "draw_seed": 991
+      }
+    },
+    "training": {
+      "run": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+      "profile": "full",
+      "best_epoch": 18,
+      "validation_selection_score": 0.0013259604278742136,
+      "train_seconds": 869.3705715001561,
+      "n_params": 2992714,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      }
+    },
+    "evaluation": {
+      "benchmark": "ballistics",
+      "model": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+      "n_conditions": 1000,
+      "n_samples": 1000,
+      "n_gt_min": 111,
+      "err_post": {
+        "mean": 0.008787309398554138,
+        "mean_clamped": 0.008787309398554138,
+        "median": 0.00747398698192242,
+        "q1": 0.005105113077541551,
+        "q3": 0.010484360474715626,
+        "max": 0.1701934152615119,
+        "n_finite": 1000
+      },
+      "err_post_biased": {
+        "mean": 0.014353198727606884,
+        "mean_clamped": 0.014353198727606884,
+        "median": 0.013017567429237015,
+        "q1": 0.010765829988189576,
+        "q3": 0.01594211731020187,
+        "max": 0.17580796034267684,
+        "n_finite": 1000
+      },
+      "err_resim": {
+        "mean": 0.0013787084272605212,
+        "mean_clamped": 0.0013787084272605212,
+        "median": 0.0009699565095515147,
+        "q1": 0.0008497357099915886,
+        "q3": 0.0012564346949687775,
+        "max": 0.13901713777272406,
+        "n_finite": 1000
+      },
+      "resim_failed_fraction": 0.000665,
+      "inference_seconds": 2.1979241999797523,
+      "inference_ms_per_condition": 2.1979241999797523,
+      "clamp": 10.0,
+      "evaluation_scope": "full",
+      "gt_options": {},
+      "training_profile": "full",
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "evaluation_seed": 0,
+      "metric_settings": {
+        "kernel": "IMQ",
+        "bandwidths": [
+          0.05,
+          0.2,
+          0.9
+        ],
+        "units": "raw",
+        "ballistics_clamp": 10,
+        "sigma": 0.02
+      }
+    },
+    "diagnostics": {
+      "run": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+      "profile": "full",
+      "diagnostic_seed": 0,
+      "kl_per_dimension": [
+        2.626943588256836,
+        2.6111695766448975,
+        2.622579574584961
+      ],
+      "inactive_latent_dimensions_kl_below_0_01": 0,
+      "reconstruction_kind": "posterior mean latent (not stochastic training loss)",
+      "reconstruction_rmse_raw": 0.031383972615003586,
+      "reconstruction_median_raw": [
+        -0.0014996087411418557,
+        -0.004884426482021809,
+        -0.0005491281626746058,
+        0.002805734984576702
+      ],
+      "latent_mean": [
+        0.027952341362833977,
+        0.001976313069462776,
+        0.017532773315906525
+      ],
+      "latent_std": [
+        0.9932093024253845,
+        0.9891242384910583,
+        1.0182509422302246
+      ],
+      "max_abs_latent_y_correlation": 0.04388736649658904,
+      "resim": {
+        "mean": 0.0010159972348413701,
+        "mean_clamped": 0.0010159972348413701,
+        "median": 0.0009497709818948664,
+        "q1": 0.000783843701656278,
+        "q3": 0.0011371265503928353,
+        "max": 0.001995327111410943,
+        "n_finite": 64
+      },
+      "failed_fraction": 0.0,
+      "posterior_variance_raw_mean": [
+        0.24078582229736942,
+        0.2533491863965392,
+        0.07011438918626761,
+        8.08950208480075
+      ],
+      "mean_distance_v0_to_integer": 0.2412973166210577,
+      "negative_launch_height_fraction": 0.0009765625,
+      "supplemental_v0_sensitivity": {
+        "n_conditions": 8,
+        "raw": 0.009172706548967173,
+        "standardized": 0.0032188936297109505,
+        "rounded_v0": 0.004092522088525979
+      }
+    }
+  },
+  {
+    "run": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+    "problem": "ballistics",
+    "family": "invertible",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete",
+    "config": {
+      "family": "invertible",
+      "problem": "ballistics",
+      "profile": "full",
+      "run_name": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+      "device": "cuda",
+      "param_budget": 3000000,
+      "hidden": null,
+      "layers": 4,
+      "activation": "relu",
+      "z_dims": 3,
+      "latent_mmd": "joint",
+      "recon_condition": "predicted",
+      "mmd_scale": 1.0,
+      "w_y": 1.0,
+      "w_z": 100.0,
+      "beta": 0.01,
+      "slope": 2.0,
+      "orth_weight": 0.0,
+      "n_train": 1000000,
+      "n_val": 20000,
+      "epochs": 50,
+      "batch_size": 1000,
+      "lr": 0.001,
+      "weight_decay": 1e-05,
+      "grad_clip": 10.0,
+      "seed": 0,
+      "threads": 4,
+      "hidden_resolved": 998,
+      "n_params": 2999992,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "data_seeds": {
+        "train": 10000,
+        "validation": 20000
+      },
+      "ballistics_handling": "original prior; no rounding or dequantization",
+      "effective_activation": "modified_leaky_relu",
+      "checkpoint_selection": {
+        "split": "validation",
+        "conditions": 64,
+        "samples": 32,
+        "invalid_penalty": 100.0,
+        "draw_seed": 991
+      }
+    },
+    "training": {
+      "run": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+      "profile": "full",
+      "best_epoch": 50,
+      "validation_selection_score": 0.0026782424607286774,
+      "train_seconds": 2095.3127126998734,
+      "n_params": 2999992,
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      }
+    },
+    "evaluation": {
+      "benchmark": "ballistics",
+      "model": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+      "n_conditions": 1000,
+      "n_samples": 1000,
+      "n_gt_min": 111,
+      "err_post": {
+        "mean": 0.008605266058116819,
+        "mean_clamped": 0.008605266058116819,
+        "median": 0.007178698634854264,
+        "q1": 0.004482125088668201,
+        "q3": 0.01054583654435498,
+        "max": 0.2050813290449029,
+        "n_finite": 1000
+      },
+      "err_post_biased": {
+        "mean": 0.014169891879592037,
+        "mean_clamped": 0.014169891879592037,
+        "median": 0.012709417354374253,
+        "q1": 0.010184406236159432,
+        "q3": 0.015932623642164467,
+        "max": 0.2106807611363382,
+        "n_finite": 1000
+      },
+      "err_resim": {
+        "mean": 0.0038769252451937124,
+        "mean_clamped": 0.0038769252451937124,
+        "median": 0.002523651220276509,
+        "q1": 0.002144428097363143,
+        "q3": 0.003506295486295421,
+        "max": 0.15897389001268813,
+        "n_finite": 1000
+      },
+      "resim_failed_fraction": 0.0006940000000000001,
+      "inference_seconds": 4.848693800158799,
+      "inference_ms_per_condition": 4.848693800158799,
+      "clamp": 10.0,
+      "evaluation_scope": "full",
+      "gt_options": {},
+      "training_profile": "full",
+      "hardware": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "torch": "2.14.1+cu126",
+        "device": "cuda",
+        "gpu": "NVIDIA GeForce GTX 1650 Ti",
+        "threads": 4
+      },
+      "evaluation_seed": 0,
+      "metric_settings": {
+        "kernel": "IMQ",
+        "bandwidths": [
+          0.05,
+          0.2,
+          0.9
+        ],
+        "units": "raw",
+        "ballistics_clamp": 10,
+        "sigma": 0.02
+      }
+    },
+    "diagnostics": {
+      "run": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+      "profile": "full",
+      "diagnostic_seed": 0,
+      "forward_y_mse_standardized": 0.00019207916921004653,
+      "joint_latent_mmd": -0.0002791028802930362,
+      "reconstruction_rmse_raw": 0.027262290939688683,
+      "reconstruction_median_raw": [
+        -0.00016285308811347932,
+        6.452293746406212e-05,
+        -0.00015460301074199378,
+        -0.0015374000649899244
+      ],
+      "latent_mean": [
+        -0.02719569206237793,
+        -0.004902774468064308,
+        0.003800127422437072
+      ],
+      "latent_std": [
+        1.010994553565979,
+        1.0043727159500122,
+        0.9856739640235901
+      ],
+      "max_abs_latent_y_correlation": 0.03699560382973741,
+      "orthogonality_error_per_layer": [
+        2928.5537109375,
+        1.7782341241836548,
+        0.9791917204856873,
+        0.9878121614456177,
+        0.9574136137962341
+      ],
+      "resim": {
+        "mean": 0.003052016722235818,
+        "mean_clamped": 0.003052016722235818,
+        "median": 0.0022129845348871848,
+        "q1": 0.0018819884449794884,
+        "q3": 0.0029285226667113765,
+        "max": 0.016403935125918877,
+        "n_finite": 64
+      },
+      "failed_fraction": 0.0,
+      "posterior_variance_raw_mean": [
+        0.24211372478919657,
+        0.2508901143548853,
+        0.07191603322814609,
+        8.224908202426441
+      ],
+      "mean_distance_v0_to_integer": 0.25008484651334584,
+      "negative_launch_height_fraction": 0.001220703125,
+      "supplemental_v0_sensitivity": {
+        "n_conditions": 8,
+        "raw": 0.008761525465797629,
+        "standardized": 0.0023439699643094253,
+        "rounded_v0": 0.0028264240437980495
+      }
+    }
+  }
+]

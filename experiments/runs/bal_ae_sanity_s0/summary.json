@@ -1,0 +1,18 @@
+{
+  "run": "bal_ae_sanity_s0",
+  "problem": "ballistics",
+  "model": "autoencoder",
+  "n_params": 2999078,
+  "hidden": 705,
+  "layers": 4,
+  "z_dims": 3,
+  "w_y": 1.0,
+  "w_z": 100.0,
+  "latent_mmd": "joint",
+  "val_recon": 0.0004564878065139055,
+  "val_y": 0.00019205030184821226,
+  "val_z": 9.256601333618165e-06,
+  "val_resim_provisional": 0.0037626212319027035,
+  "val_resim_failed_fraction": 0.0,
+  "train_seconds": 435.2394452095032
+}
