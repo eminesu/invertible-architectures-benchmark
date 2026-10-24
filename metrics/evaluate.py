@@ -35,6 +35,7 @@ from pathlib import Path
 
 import numpy as np
 
+from data.toy_data import PRIOR_PARAMS
 from metrics.benchmarks import forward_fn, load_test_conditions, prior
 from metrics.ground_truth import ground_truth_posterior
 from metrics.mmd import mmd
@@ -116,9 +117,12 @@ def summarize(values):
 
 
 def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DIR, verbose=True,
-             n_conditions=None, gt_options=None):
+             n_conditions=None, gt_options=None, prior_params=None):
     """Score one model on the shared test conditions; saves the per-y* arrays to
-    <out_dir>/<benchmark>_<name>.npz and the summary to .json next to it."""
+    <out_dir>/<benchmark>_<name>.npz and the summary to .json next to it.
+    prior_params (data.toy_data.PRIOR_PARAMS): score against the ground truth under
+    that prior instead of the benchmark prior; sample_fn must then sample
+    p(x | y*, prior_params)."""
     y_star, _ = load_test_conditions(benchmark)
     if n_conditions is not None:
         if not 1 <= n_conditions <= len(y_star):
@@ -127,7 +131,7 @@ def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DI
     if n_samples < 2:
         raise ValueError('MMD evaluation requires at least two samples')
     gt_options = gt_options or {}
-    gt = ground_truth_posterior(benchmark, y_star, verbose=verbose, **gt_options)
+    gt = ground_truth_posterior(benchmark, y_star, verbose=verbose, prior_params=prior_params, **gt_options)
     if any(len(g) < 2 for g in gt):
         raise ValueError('Ground truth has fewer than two samples for a condition; increase proposal cap')
 
@@ -151,6 +155,8 @@ def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DI
         'evaluation_scope': 'full' if n_conditions is None and n_samples == N_SAMPLES and not gt_options else 'pilot',
         'gt_options': gt_options,
     }
+    if prior_params is not None:
+        summary.update(zip(PRIOR_PARAMS[benchmark]['names'], map(float, np.ravel(prior_params))))
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     np.savez(out_dir / f'{benchmark}_{name}.npz', err_post=post, err_post_biased=post_biased, err_resim=resim,
