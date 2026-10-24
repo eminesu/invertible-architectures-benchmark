@@ -1,0 +1,33 @@
+{
+  "problem": "kinematics",
+  "manifold": "torus",
+  "latent": "wrapped",
+  "beta": 400.0,
+  "y_noise": 0.01,
+  "beta_z": 0.0,
+  "beta_p": 0.0,
+  "blocks": 6,
+  "hidden": null,
+  "param_budget": 3000000,
+  "activation": "silu",
+  "n_train": 1000000,
+  "n_val": 20000,
+  "epochs": 50,
+  "batch_size": 1000,
+  "lr": 0.001,
+  "weight_decay": 1e-05,
+  "grad_clip": 10.0,
+  "seed": 0,
+  "device": "mps",
+  "run_name": "kin_mfff_wrapped_b400_s0",
+  "hidden_resolved": 352,
+  "n_params": 2994126,
+  "ambient_dims": 7,
+  "angle_dims": [
+    1,
+    2,
+    3
+  ],
+  "device_resolved": "mps",
+  "torch": "2.14.1"
+}

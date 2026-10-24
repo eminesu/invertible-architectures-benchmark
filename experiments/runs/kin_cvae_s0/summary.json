@@ -1,0 +1,15 @@
+{
+  "run": "kin_cvae_s0",
+  "profile": "full",
+  "best_epoch": 27,
+  "validation_selection_score": 0.00040034363807667857,
+  "train_seconds": 844.2280387000646,
+  "n_params": 2992008,
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch": "2.14.1+cu126",
+    "device": "cuda",
+    "gpu": "NVIDIA GeForce GTX 1650 Ti",
+    "threads": 4
+  }
+}

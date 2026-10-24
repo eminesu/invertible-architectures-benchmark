@@ -1,0 +1,60 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_cvae_s0",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.016944543282522827,
+    "mean_clamped": 0.016944543282522827,
+    "median": 0.006217190776732329,
+    "q1": 0.002897779766115327,
+    "q3": 0.01352413529112867,
+    "max": 0.3202816465840971,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.021585453254079137,
+    "mean_clamped": 0.021585453254079137,
+    "median": 0.01079633686154402,
+    "q1": 0.007594426656733266,
+    "q3": 0.018215140210388586,
+    "max": 0.3254365900632694,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.0009647583156904288,
+    "mean_clamped": 0.0009647583156904288,
+    "median": 0.00015727286006812042,
+    "q1": 9.455850146191188e-05,
+    "q3": 0.0005547655735426349,
+    "max": 0.06347127682841198,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 2.1718192999251187,
+  "inference_ms_per_condition": 2.1718192999251187,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "training_profile": "full",
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch": "2.14.1+cu126",
+    "device": "cuda",
+    "gpu": "NVIDIA GeForce GTX 1650 Ti",
+    "threads": 4
+  },
+  "evaluation_seed": 0,
+  "metric_settings": {
+    "kernel": "IMQ",
+    "bandwidths": [
+      0.05,
+      0.2,
+      0.9
+    ],
+    "units": "raw",
+    "ballistics_clamp": 10,
+    "sigma": 0.01
+  }
+}

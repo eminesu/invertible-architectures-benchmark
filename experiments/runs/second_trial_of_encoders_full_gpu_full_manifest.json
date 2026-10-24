@@ -1,0 +1,56 @@
+[
+  {
+    "run": "kin_standard_s0",
+    "problem": "kinematics",
+    "family": "standard",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete"
+  },
+  {
+    "run": "kin_cvae_s0",
+    "problem": "kinematics",
+    "family": "cvae",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete"
+  },
+  {
+    "run": "kin_invertible_s0",
+    "problem": "kinematics",
+    "family": "invertible",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete"
+  },
+  {
+    "run": "bal_standard_s0",
+    "problem": "ballistics",
+    "family": "standard",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete"
+  },
+  {
+    "run": "bal_cvae_s0",
+    "problem": "ballistics",
+    "family": "cvae",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete"
+  },
+  {
+    "run": "bal_invertible_s0",
+    "problem": "ballistics",
+    "family": "invertible",
+    "ablation": "baseline",
+    "train": "complete",
+    "evaluate": "complete",
+    "diagnose": "complete"
+  }
+]

@@ -154,7 +154,9 @@ use the same library, budget, data and evaluation code for both methods.
    the same library, budget and Euler solver, diffusion is slightly ahead at 8
    and 32 NFE on both benchmarks. With fixed-step rk45 it is behind on
    kinematics and ahead on ballistics. Both converge to the same Err_post
-   (kinematics 0.0016–0.0018, ballistics 0.0071) by 32 NFE.
+   (kinematics 0.0016–0.0018, ballistics 0.0071) by 32 NFE. Against FMPE's best
+   solver (hand-rolled midpoint × 16) the 32-NFE result is a paired tie
+   (Wilcoxon p = 0.18 kinematics, 0.75 ballistics; `docs/comparison.md`).
 2. **The cheapest good setting is still FMPE's.** Hand-rolled FMPE with the
    midpoint solver reaches 0.0017 on kinematics at 8 NFE; diffusion needs 32 NFE
    (ODE Euler) for 0.0018. At 8 NFE diffusion is at 0.0048.

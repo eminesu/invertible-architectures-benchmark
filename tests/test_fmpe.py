@@ -53,6 +53,8 @@ def test_sample_interface_and_shapes():
     assert torch.allclose(x.reshape(-1, 4).std(0), model.x_std, rtol=0.05)
 
 
+# Importing bayesflow (tests/test_npse.py) turns torch autograd off process-wide.
+@torch.enable_grad()
 def test_learns_conditional_gaussian():
     """x | y ~ N((y, -y), diag(0.5^2, 0.2^2)): a small FMPE trained for a few
     seconds recovers the conditional mean and spread."""

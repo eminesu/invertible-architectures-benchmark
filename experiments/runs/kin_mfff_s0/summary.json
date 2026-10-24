@@ -1,0 +1,19 @@
+{
+  "run": "kin_mfff_s0",
+  "problem": "kinematics",
+  "manifold": "torus",
+  "beta": 100.0,
+  "y_noise": 0.01,
+  "n_params": 2994126,
+  "hidden": 352,
+  "blocks": 6,
+  "train_loss": 4.153707570433617,
+  "val_loss": 4.127064645290375,
+  "train_recon": 0.0012563240338931791,
+  "val_recon": 0.0011167146731168032,
+  "val_nll": 2.90553798828125,
+  "err_resim_provisional": 0.013057536427871799,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, one decoder pass",
+  "train_seconds": 7568.059374809265
+}
