@@ -1,0 +1,63 @@
+{
+  "benchmark": "kinematics",
+  "model": "ilk_deneme_kinematics_cvae_baseline_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 206,
+  "err_post": {
+    "mean": 0.06278699214723982,
+    "mean_clamped": 0.06278699214723982,
+    "median": 0.045478300477969524,
+    "q1": 0.02984308996568763,
+    "q3": 0.078598399766789,
+    "max": 0.1716689282939785,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.08135692580584011,
+    "mean_clamped": 0.08135692580584011,
+    "median": 0.06381200082237914,
+    "q1": 0.048098193413268875,
+    "q3": 0.09747233218284473,
+    "max": 0.1888854165295939,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.006057511765483662,
+    "mean_clamped": 0.006057511765483662,
+    "median": 0.0030382354476198963,
+    "q1": 0.002169777053266344,
+    "q3": 0.01126846579882474,
+    "max": 0.018069368789181924,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.00292960018850863,
+  "inference_ms_per_condition": 0.18310001178178936,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  },
+  "training_profile": "pilot",
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch": "2.14.1+cpu",
+    "device": "cpu",
+    "gpu": null,
+    "threads": 4
+  },
+  "evaluation_seed": 0,
+  "metric_settings": {
+    "kernel": "IMQ",
+    "bandwidths": [
+      0.05,
+      0.2,
+      0.9
+    ],
+    "units": "raw",
+    "ballistics_clamp": 10,
+    "sigma": 0.01
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "benchmark": "kinematics",
+  "model": "ae_suite_kinematics_standard_wz0_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 206,
+  "err_post": {
+    "mean": 0.5283378734482381,
+    "mean_clamped": 0.5283378734482381,
+    "median": 0.5313091138990265,
+    "q1": 0.4063183155396835,
+    "q3": 0.6226983154801335,
+    "max": 0.8777656002272918,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.5451143293461351,
+    "mean_clamped": 0.5451143293461351,
+    "median": 0.5484078209516879,
+    "q1": 0.4234044490047862,
+    "q3": 0.63932146944244,
+    "max": 0.8945560776365198,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.25737194504816713,
+    "mean_clamped": 0.25737194504816713,
+    "median": 0.1494218192701753,
+    "q1": 0.07593157916425997,
+    "q3": 0.3174669326466868,
+    "max": 1.09268959226329,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.005980783000040901,
+  "inference_ms_per_condition": 0.3737989375025563,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  }
+}

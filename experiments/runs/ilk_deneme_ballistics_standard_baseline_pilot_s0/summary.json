@@ -1,0 +1,15 @@
+{
+  "run": "ilk_deneme_ballistics_standard_baseline_pilot_s0",
+  "profile": "pilot",
+  "best_epoch": 6,
+  "validation_selection_score": 0.23381462560219735,
+  "train_seconds": 15.250015599885955,
+  "n_params": 99830,
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch": "2.14.1+cpu",
+    "device": "cpu",
+    "gpu": null,
+    "threads": 4
+  }
+}

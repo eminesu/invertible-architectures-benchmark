@@ -1,0 +1,40 @@
+{
+  "benchmark": "ballistics",
+  "model": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 111,
+  "err_post": {
+    "mean": 0.008605266058116819,
+    "mean_clamped": 0.008605266058116819,
+    "median": 0.007178698634854264,
+    "q1": 0.004482125088668201,
+    "q3": 0.01054583654435498,
+    "max": 0.2050813290449029,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.014169891879592037,
+    "mean_clamped": 0.014169891879592037,
+    "median": 0.012709417354374253,
+    "q1": 0.010184406236159432,
+    "q3": 0.015932623642164467,
+    "max": 0.2106807611363382,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.0038769252451937124,
+    "mean_clamped": 0.0038769252451937124,
+    "median": 0.002523651220276509,
+    "q1": 0.002144428097363143,
+    "q3": 0.003506295486295421,
+    "max": 0.15897389001268813,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0006940000000000001,
+  "inference_seconds": 4.848693800158799,
+  "inference_ms_per_condition": 4.848693800158799,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {}
+}

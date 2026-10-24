@@ -1,0 +1,15 @@
+{
+  "run": "ae_suite_kinematics_cvae_baseline_pilot_s0",
+  "profile": "pilot",
+  "best_epoch": 12,
+  "validation_selection_score": 0.006329608465271716,
+  "train_seconds": 7.99188884199998,
+  "n_params": 98540,
+  "hardware": {
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "torch": "2.6.0+cpu",
+    "device": "cpu",
+    "gpu": null,
+    "threads": 4
+  }
+}

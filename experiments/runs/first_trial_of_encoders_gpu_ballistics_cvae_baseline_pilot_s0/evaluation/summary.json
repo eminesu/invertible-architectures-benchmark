@@ -1,0 +1,63 @@
+{
+  "benchmark": "ballistics",
+  "model": "first_trial_of_encoders_gpu_ballistics_cvae_baseline_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 256,
+  "err_post": {
+    "mean": 0.03252630389269099,
+    "mean_clamped": 0.03252630389269099,
+    "median": 0.03020584659082909,
+    "q1": 0.022831178534274063,
+    "q3": 0.03825788339975962,
+    "max": 0.06352506787956524,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.05395598472929225,
+    "mean_clamped": 0.05395598472929225,
+    "median": 0.05164027704122037,
+    "q1": 0.044630222742812586,
+    "q3": 0.06043297095331904,
+    "max": 0.08566844999197698,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.12223434864688934,
+    "mean_clamped": 0.12223434864688934,
+    "median": 0.035531956240757126,
+    "q1": 0.02050984147441876,
+    "q3": 0.10900372346299207,
+    "max": 0.8347641551275533,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.001307399943470955,
+  "inference_ms_per_condition": 0.08171249646693468,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  },
+  "training_profile": "pilot",
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch": "2.14.1+cu126",
+    "device": "cuda",
+    "gpu": "NVIDIA GeForce GTX 1650 Ti",
+    "threads": 4
+  },
+  "evaluation_seed": 0,
+  "metric_settings": {
+    "kernel": "IMQ",
+    "bandwidths": [
+      0.05,
+      0.2,
+      0.9
+    ],
+    "units": "raw",
+    "ballistics_clamp": 10,
+    "sigma": 0.02
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "benchmark": "ballistics",
+  "model": "ae_suite_ballistics_cvae_baseline_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 256,
+  "err_post": {
+    "mean": 0.020454374259890076,
+    "mean_clamped": 0.020454374259890076,
+    "median": 0.018198855076019482,
+    "q1": 0.01500445607948464,
+    "q3": 0.02256466367501933,
+    "max": 0.05732769071541555,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.04200639934537441,
+    "mean_clamped": 0.04200639934537441,
+    "median": 0.0401777526818779,
+    "q1": 0.03581347433730503,
+    "q3": 0.04337251373673037,
+    "max": 0.07779712771879588,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.14583217996648185,
+    "mean_clamped": 0.14583217996648185,
+    "median": 0.02701353622901964,
+    "q1": 0.01491010407200674,
+    "q3": 0.14028966570042176,
+    "max": 0.9949619329147599,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.00859396199996354,
+  "inference_ms_per_condition": 0.5371226249977212,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  }
+}

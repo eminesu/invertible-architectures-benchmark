@@ -1,0 +1,15 @@
+{
+  "run": "ae_suite_ballistics_standard_z4_pilot_s0",
+  "profile": "pilot",
+  "best_epoch": 8,
+  "validation_selection_score": 6.148984363546067,
+  "train_seconds": 17.746150230000012,
+  "n_params": 98541,
+  "hardware": {
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "torch": "2.6.0+cpu",
+    "device": "cpu",
+    "gpu": null,
+    "threads": 4
+  }
+}

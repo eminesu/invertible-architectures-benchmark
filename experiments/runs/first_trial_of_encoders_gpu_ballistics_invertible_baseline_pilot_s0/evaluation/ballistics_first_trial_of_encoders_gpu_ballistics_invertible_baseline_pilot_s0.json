@@ -1,0 +1,43 @@
+{
+  "benchmark": "ballistics",
+  "model": "first_trial_of_encoders_gpu_ballistics_invertible_baseline_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 256,
+  "err_post": {
+    "mean": 0.008098685984595993,
+    "mean_clamped": 0.008098685984595993,
+    "median": 0.007414348043988328,
+    "q1": 0.003461691624867022,
+    "q3": 0.011593659168849649,
+    "max": 0.023501203782252955,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.029769423387257576,
+    "mean_clamped": 0.029769423387257576,
+    "median": 0.02967993256449783,
+    "q1": 0.025488127281450224,
+    "q3": 0.03273497198842713,
+    "max": 0.044131153270115964,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.1177834297882711,
+    "mean_clamped": 0.1177834297882711,
+    "median": 0.05991700171945512,
+    "q1": 0.04305627110222571,
+    "q3": 0.09711934360879566,
+    "max": 0.7124662139610127,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.00048828125,
+  "inference_seconds": 0.0034268000163137913,
+  "inference_ms_per_condition": 0.21417500101961195,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  }
+}

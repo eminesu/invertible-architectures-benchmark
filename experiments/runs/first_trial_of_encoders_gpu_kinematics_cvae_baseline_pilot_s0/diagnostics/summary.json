@@ -1,0 +1,44 @@
+{
+  "run": "first_trial_of_encoders_gpu_kinematics_cvae_baseline_pilot_s0",
+  "profile": "pilot",
+  "diagnostic_seed": 0,
+  "kl_per_dimension": [
+    3.3019533157348633,
+    2.996135950088501
+  ],
+  "inactive_latent_dimensions_kl_below_0_01": 0,
+  "reconstruction_kind": "posterior mean latent (not stochastic training loss)",
+  "reconstruction_rmse_raw": 0.13232479989528656,
+  "reconstruction_median_raw": [
+    -0.011140352115035057,
+    0.02713402546942234,
+    -0.026859596371650696,
+    -0.00846092402935028
+  ],
+  "latent_mean": [
+    -0.0031027398072183132,
+    0.1505914032459259
+  ],
+  "latent_std": [
+    1.0253146886825562,
+    1.0982117652893066
+  ],
+  "max_abs_latent_y_correlation": 0.09766039730271345,
+  "resim": {
+    "mean": 0.06499208797397055,
+    "mean_clamped": 0.06499208797397055,
+    "median": 0.030472279865745855,
+    "q1": 0.011143796968368216,
+    "q3": 0.052497631213091325,
+    "max": 1.1445809833238332,
+    "n_finite": 65
+  },
+  "failed_fraction": 0.0,
+  "posterior_variance_raw_mean": [
+    0.04405815445956243,
+    0.0866595756392037,
+    0.13290699066135644,
+    0.1692708776992271
+  ],
+  "hard_target_resim": 0.15495063417292013
+}

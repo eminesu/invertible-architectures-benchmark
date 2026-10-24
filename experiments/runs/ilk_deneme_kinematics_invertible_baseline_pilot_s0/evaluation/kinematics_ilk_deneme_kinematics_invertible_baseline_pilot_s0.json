@@ -1,0 +1,43 @@
+{
+  "benchmark": "kinematics",
+  "model": "ilk_deneme_kinematics_invertible_baseline_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 206,
+  "err_post": {
+    "mean": 0.09974021193211619,
+    "mean_clamped": 0.09974021193211619,
+    "median": 0.06588507059965687,
+    "q1": 0.037343365918446614,
+    "q3": 0.11402845898739683,
+    "max": 0.43430993365012704,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.11800568590911284,
+    "mean_clamped": 0.11800568590911284,
+    "median": 0.08500637574273417,
+    "q1": 0.055476121681811874,
+    "q3": 0.13249530884673733,
+    "max": 0.4514787952367727,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.018985411488331577,
+    "mean_clamped": 0.018985411488331577,
+    "median": 0.01042493741554222,
+    "q1": 0.007374902326830343,
+    "q3": 0.014316880939802282,
+    "max": 0.10447284786874114,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.01979920011945069,
+  "inference_ms_per_condition": 1.237450007465668,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  }
+}

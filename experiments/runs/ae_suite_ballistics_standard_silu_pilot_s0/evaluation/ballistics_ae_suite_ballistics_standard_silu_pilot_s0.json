@@ -1,0 +1,43 @@
+{
+  "benchmark": "ballistics",
+  "model": "ae_suite_ballistics_standard_silu_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 256,
+  "err_post": {
+    "mean": 0.010190765202460119,
+    "mean_clamped": 0.010190765202460119,
+    "median": 0.008993138638084097,
+    "q1": 0.005028265098086029,
+    "q3": 0.014105591540028273,
+    "max": 0.027981870982831558,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.03188587145601207,
+    "mean_clamped": 0.03188587145601207,
+    "median": 0.030457300391095815,
+    "q1": 0.027094612731050516,
+    "q3": 0.03611531691394412,
+    "max": 0.04866426531434953,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.03386862022462034,
+    "mean_clamped": 0.03386862022462034,
+    "median": 0.03355305135858554,
+    "q1": 0.0217687261001686,
+    "q3": 0.042420935216544026,
+    "max": 0.05644298235143072,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.0067387159999725554,
+  "inference_ms_per_condition": 0.4211697499982847,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "run": "ae_suite_kinematics_standard_marginal_pilot_s0",
+  "profile": "pilot",
+  "diagnostic_seed": 0,
+  "forward_y_mse_standardized": 0.09420564770698547,
+  "joint_latent_mmd": 0.02324962918935164,
+  "reconstruction_rmse_raw": 0.25332459807395935,
+  "reconstruction_median_raw": [
+    0.03411734476685524,
+    0.06498625874519348,
+    -0.1275525987148285,
+    -0.030130578204989433
+  ],
+  "latent_mean": [
+    0.10978464782238007,
+    0.041585199534893036
+  ],
+  "latent_std": [
+    0.9892153143882751,
+    0.9517369270324707
+  ],
+  "max_abs_latent_y_correlation": 0.8210199046216058,
+  "resim": {
+    "mean": 0.22456330743702188,
+    "mean_clamped": 0.22456330743702188,
+    "median": 0.1539032624879519,
+    "q1": 0.055207010530816676,
+    "q3": 0.30339423477782407,
+    "max": 1.2287305861452806,
+    "n_finite": 65
+  },
+  "failed_fraction": 0.0,
+  "posterior_variance_raw_mean": [
+    0.1169172482818289,
+    0.33852475178854685,
+    0.49908817567107655,
+    0.04254130685554273
+  ],
+  "hard_target_resim": 0.17307407828654084
+}
