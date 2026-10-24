@@ -1,0 +1,16 @@
+{
+  "run": "bal_cinn_s1",
+  "problem": "ballistics",
+  "model": "cinn",
+  "n_params": 2986432,
+  "hidden": 303,
+  "blocks": 8,
+  "layers": 3,
+  "z_dims": 4,
+  "val_loss": -5.467679572105408,
+  "val_nll": -5.467679572105408,
+  "err_resim_provisional": 1.812201034965398e-05,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 1304.9815866947174,
+  "test_nll": -2.8364479541778564
+}

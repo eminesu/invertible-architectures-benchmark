@@ -1,0 +1,17 @@
+{
+  "run": "kin_inn_ml_s2",
+  "problem": "kinematics",
+  "model": "inn_ml",
+  "n_params": 2981584,
+  "hidden": 303,
+  "blocks": 8,
+  "layers": 3,
+  "z_dims": 2,
+  "val_loss": 2.090881872177124,
+  "val_nll": 2.090881872177124,
+  "val_y": 0.00023761441989336162,
+  "val_z": 1.983879017829895,
+  "err_resim_provisional": 0.00018608830392051015,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 1219.234733581543
+}

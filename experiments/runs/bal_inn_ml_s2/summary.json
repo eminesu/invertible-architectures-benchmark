@@ -1,0 +1,17 @@
+{
+  "run": "bal_inn_ml_s2",
+  "problem": "ballistics",
+  "model": "inn_ml",
+  "n_params": 2981584,
+  "hidden": 303,
+  "blocks": 8,
+  "layers": 3,
+  "z_dims": 3,
+  "val_loss": -3.7620918989181518,
+  "val_nll": -3.7620918989181518,
+  "val_y": 0.0001275694627111079,
+  "val_z": 2.5906447649002073,
+  "err_resim_provisional": 1.3619178219835362,
+  "resim_failed_fraction": 0.00085,
+  "train_seconds": 1287.1122760772705
+}

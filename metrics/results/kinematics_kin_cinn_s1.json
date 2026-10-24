@@ -1,0 +1,42 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_cinn_s1",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.0030619036431089866,
+    "mean_clamped": 0.0030619036431089866,
+    "median": 0.0009460448675058242,
+    "q1": 5.240274296941516e-05,
+    "q3": 0.0025125068590146626,
+    "max": 0.1773821924119594,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.007665853783619022,
+    "mean_clamped": 0.007665853783619022,
+    "median": 0.0055429146039998045,
+    "q1": 0.004682056162977066,
+    "q3": 0.007154737735710792,
+    "max": 0.18057376822420634,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 1.632618431213343e-05,
+    "mean_clamped": 1.632618431213343e-05,
+    "median": 2.0016125093040357e-06,
+    "q1": 1.2468970091335986e-06,
+    "q3": 4.635691713595711e-06,
+    "max": 0.002883370401980357,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 333.6369418000031,
+  "inference_ms_per_condition": 333.6369418000031,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "n_params": 2991280,
+  "device": "cpu"
+}

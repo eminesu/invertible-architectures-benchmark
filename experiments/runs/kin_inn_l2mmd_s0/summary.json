@@ -1,0 +1,16 @@
+{
+  "run": "kin_inn_l2mmd_s0",
+  "problem": "kinematics",
+  "model": "inn_l2mmd",
+  "n_params": 2981584,
+  "hidden": 303,
+  "blocks": 8,
+  "layers": 3,
+  "z_dims": 2,
+  "val_loss": -0.03154876433545724,
+  "val_y": 0.0018094221071805806,
+  "val_z": -0.0003335818648338318,
+  "err_resim_provisional": 552935.7140357527,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 1301.4801740646362
+}

@@ -1,0 +1,42 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_inn_l2mmd_s0",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.020023883541806748,
+    "mean_clamped": 0.020023883541806748,
+    "median": 0.007985061362113854,
+    "q1": 0.0029894119110890904,
+    "q3": 0.019863027231980024,
+    "max": 1.163033328807567,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.024688760178787277,
+    "mean_clamped": 0.024688760178787277,
+    "median": 0.012614516276414522,
+    "q1": 0.007640311450818282,
+    "q3": 0.024560081411057866,
+    "max": 1.167854648278477,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 599845.0196721137,
+    "mean_clamped": 4.412066160603208,
+    "median": 0.011907619612214329,
+    "q1": 0.0008178889817423787,
+    "q3": 317944.5239890901,
+    "max": 45581158.295763195,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 215.9966538000008,
+  "inference_ms_per_condition": 215.9966538000008,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "n_params": 2981584,
+  "device": "cpu"
+}

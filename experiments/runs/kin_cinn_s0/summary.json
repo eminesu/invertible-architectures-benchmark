@@ -1,0 +1,16 @@
+{
+  "run": "kin_cinn_s0",
+  "problem": "kinematics",
+  "model": "cinn",
+  "n_params": 2991280,
+  "hidden": 303,
+  "blocks": 8,
+  "layers": 3,
+  "z_dims": 4,
+  "val_loss": -11.346249055862426,
+  "val_nll": -11.346249055862426,
+  "err_resim_provisional": 1.1224920164268645e-05,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 1088.230147600174,
+  "test_nll": -11.112970352172852
+}
