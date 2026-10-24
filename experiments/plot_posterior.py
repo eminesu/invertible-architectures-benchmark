@@ -15,7 +15,8 @@ The row title gives the fraction of samples inside all four bounds.
 
 Any model plugs in through `posterior_figure(problem, sample, label, ...)` with
 `sample(y_star (M, dim_y), n) -> x (M, n, 4)`. The command line loads a trained
-run (MDN, hand-rolled FMPE, BayesFlow FMPE or diffusion) and calls it:
+run (MDN, hand-rolled FMPE, BayesFlow FMPE, diffusion, standard AE, cVAE,
+invertible AE or FIF) and calls it:
 
     .venv/bin/python experiments/plot_posterior.py kin_K16_s0
     .venv/bin/python experiments/plot_posterior.py bal_bf_fmpe_s0 --sampler euler:32
@@ -204,9 +205,34 @@ def load_bayesflow(run, args):
             f'{label} posterior vs. rejection ground truth, run {run}, {method} x {steps}')
 
 
+AE_LABELS = {'standard': 'standard AE', 'cvae': 'cVAE', 'invertible': 'invertible AE'}
+
+
+def load_autoencoder(run, args):
+    """Standard AE, cVAE or invertible AE run (experiments/autoencoder_bench.py)."""
+    from experiments.autoencoder_bench import load_run
+    model, cfg, _ = load_run(run)
+    label = AE_LABELS[cfg['family']]
+    sample = lambda y, n: model.sample(y, n).detach().cpu().numpy()  # noqa: E731
+    return (cfg['problem'], sample, label, f'ae_posterior_{run}',
+            f'{label} posterior vs. rejection ground truth, run {run}')
+
+
+def load_fif(run, args):
+    """Free-form injective flow run (experiments/train_fif.py)."""
+    from experiments.evaluate_fif import load_run
+    model, cfg, _ = load_run(run)
+    sample = lambda y, n: model.sample(y, n).detach().cpu().numpy()  # noqa: E731
+    return cfg['problem'], sample, 'FIF', f'fif_posterior_{run}', f'FIF posterior vs. rejection ground truth, run {run}'
+
+
 def load(run, args):
     if '_bf_' in run:
         return load_bayesflow(run, args)
+    if any(f'_{family}_' in run for family in AE_LABELS):
+        return load_autoencoder(run, args)
+    if '_fif' in run:
+        return load_fif(run, args)
     if '_fmpe' in run:
         return load_fmpe(run, args)
     if '_K' in run:
