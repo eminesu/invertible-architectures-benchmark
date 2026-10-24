@@ -15,9 +15,10 @@ and raises (or returns NaN with strict=False) otherwise. Upstream silently
 returns fewer rows than inputs in that case, which would misalign x and y.
 
 A second addition for the prior-conditioned FMPE (docs/conditional_fmpe.md):
-the Poisson rate of v0, lambda (upstream: fixed 15), is an argument of
-`InverseBallisticsModel.sample_prior`, and `make_conditional_dataset` draws a
-lambda per sample. With the default lambda = 15 the draws are unchanged.
+the prior's parameters are arguments of `sample_prior` (ballistics: the Poisson
+rate lambda of v0, upstream fixed 15; kinematics: the four Gaussian sigmas), and
+`make_conditional_dataset` draws them per sample (PRIOR_PARAMS). With the
+default parameters the draws are unchanged.
 """
 
 import numpy as np
@@ -34,8 +35,10 @@ class InverseKinematicsModel:
         self.lens = np.array(lens)
         self.sigmas = np.array(sigmas)
 
-    def sample_prior(self, n, rng=np.random):
-        return rng.randn(n, 4) * self.sigmas
+    def sample_prior(self, n, rng=np.random, sigmas=None):
+        """sigmas: the four prior standard deviations, a 4-vector or an (n, 4)
+        array (one prior per sample); None is the benchmark prior."""
+        return rng.randn(n, 4) * (self.sigmas if sigmas is None else sigmas)
 
     @staticmethod
     def _segment(p, length, angle):
@@ -133,17 +136,42 @@ def make_dataset(problem, n, seed):
     return x.astype(np.float32), y.astype(np.float32)
 
 
-# Training range of the ballistics prior parameter lambda (Poisson rate of v0)
-# for the prior-conditioned FMPE; contains the benchmark value 15.
-LAM_RANGE = (10.0, 20.0)
+# Prior parameters the prior-conditioned FMPE conditions on: their names, the
+# benchmark values and the training range (each parameter ~ U[range]; the range
+# contains the benchmark value). Ballistics: lambda, the Poisson rate of v0.
+# Kinematics: the joint-angle sigmas 1..3; the rail offset's sigma_0 stays 0.25
+# (option (b) of the kinematics spec, docs/conditional_fmpe.md). `tag` names
+# cache and result files.
+PRIOR_PARAMS = {
+    'ballistics': {'names': ('lam',), 'default': (15.0,), 'range': (10.0, 20.0), 'tag': 'lam'},
+    'kinematics': {'names': ('sigma1', 'sigma2', 'sigma3'), 'default': (0.5, 0.5, 0.5), 'range': (0.25, 0.75),
+                   'tag': 'sig'},
+}
 
 
-def make_conditional_dataset(n, seed, lam_range=LAM_RANGE):
-    """Ballistics (x, y, lam) triples: lam ~ U[lam_range], v0 ~ Poisson(lam),
-    x ~ prior given lam, y = f(x). float32 arrays of shape (n, 4), (n, 1), (n, 1)."""
-    model = InverseBallisticsModel()
+def prior_tag(problem, params):
+    """'lam12' / 'sig0.35-0.35-0.35': the prior parameters in a file name."""
+    return PRIOR_PARAMS[problem]['tag'] + '-'.join(f'{float(v):g}' for v in np.ravel(params))
+
+
+def sample_prior_given(problem, n, rng, params):
+    """n samples x ~ p(x | params). params: the PRIOR_PARAMS of `problem`, one
+    vector for all n samples or an (n, k) array, one prior per sample."""
+    model = MODELS[problem]()
+    p = np.asarray(params, dtype=np.float64)
+    if problem == 'ballistics':
+        return model.sample_prior(n, rng, lam=p.reshape(-1, 1) if p.ndim == 2 else p.item())
+    sigma0 = np.broadcast_to(model.sigmas[:1], p.shape[:-1] + (1,))
+    return model.sample_prior(n, rng, sigmas=np.concatenate([sigma0, p], -1))
+
+
+def make_conditional_dataset(problem, n, seed, prior_range=None):
+    """(x, y, c) triples for the prior-conditioned FMPE: every PRIOR_PARAMS entry
+    c_j ~ U[prior_range] (default: the problem's range), x ~ p(x | c), y = f(x).
+    float32 arrays of shape (n, 4), (n, dim_y), (n, k)."""
+    spec = PRIOR_PARAMS[problem]
     rng = np.random.RandomState(seed)
-    lam = rng.uniform(*lam_range, (n, 1))
-    x = model.sample_prior(n, rng, lam=lam)
-    y = model.forward_process(x)
-    return x.astype(np.float32), y.astype(np.float32), lam.astype(np.float32)
+    c = rng.uniform(*(prior_range or spec['range']), (n, len(spec['names'])))
+    x = sample_prior_given(problem, n, rng, c)
+    y = MODELS[problem]().forward_process(x)
+    return x.astype(np.float32), y.astype(np.float32), c.astype(np.float32)

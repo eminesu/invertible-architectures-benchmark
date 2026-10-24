@@ -11,6 +11,7 @@ are comparable; the train loss is the mean over the epoch's batches.
 
 import argparse
 import csv
+import json
 import os
 from pathlib import Path
 
@@ -53,7 +54,8 @@ def main():
     for s in ('top', 'right'):
         ax.spines[s].set_visible(False)
     ax.legend(fontsize=8, frameon=False)
-    ax.set_title(f'Prior-conditioned FMPE, ballistics: {", ".join(args.runs)}', fontsize=10)
+    problems = sorted({json.load(open(RUNS / run / 'config.json'))['problem'] for run in args.runs})
+    ax.set_title(f'Prior-conditioned FMPE, {", ".join(problems)}: {", ".join(args.runs)}', fontsize=10)
     fig.tight_layout()
     out = args.out or Path(__file__).parent / 'figures' / f'cfmpe_learning_curve_{"_".join(args.runs)}.png'
     fig.savefig(out, dpi=130)

@@ -1,0 +1,50 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_cfmpe_s0_sig0.65-0.65-0.65_midpointx16",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 1000,
+  "err_post": {
+    "mean": 0.0017045972515830053,
+    "mean_clamped": 0.0017045972515830053,
+    "median": 0.0002184857512727012,
+    "q1": -0.0003812843887166517,
+    "q3": 0.0010669463874590224,
+    "max": 0.2102134602931094,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.00645847914699167,
+    "mean_clamped": 0.00645847914699167,
+    "median": 0.005046822401737039,
+    "q1": 0.004465816860784733,
+    "q3": 0.005885132932911985,
+    "max": 0.21333055770516252,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 7.656633063299003e-06,
+    "mean_clamped": 7.656633063299003e-06,
+    "median": 2.1225120591754563e-06,
+    "q1": 1.5566804138075509e-06,
+    "q3": 3.323250618690988e-06,
+    "max": 0.002947478533626091,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 413.30700995901134,
+  "inference_ms_per_condition": 413.30700995901134,
+  "clamp": 10.0,
+  "sigma1": 0.65,
+  "sigma2": 0.65,
+  "sigma3": 0.65,
+  "method": "midpoint",
+  "steps": 16,
+  "nfe": 32,
+  "n_params": 2995423,
+  "device": "cpu",
+  "prior_range": [
+    0.25,
+    0.75
+  ]
+}

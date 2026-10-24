@@ -31,10 +31,11 @@ A y* far in the tails of p(y) may not reach N_GT accepted samples before
 max_proposals. Its posterior is then estimated from fewer samples (counted in
 the result; MMD with the unbiased estimator handles unequal set sizes).
 
-Prior-conditioned ground truth (ballistics, docs/conditional_fmpe.md): `lam`
-replaces the Poisson rate of v0 in the prior, v0 ~ Poisson(lam), so the
-reference is p(x | y*, lam). lam = None or 15 is the benchmark posterior and
-shares its cache file.
+Prior-conditioned ground truth (docs/conditional_fmpe.md): `prior_params`
+replaces the prior's parameters (data.toy_data.PRIOR_PARAMS: ballistics v0 ~
+Poisson(lambda), kinematics joint sigmas 1..3), so the reference is
+p(x | y*, prior_params). None or the benchmark values give the benchmark
+posterior and share its cache file.
 """
 
 import hashlib
@@ -44,7 +45,7 @@ from pathlib import Path
 import numpy as np
 from scipy.spatial import cKDTree
 
-from data.toy_data import InverseBallisticsModel
+from data.toy_data import PRIOR_PARAMS, prior_tag
 from metrics.benchmarks import forward_fn, load_test_conditions, prior
 
 N_GT = 1000
@@ -56,9 +57,9 @@ CACHE_DIR = Path(__file__).parent / 'cache'
 
 
 def rejection_sample(benchmark, y_star, n_gt=N_GT, sigma=None, seed=GT_SEED,
-                     chunk=None, max_proposals=None, verbose=True, lam=None):
+                     chunk=None, max_proposals=None, verbose=True, prior_params=None):
     """Returns (samples, n_proposals): samples is a list with one (n_i, 4) array
-    per y*, n_i <= n_gt. lam: ballistics v0 rate of the prior (None = 15)."""
+    per y*, n_i <= n_gt. prior_params: see the module docstring (None = benchmark prior)."""
     sigma = GT_SIGMA[benchmark] if sigma is None else sigma
     chunk = GT_CHUNK[benchmark] if chunk is None else chunk
     max_proposals = GT_MAX_PROPOSALS[benchmark] if max_proposals is None else max_proposals
@@ -73,7 +74,7 @@ def rejection_sample(benchmark, y_star, n_gt=N_GT, sigma=None, seed=GT_SEED,
         pending = np.flatnonzero(counts < n_gt)
         if len(pending) == 0:
             break
-        x = prior(benchmark, chunk, rng, lam=lam)
+        x = prior(benchmark, chunk, rng, prior_params)
         y = f(x)
         u = rng.rand(chunk)
         n_proposals += chunk
@@ -101,38 +102,41 @@ def rejection_sample(benchmark, y_star, n_gt=N_GT, sigma=None, seed=GT_SEED,
     return samples, n_proposals
 
 
-def _cache_path(benchmark, y_star, n_gt, sigma, seed, max_proposals, lam=None):
-    key = repr((n_gt, sigma, seed, max_proposals)) + ('' if lam is None else repr(float(lam)))
+def _cache_path(benchmark, y_star, n_gt, sigma, seed, max_proposals, prior_params=None):
+    key, tag = repr((n_gt, sigma, seed, max_proposals)), ''
+    if prior_params is not None:
+        p = tuple(float(v) for v in np.ravel(prior_params))
+        key += repr(p[0]) if len(p) == 1 else repr(p)
+        tag = '_' + prior_tag(benchmark, p)
     key = hashlib.sha1(np.ascontiguousarray(y_star, dtype=np.float64).tobytes() + key.encode()).hexdigest()[:10]
-    tag = '' if lam is None else f'_lam{lam:g}'
     return CACHE_DIR / f'gt_{benchmark}{tag}_sigma{sigma}_n{n_gt}_{key}.npz'
 
 
 def ground_truth_posterior(benchmark, y_star=None, n_gt=N_GT, sigma=None, seed=GT_SEED,
-                           max_proposals=None, verbose=True, lam=None):
+                           max_proposals=None, verbose=True, prior_params=None):
     """Cached ground-truth posterior samples for each y* (default: the shared
     test conditions). Returns a list of (n_i, 4) arrays, one per y*.
-    lam (ballistics): Poisson rate of v0 in the prior; None = the benchmark's 15.
+    prior_params: the prior's parameters (module docstring); None = benchmark prior.
 
-    The cache key covers y*, n_gt, sigma, seed, max_proposals and lam, so changing
-    any of them recomputes instead of silently reusing stale samples."""
-    if lam is not None and float(lam) == InverseBallisticsModel.default_lam:
-        lam = None  # same draws as the benchmark prior (tests/test_conditional_fmpe.py)
+    The cache key covers y*, n_gt, sigma, seed, max_proposals and prior_params, so
+    changing any of them recomputes instead of silently reusing stale samples."""
+    if prior_params is not None and np.array_equal(np.ravel(prior_params), PRIOR_PARAMS[benchmark]['default']):
+        prior_params = None  # same draws as the benchmark prior (tests/test_conditional_fmpe.py)
     if y_star is None:
         y_star, _ = load_test_conditions(benchmark)
     sigma = GT_SIGMA[benchmark] if sigma is None else sigma
     max_proposals = GT_MAX_PROPOSALS[benchmark] if max_proposals is None else max_proposals
-    path = _cache_path(benchmark, y_star, n_gt, sigma, seed, max_proposals, lam)
+    path = _cache_path(benchmark, y_star, n_gt, sigma, seed, max_proposals, prior_params)
 
     if not path.exists():
-        _compute_and_cache(path, benchmark, y_star, n_gt, sigma, seed, max_proposals, verbose, lam)
+        _compute_and_cache(path, benchmark, y_star, n_gt, sigma, seed, max_proposals, verbose, prior_params)
     with np.load(path) as f:
         return np.split(f['samples'].astype(np.float64), np.cumsum(f['counts'])[:-1])
 
 
-def _compute_and_cache(path, benchmark, y_star, n_gt, sigma, seed, max_proposals, verbose, lam=None):
+def _compute_and_cache(path, benchmark, y_star, n_gt, sigma, seed, max_proposals, verbose, prior_params=None):
     samples, n_proposals = rejection_sample(benchmark, y_star, n_gt, sigma, seed,
-                                            max_proposals=max_proposals, verbose=verbose, lam=lam)
+                                            max_proposals=max_proposals, verbose=verbose, prior_params=prior_params)
     counts = np.array([len(s) for s in samples])
     CACHE_DIR.mkdir(exist_ok=True)
     np.savez(path, samples=np.concatenate(samples).astype(np.float32), counts=counts,
@@ -145,7 +149,8 @@ def _compute_and_cache(path, benchmark, y_star, n_gt, sigma, seed, max_proposals
 
 if __name__ == '__main__':
     import sys
-    # python -m metrics.ground_truth ballistics:12   (ballistics GT under v0 ~ Poisson(12))
+    # python -m metrics.ground_truth ballistics:12 kinematics:0.35,0.35,0.35
+    # (ground truth under v0 ~ Poisson(12), resp. joint sigmas 0.35)
     for b in sys.argv[1:] or ['kinematics', 'ballistics']:
-        b, _, lam = b.partition(':')
-        ground_truth_posterior(b, lam=float(lam) if lam else None)
+        b, _, p = b.partition(':')
+        ground_truth_posterior(b, prior_params=[float(v) for v in p.split(',')] if p else None)

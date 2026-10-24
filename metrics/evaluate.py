@@ -35,6 +35,7 @@ from pathlib import Path
 
 import numpy as np
 
+from data.toy_data import PRIOR_PARAMS
 from metrics.benchmarks import forward_fn, load_test_conditions, prior
 from metrics.ground_truth import ground_truth_posterior
 from metrics.mmd import mmd
@@ -110,13 +111,14 @@ def summarize(values):
             'n_finite': int(len(v))}
 
 
-def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DIR, verbose=True, lam=None):
+def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DIR, verbose=True, prior_params=None):
     """Score one model on the shared test conditions; saves the per-y* arrays to
     <out_dir>/<benchmark>_<name>.npz and the summary to .json next to it.
-    lam (ballistics): score against the ground truth under v0 ~ Poisson(lam)
-    instead of the benchmark prior; sample_fn must then sample p(x | y*, lam)."""
+    prior_params (data.toy_data.PRIOR_PARAMS): score against the ground truth under
+    that prior instead of the benchmark prior; sample_fn must then sample
+    p(x | y*, prior_params)."""
     y_star, _ = load_test_conditions(benchmark)
-    gt = ground_truth_posterior(benchmark, y_star, verbose=verbose, lam=lam)
+    gt = ground_truth_posterior(benchmark, y_star, verbose=verbose, prior_params=prior_params)
 
     x, seconds = timed_sampling(sample_fn, y_star, n_samples)
     assert x.shape == (len(y_star), n_samples, 4), f'sample() returned {x.shape}'
@@ -134,8 +136,8 @@ def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DI
         'inference_ms_per_condition': 1000 * seconds / len(y_star),
         'clamp': CLAMP,
     }
-    if lam is not None:
-        summary['lam'] = float(lam)
+    if prior_params is not None:
+        summary.update(zip(PRIOR_PARAMS[benchmark]['names'], map(float, np.ravel(prior_params))))
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     np.savez(out_dir / f'{benchmark}_{name}.npz', err_post=post, err_post_biased=post_biased, err_resim=resim,

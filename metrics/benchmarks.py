@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-from data.toy_data import MODELS
+from data.toy_data import MODELS, sample_prior_given
 
 BENCHMARKS = tuple(MODELS)  # ('kinematics', 'ballistics')
 N_CONDITIONS = 1000
@@ -23,13 +23,13 @@ def get_model(benchmark):
     return MODELS[benchmark]()
 
 
-def prior(benchmark, n, rng, lam=None):
-    """n samples x ~ p(x), shape (n, 4). lam (ballistics only): Poisson rate of
-    v0; None is the benchmark prior."""
-    if lam is None:
+def prior(benchmark, n, rng, prior_params=None):
+    """n samples x ~ p(x), shape (n, 4). prior_params: the prior's parameters as
+    in data.toy_data.PRIOR_PARAMS (ballistics lambda, kinematics joint sigmas);
+    None is the benchmark prior."""
+    if prior_params is None:
         return get_model(benchmark).sample_prior(n, rng)
-    assert benchmark == 'ballistics', 'lam is the ballistics v0 rate'
-    return get_model(benchmark).sample_prior(n, rng, lam=lam)
+    return sample_prior_given(benchmark, n, rng, prior_params)
 
 
 def forward_fn(benchmark):

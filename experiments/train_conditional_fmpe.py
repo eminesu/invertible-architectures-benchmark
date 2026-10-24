@@ -1,11 +1,14 @@
-"""Train the prior-conditioned FMPE (models/conditional_fmpe.py) on ballistics.
+"""Train the prior-conditioned FMPE (models/conditional_fmpe.py).
 
-    .venv/bin/python experiments/train_conditional_fmpe.py --device mps --run-name bal_cfmpe_s0
+    .venv/bin/python experiments/train_conditional_fmpe.py --problem ballistics --device mps --run-name bal_cfmpe_s0
+    .venv/bin/python experiments/train_conditional_fmpe.py --problem kinematics --device mps --run-name kin_cfmpe_s0
 
-Training data are (x, y, lambda) triples with lambda ~ U[--lam-min, --lam-max],
-v0 ~ Poisson(lambda) (data/toy_data.py make_conditional_dataset). Everything
-else matches experiments/train_fmpe.py and the plain-FMPE headline run
-bal_fmpe_s0: 1M training samples, 50 epochs, batch 1000, Adam 1e-3 + cosine,
+Training data are (x, y, c) triples, c the prior parameters of
+data.toy_data.PRIOR_PARAMS, each ~ U[--prior-min, --prior-max] (default: the
+problem's range): ballistics lambda in [10, 20] with v0 ~ Poisson(lambda),
+kinematics the joint sigmas 1..3, each in [0.25, 0.75]. Everything else matches
+experiments/train_fmpe.py and the plain-FMPE headline runs
+bal_fmpe_s0 / kin_fmpe_s0: 1M training samples, 50 epochs, batch 1000, Adam 1e-3 + cosine,
 weight decay 1e-5, grad clip 10, 6 gated blocks at ~3M parameters, time prior
 p(t) ∝ t (alpha = 1). Outputs in experiments/runs/<run-name>/ as train_fmpe.py
 (config.json, log.csv, summary.json, model.pt), plus checkpoint.pt after every
@@ -25,7 +28,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from data.toy_data import LAM_RANGE, InverseBallisticsModel, make_conditional_dataset
+from data.toy_data import MODELS, PRIOR_PARAMS, make_conditional_dataset
 from experiments.train_fmpe import RUNS, pick_device
 from metrics.benchmarks import forward_fn
 from models.conditional_fmpe import ConditionalFMPE
@@ -33,36 +36,37 @@ from models.fmpe import ACTIVATIONS, count_parameters, width_for_budget
 
 
 @torch.no_grad()
-def evaluate_loss(model, x, y, lam, noise, batch_size):
+def evaluate_loss(model, x, y, c, noise, batch_size):
     total = 0.0
     for s in range(0, len(x), batch_size):
         sl = slice(s, s + batch_size)
-        total += model.loss(x[sl], y[sl], lam[sl], noise=(noise[0][sl], noise[1][sl])).item() * len(x[sl])
+        total += model.loss(x[sl], y[sl], c[sl], noise=(noise[0][sl], noise[1][sl])).item() * len(x[sl])
     return total / len(x)
 
 
 @torch.no_grad()
-def provisional_resim(model, y, lam, n_conditions=200, n_samples=100, steps=16):
-    """Mean ||f(x) - y||^2 over a few validation (y, lambda): a cheap progress
+def provisional_resim(model, problem, y, c, n_conditions=200, n_samples=100, steps=16):
+    """Mean ||f(x) - y||^2 over a few validation (y, c): a cheap progress
     signal. Report metrics.evaluate numbers, not this."""
-    y, lam = y[:n_conditions], lam[:n_conditions]
-    x = model.sample(y, lam, n_samples, steps=steps).cpu().numpy().reshape(-1, model.x_dims)
-    y_resim = forward_fn('ballistics')(x).reshape(len(y), n_samples, -1)
+    y, c = y[:n_conditions], c[:n_conditions]
+    x = model.sample(y, c, n_samples, steps=steps).cpu().numpy().reshape(-1, model.x_dims)
+    y_resim = forward_fn(problem)(x).reshape(len(y), n_samples, -1)
     sq = ((y_resim - y.cpu().numpy()[:, None, :]) ** 2).sum(-1)
     return float(np.nanmean(sq)), float(np.isnan(sq).mean())
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--lam-min', type=float, default=LAM_RANGE[0])
-    p.add_argument('--lam-max', type=float, default=LAM_RANGE[1])
+    p.add_argument('--problem', choices=list(PRIOR_PARAMS), default='ballistics')
+    p.add_argument('--prior-min', type=float, default=None, help="default: the problem's PRIOR_PARAMS range")
+    p.add_argument('--prior-max', type=float, default=None)
     p.add_argument('--blocks', type=int, default=6, help='gated residual blocks (2 linear layers each)')
     p.add_argument('--hidden', type=int, default=None, help='hidden width; default: fit --param-budget')
     p.add_argument('--param-budget', type=int, default=3_000_000)
     p.add_argument('--activation', default='silu', choices=list(ACTIVATIONS))
     p.add_argument('--sigma-min', type=float, default=1e-4)
     p.add_argument('--alpha', type=float, default=1.0,
-                   help='time prior p(t) ∝ t^alpha; 1 = the plain-FMPE headline bal_fmpe_s0 (docs/fmpe.md)')
+                   help='time prior p(t) ∝ t^alpha; 1 = the plain-FMPE headlines bal/kin_fmpe_s0 (docs/fmpe.md)')
     p.add_argument('--n-train', type=int, default=1_000_000)
     p.add_argument('--n-val', type=int, default=20_000)
     p.add_argument('--epochs', type=int, default=50)
@@ -74,40 +78,44 @@ def main():
     p.add_argument('--device', default='auto')
     p.add_argument('--run-name', default=None)
     args = p.parse_args()
-    assert args.lam_min <= InverseBallisticsModel.default_lam <= args.lam_max, 'lambda = 15 must be in the range'
+    spec = PRIOR_PARAMS[args.problem]
+    prior_range = (spec['range'][0] if args.prior_min is None else args.prior_min,
+                   spec['range'][1] if args.prior_max is None else args.prior_max)
+    assert all(prior_range[0] <= d <= prior_range[1] for d in spec['default']), 'benchmark prior must be in the range'
 
     torch.manual_seed(args.seed)
     device = pick_device(args.device)
-    problem = InverseBallisticsModel()
-    y_dims, x_dims = problem.n_observations, problem.n_parameters
+    problem = MODELS[args.problem]()
+    y_dims, x_dims, prior_dims = problem.n_observations, problem.n_parameters, len(spec['names'])
 
-    hidden = args.hidden or width_for_budget(x_dims, y_dims + 1, args.blocks, args.param_budget)
-    model = ConditionalFMPE(x_dims, y_dims, hidden, args.blocks, args.activation, args.sigma_min, args.alpha)
+    hidden = args.hidden or width_for_budget(x_dims, y_dims + prior_dims, args.blocks, args.param_budget)
+    model = ConditionalFMPE(x_dims, y_dims, hidden, args.blocks, args.activation, args.sigma_min, args.alpha,
+                            prior_dims)
     n_params = count_parameters(model)
 
-    run_name = args.run_name or f'bal_cfmpe_s{args.seed}_{time.strftime("%Y%m%d-%H%M%S")}'
+    run_name = args.run_name or f'{args.problem[:3]}_cfmpe_s{args.seed}_{time.strftime("%Y%m%d-%H%M%S")}'
     out = os.path.join(RUNS, run_name)
     os.makedirs(out, exist_ok=True)
     ckpt_path = os.path.join(out, 'checkpoint.pt')
     ckpt = torch.load(ckpt_path, map_location='cpu', weights_only=False) if os.path.exists(ckpt_path) else None
     if ckpt is not None:
         assert ckpt['args'] == vars(args), 'checkpoint was written with different arguments'
-    config = {**vars(args), 'problem': 'ballistics', 'hidden_resolved': hidden, 'n_params': n_params,
-              'device_resolved': str(device), 'torch': torch.__version__}
+    config = {**vars(args), 'prior_names': spec['names'], 'prior_range': prior_range, 'hidden_resolved': hidden,
+              'n_params': n_params, 'device_resolved': str(device), 'torch': torch.__version__}
     json.dump(config, open(os.path.join(out, 'config.json'), 'w'), indent=2)
     print(f'{run_name}: hidden={hidden}, {n_params:,} trainable parameters, device={device}')
 
-    # Same seeds per split as train_fmpe.py (the draws differ: lambda comes first).
-    lam_range = (args.lam_min, args.lam_max)
+    # Same seeds per split as train_fmpe.py (the draws differ: c comes first).
     t = time.time()
-    x_tr, y_tr, l_tr = (torch.from_numpy(a) for a in make_conditional_dataset(args.n_train, 10_000 + args.seed, lam_range))
-    x_va, y_va, l_va = (torch.from_numpy(a).to(device)
-                        for a in make_conditional_dataset(args.n_val, 20_000 + args.seed, lam_range))
+    x_tr, y_tr, c_tr = (torch.from_numpy(a)
+                        for a in make_conditional_dataset(args.problem, args.n_train, 10_000 + args.seed, prior_range))
+    x_va, y_va, c_va = (torch.from_numpy(a).to(device)
+                        for a in make_conditional_dataset(args.problem, args.n_val, 20_000 + args.seed, prior_range))
     print(f'data generated in {time.time() - t:.0f}s')
 
-    model.set_normalization(x_tr, y_tr, l_tr)
+    model.set_normalization(x_tr, y_tr, c_tr)
     model.to(device)
-    x_tr, y_tr, l_tr = x_tr.to(device), y_tr.to(device), l_tr.to(device)
+    x_tr, y_tr, c_tr = x_tr.to(device), y_tr.to(device), c_tr.to(device)
     # Fixed (x0, t) for the validation loss, so epochs are comparable.
     g = torch.Generator().manual_seed(1)
     val_noise = (torch.randn(args.n_val, x_dims, generator=g).to(device),
@@ -138,7 +146,7 @@ def main():
         running = 0.0
         for b in range(steps_per_epoch):
             idx = perm[b * args.batch_size:(b + 1) * args.batch_size]
-            loss = model.loss(x_tr[idx], y_tr[idx], l_tr[idx])
+            loss = model.loss(x_tr[idx], y_tr[idx], c_tr[idx])
             if not torch.isfinite(loss):
                 raise RuntimeError(f'non-finite loss at step {step}')
             opt.zero_grad(set_to_none=True)
@@ -147,7 +155,7 @@ def main():
             opt.step(); sched.step()
             running += loss.item(); step += 1
         model.eval()
-        val = evaluate_loss(model, x_va, y_va, l_va, val_noise, 10_000)
+        val = evaluate_loss(model, x_va, y_va, c_va, val_noise, 10_000)
         train = running / steps_per_epoch
         log.writerow([epoch, step, train, val, sched.get_last_lr()[0], time.time() - t0])
         log_file.flush()
@@ -162,12 +170,12 @@ def main():
 
     torch.save(model.state_dict(), os.path.join(out, 'model.pt'))
 
-    resim, failed = provisional_resim(model, y_va, l_va)
+    resim, failed = provisional_resim(model, args.problem, y_va, c_va)
     summary = {
-        'run': run_name, 'problem': 'ballistics', 'n_params': n_params, 'hidden': hidden, 'blocks': args.blocks,
-        'lam_range': list(lam_range), 'train_loss': train, 'val_loss': val,
+        'run': run_name, 'problem': args.problem, 'n_params': n_params, 'hidden': hidden, 'blocks': args.blocks,
+        'prior_names': spec['names'], 'prior_range': list(prior_range), 'train_loss': train, 'val_loss': val,
         'err_resim_provisional': resim, 'resim_failed_fraction': failed,
-        'provisional_setup': '200 val (y, lambda) x 100 samples, rk4 16 steps (64 NFE)',
+        'provisional_setup': '200 val (y, c) x 100 samples, rk4 16 steps (64 NFE)',
         'train_seconds': time.time() - t0,
     }
     json.dump(summary, open(os.path.join(out, 'summary.json'), 'w'), indent=2)

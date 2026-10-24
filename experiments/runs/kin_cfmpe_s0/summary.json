@@ -1,0 +1,22 @@
+{
+  "run": "kin_cfmpe_s0",
+  "problem": "kinematics",
+  "n_params": 2995423,
+  "hidden": 497,
+  "blocks": 6,
+  "prior_names": [
+    "sigma1",
+    "sigma2",
+    "sigma3"
+  ],
+  "prior_range": [
+    0.25,
+    0.75
+  ],
+  "train_loss": 3.12108473443985,
+  "val_loss": 3.123781204223633,
+  "err_resim_provisional": 0.00023091095337860406,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val (y, c) x 100 samples, rk4 16 steps (64 NFE)",
+  "train_seconds": 1660.4554460048676
+}
