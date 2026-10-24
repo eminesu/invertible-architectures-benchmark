@@ -1,0 +1,9 @@
+{
+  "run": "kin_fif_s0",
+  "problem": "kinematics",
+  "prior_mode": "fixed",
+  "best_epoch": 48,
+  "validation_resim": 0.0002088595809538377,
+  "n_params": 2996080,
+  "seconds": 2835.4935542000458
+}

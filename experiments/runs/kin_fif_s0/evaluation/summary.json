@@ -1,0 +1,47 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_fif_s0",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.0027935854017569614,
+    "mean_clamped": 0.0027935854017569614,
+    "median": 0.00042933367320985294,
+    "q1": -0.00034040401326995706,
+    "q3": 0.0018703333749624518,
+    "max": 0.09113037215309117,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.007406199841925504,
+    "mean_clamped": 0.007406199841925504,
+    "median": 0.005043952538676177,
+    "q1": 0.0042538605752149294,
+    "q3": 0.006472699516094971,
+    "max": 0.09463188958916025,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.0002700405266394867,
+    "mean_clamped": 0.0002700405266394867,
+    "median": 0.00020595412717967315,
+    "q1": 0.00020075435448436751,
+    "q3": 0.00021188730843765347,
+    "max": 0.025855554612999876,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 3.0400786999380216,
+  "inference_ms_per_condition": 3.0400786999380216,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "prior_mode": "fixed",
+  "method": "conditional FIF with clean-output KDE bridge",
+  "sampling_sigma": 0.01,
+  "reference_sigma": 0.01,
+  "discrete_speed": false,
+  "evaluation_seed": 0,
+  "device": "cuda"
+}
