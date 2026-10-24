@@ -19,8 +19,6 @@ Minimum accepted reference samples per condition: {'kinematics': 206, 'ballistic
 | ballistics | cvae | baseline | 0.03253 | 0.12223 | 0.000% | 1.3 |
 | ballistics | invertible | baseline | 0.00810 | 0.11778 | 0.049% | 3.4 |
 
-Times are measured on the same CPU/container, including host conversion, with 8192-row decoder chunks. They are not comparable to the paper GPU figures. Checkpoint selection uses validation only, with a 100-unit penalty per invalid re-simulation; that selection score is not a headline metric.
-
 ## Validation probes
 
 | Problem | Family | Ablation | Parameters | Best validation score | Epoch |

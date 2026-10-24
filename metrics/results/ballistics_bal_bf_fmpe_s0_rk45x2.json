@@ -1,0 +1,44 @@
+{
+  "benchmark": "ballistics",
+  "model": "bal_bf_fmpe_s0_rk45x2",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 111,
+  "err_post": {
+    "mean": 0.02869534340417494,
+    "mean_clamped": 0.02869534340417494,
+    "median": 0.010927639030403807,
+    "q1": 0.0054431890812357,
+    "q3": 0.052006878744848495,
+    "max": 0.09562797767822695,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.03427632821860979,
+    "mean_clamped": 0.03427632821860979,
+    "median": 0.016496987532385238,
+    "q1": 0.011120971339985616,
+    "q3": 0.0574482055039716,
+    "max": 0.1009549091769919,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.6872682611289739,
+    "mean_clamped": 0.6872682611289739,
+    "median": 0.7001065251524297,
+    "q1": 0.6388088579785884,
+    "q3": 0.7431637540519782,
+    "max": 0.9169615303204152,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 2.8000000000000003e-05,
+  "inference_seconds": 192.0911315830017,
+  "inference_ms_per_condition": 192.0911315830017,
+  "clamp": 10.0,
+  "method": "rk45",
+  "steps": 2,
+  "nfe": 12,
+  "n_params": 2993900,
+  "device": "cpu",
+  "implementation": "bayesflow 2.0.14"
+}

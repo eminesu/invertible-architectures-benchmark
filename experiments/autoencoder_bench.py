@@ -1,11 +1,4 @@
 """Train, evaluate and diagnose standard AE, CVAE and tied-transpose InvAuto.
-
-Examples (Windows):
-  .venv/Scripts/python experiments/autoencoder_bench.py train --family cvae --problem kinematics --profile pilot
-  .venv/Scripts/python experiments/autoencoder_bench.py evaluate RUN --scope pilot
-  .venv/Scripts/python experiments/autoencoder_bench.py diagnose RUN
-
-Pilot results are explicitly labelled and are never paper-replication results.
 """
 import argparse
 import csv
@@ -293,6 +286,7 @@ def parser():
         t.add_argument('--'+key, type=int)
     t.add_argument('--lr', type=float, default=1e-3); t.add_argument('--weight-decay', type=float, default=1e-5)
     t.add_argument('--grad-clip', type=float, default=10.0)
+    
     for action in ['evaluate', 'diagnose']:
         a = sub.add_parser(action); a.add_argument('run'); a.add_argument('--device', default='cpu')
         if action == 'evaluate':

@@ -25,7 +25,6 @@ class InvertibleAutoencoder(Autoencoder):
         del self.decoder  # decoder uses exactly the encoder parameters
 
     def activation(self, x, inverse=False):
-        # Modified LeakyReLU, Teng et al. Eqs. 5-6, alpha=2 by default.
         a = 1/self.slope if inverse else self.slope
         return torch.where(x >= 0, x/a, x*a)
 

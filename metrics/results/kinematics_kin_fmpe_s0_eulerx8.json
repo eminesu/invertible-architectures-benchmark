@@ -1,0 +1,43 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_fmpe_s0_eulerx8",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.008614257503972366,
+    "mean_clamped": 0.008614257503972366,
+    "median": 0.006730233966652399,
+    "q1": 0.004153094348298747,
+    "q3": 0.009214587511574002,
+    "max": 0.33927662162563665,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.01314686169109314,
+    "mean_clamped": 0.01314686169109314,
+    "median": 0.011163627445987867,
+    "q1": 0.008791055826759486,
+    "q3": 0.01369158505737672,
+    "max": 0.34221499238034214,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 1.811195847334572e-05,
+    "mean_clamped": 1.811195847334572e-05,
+    "median": 5.898418423587292e-06,
+    "q1": 3.977769143256627e-06,
+    "q3": 1.048262503670436e-05,
+    "max": 0.000516749658985845,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 91.75298049999401,
+  "inference_ms_per_condition": 91.75298049999401,
+  "clamp": 10.0,
+  "method": "euler",
+  "steps": 8,
+  "nfe": 8,
+  "n_params": 2993932,
+  "device": "cpu"
+}

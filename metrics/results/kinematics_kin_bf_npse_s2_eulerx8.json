@@ -1,0 +1,50 @@
+{
+  "benchmark": "kinematics",
+  "model": "kin_bf_npse_s2_eulerx8",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 444,
+  "err_post": {
+    "mean": 0.00427986746712541,
+    "mean_clamped": 0.00427986746712541,
+    "median": 0.0012480145641730056,
+    "q1": 0.0003760808251070391,
+    "q3": 0.002524635400079467,
+    "max": 0.35041700048633073,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.008895128382331386,
+    "mean_clamped": 0.008895128382331386,
+    "median": 0.005929777096650435,
+    "q1": 0.005071615670230234,
+    "q3": 0.007117008708428907,
+    "max": 0.3533801661732823,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.0008181838563208985,
+    "mean_clamped": 0.0008181838563208985,
+    "median": 0.0005156688823367366,
+    "q1": 0.00026826137767441415,
+    "q3": 0.0010576431082955796,
+    "max": 0.006312960908048902,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 123.82313979201717,
+  "inference_ms_per_condition": 123.82313979201717,
+  "clamp": 10.0,
+  "method": "euler",
+  "steps": 8,
+  "nfe": 8,
+  "n_params": 2994309,
+  "device": "cpu",
+  "implementation": "bayesflow 2.0.14",
+  "load_avg_before": [
+    2.50537109375,
+    3.0009765625,
+    3.169921875
+  ],
+  "seconds_per_nfe": 15.477892474002147
+}

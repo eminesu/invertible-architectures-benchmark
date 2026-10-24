@@ -1,8 +1,3 @@
-"""Run all three families on both problems, optionally with TODO ablations.
-
-Each stage is a separate process; failures are recorded and return nonzero.
-Existing completed stages are reused, so an interrupted suite can be resumed.
-"""
 import argparse
 import json
 import subprocess
@@ -28,7 +23,6 @@ def main():
     jobs = [(b, f, 'baseline', []) for b in ('kinematics', 'ballistics')
             for f in ('standard', 'cvae', 'invertible')]
     if args.ablations:
-        # One-factor probes, not a claim of exhaustive hyperparameter tuning.
         for b in ('kinematics', 'ballistics'):
             for label, opts in [
                 ('wz10', ['--w-z', '10']), ('wz0', ['--w-z', '0']),

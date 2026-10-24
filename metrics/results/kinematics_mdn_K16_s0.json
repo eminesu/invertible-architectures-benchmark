@@ -32,7 +32,7 @@
     "n_finite": 1000
   },
   "resim_failed_fraction": 0.0,
-  "inference_seconds": 0.07472133400733583,
-  "inference_ms_per_condition": 0.07472133400733583,
+  "inference_seconds": 0.07391441700747237,
+  "inference_ms_per_condition": 0.07391441700747237,
   "clamp": 10.0
 }

@@ -19,7 +19,7 @@ Minimum accepted reference samples per condition: {'kinematics': 444, 'ballistic
 | ballistics | cvae | baseline | 0.00879 | 0.00138 | 0.067% | 2197.9 |
 | ballistics | invertible | baseline | 0.00861 | 0.00388 | 0.069% | 4848.7 |
 
-Times are measured on the same CPU/container, including host conversion, with 8192-row decoder chunks. They are not comparable to the paper GPU figures. Checkpoint selection uses validation only, with a 100-unit penalty per invalid re-simulation; that selection score is not a headline metric.
+Times are measured on the hardware recorded in each run configuration, including device synchronization and host conversion, with 8192-row decoder chunks. Hardware and timing scope differ from the paper, so the timings are not directly comparable. Checkpoint selection uses validation only, with a 100-unit penalty per invalid re-simulation; that selection score is not a headline metric.
 
 ## Validation probes
 
@@ -36,4 +36,4 @@ One-factor ablations are probes. A single seed and a short schedule do not estab
 
 Detailed JSON accompanies this report. Each run keeps config, best/final checkpoints, training log, evaluation arrays, latent/reconstruction summaries and physical posterior plots under experiments/runs/.
 
-![Baseline comparison](third_trial_of_encoders_full_gpu.png)
+![Baseline comparison](second_trial_of_encoders_full_gpu.png)
