@@ -1,6 +1,6 @@
 [
   {
-    "run": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+    "run": "kin_standard_s0",
     "problem": "kinematics",
     "family": "standard",
     "ablation": "baseline",
@@ -11,7 +11,7 @@
       "family": "standard",
       "problem": "kinematics",
       "profile": "full",
-      "run_name": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+      "run_name": "kin_standard_s0",
       "device": "cuda",
       "param_budget": 3000000,
       "hidden": null,
@@ -59,7 +59,7 @@
       }
     },
     "training": {
-      "run": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+      "run": "kin_standard_s0",
       "profile": "full",
       "best_epoch": 50,
       "validation_selection_score": 0.0002975780214447857,
@@ -75,7 +75,7 @@
     },
     "evaluation": {
       "benchmark": "kinematics",
-      "model": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+      "model": "kin_standard_s0",
       "n_conditions": 1000,
       "n_samples": 1000,
       "n_gt_min": 444,
@@ -134,7 +134,7 @@
       }
     },
     "diagnostics": {
-      "run": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+      "run": "kin_standard_s0",
       "profile": "full",
       "diagnostic_seed": 0,
       "forward_y_mse_standardized": 0.00044214000809006393,
@@ -175,7 +175,7 @@
     }
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+    "run": "kin_cvae_s0",
     "problem": "kinematics",
     "family": "cvae",
     "ablation": "baseline",
@@ -186,7 +186,7 @@
       "family": "cvae",
       "problem": "kinematics",
       "profile": "full",
-      "run_name": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+      "run_name": "kin_cvae_s0",
       "device": "cuda",
       "param_budget": 3000000,
       "hidden": null,
@@ -234,7 +234,7 @@
       }
     },
     "training": {
-      "run": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+      "run": "kin_cvae_s0",
       "profile": "full",
       "best_epoch": 27,
       "validation_selection_score": 0.00040034363807667857,
@@ -250,7 +250,7 @@
     },
     "evaluation": {
       "benchmark": "kinematics",
-      "model": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+      "model": "kin_cvae_s0",
       "n_conditions": 1000,
       "n_samples": 1000,
       "n_gt_min": 444,
@@ -309,7 +309,7 @@
       }
     },
     "diagnostics": {
-      "run": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+      "run": "kin_cvae_s0",
       "profile": "full",
       "diagnostic_seed": 0,
       "kl_per_dimension": [
@@ -354,7 +354,7 @@
     }
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+    "run": "kin_invertible_s0",
     "problem": "kinematics",
     "family": "invertible",
     "ablation": "baseline",
@@ -365,7 +365,7 @@
       "family": "invertible",
       "problem": "kinematics",
       "profile": "full",
-      "run_name": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+      "run_name": "kin_invertible_s0",
       "device": "cuda",
       "param_budget": 3000000,
       "hidden": null,
@@ -413,7 +413,7 @@
       }
     },
     "training": {
-      "run": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+      "run": "kin_invertible_s0",
       "profile": "full",
       "best_epoch": 43,
       "validation_selection_score": 0.0019145888273457588,
@@ -429,7 +429,7 @@
     },
     "evaluation": {
       "benchmark": "kinematics",
-      "model": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+      "model": "kin_invertible_s0",
       "n_conditions": 1000,
       "n_samples": 1000,
       "n_gt_min": 444,
@@ -488,7 +488,7 @@
       }
     },
     "diagnostics": {
-      "run": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+      "run": "kin_invertible_s0",
       "profile": "full",
       "diagnostic_seed": 0,
       "forward_y_mse_standardized": 0.0012474809773266315,
@@ -536,7 +536,7 @@
     }
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+    "run": "bal_standard_s0",
     "problem": "ballistics",
     "family": "standard",
     "ablation": "baseline",
@@ -547,7 +547,7 @@
       "family": "standard",
       "problem": "ballistics",
       "profile": "full",
-      "run_name": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+      "run_name": "bal_standard_s0",
       "device": "cuda",
       "param_budget": 3000000,
       "hidden": null,
@@ -595,7 +595,7 @@
       }
     },
     "training": {
-      "run": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+      "run": "bal_standard_s0",
       "profile": "full",
       "best_epoch": 46,
       "validation_selection_score": 0.003991889983150164,
@@ -611,7 +611,7 @@
     },
     "evaluation": {
       "benchmark": "ballistics",
-      "model": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+      "model": "bal_standard_s0",
       "n_conditions": 1000,
       "n_samples": 1000,
       "n_gt_min": 111,
@@ -670,7 +670,7 @@
       }
     },
     "diagnostics": {
-      "run": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+      "run": "bal_standard_s0",
       "profile": "full",
       "diagnostic_seed": 0,
       "forward_y_mse_standardized": 0.00017452894826419652,
@@ -720,7 +720,7 @@
     }
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+    "run": "bal_cvae_s0",
     "problem": "ballistics",
     "family": "cvae",
     "ablation": "baseline",
@@ -731,7 +731,7 @@
       "family": "cvae",
       "problem": "ballistics",
       "profile": "full",
-      "run_name": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+      "run_name": "bal_cvae_s0",
       "device": "cuda",
       "param_budget": 3000000,
       "hidden": null,
@@ -779,7 +779,7 @@
       }
     },
     "training": {
-      "run": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+      "run": "bal_cvae_s0",
       "profile": "full",
       "best_epoch": 18,
       "validation_selection_score": 0.0013259604278742136,
@@ -795,7 +795,7 @@
     },
     "evaluation": {
       "benchmark": "ballistics",
-      "model": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+      "model": "bal_cvae_s0",
       "n_conditions": 1000,
       "n_samples": 1000,
       "n_gt_min": 111,
@@ -854,7 +854,7 @@
       }
     },
     "diagnostics": {
-      "run": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+      "run": "bal_cvae_s0",
       "profile": "full",
       "diagnostic_seed": 0,
       "kl_per_dimension": [
@@ -909,7 +909,7 @@
     }
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+    "run": "bal_invertible_s0",
     "problem": "ballistics",
     "family": "invertible",
     "ablation": "baseline",
@@ -920,7 +920,7 @@
       "family": "invertible",
       "problem": "ballistics",
       "profile": "full",
-      "run_name": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+      "run_name": "bal_invertible_s0",
       "device": "cuda",
       "param_budget": 3000000,
       "hidden": null,
@@ -968,7 +968,7 @@
       }
     },
     "training": {
-      "run": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+      "run": "bal_invertible_s0",
       "profile": "full",
       "best_epoch": 50,
       "validation_selection_score": 0.0026782424607286774,
@@ -984,7 +984,7 @@
     },
     "evaluation": {
       "benchmark": "ballistics",
-      "model": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+      "model": "bal_invertible_s0",
       "n_conditions": 1000,
       "n_samples": 1000,
       "n_gt_min": 111,
@@ -1043,7 +1043,7 @@
       }
     },
     "diagnostics": {
-      "run": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+      "run": "bal_invertible_s0",
       "profile": "full",
       "diagnostic_seed": 0,
       "forward_y_mse_standardized": 0.00019207916921004653,

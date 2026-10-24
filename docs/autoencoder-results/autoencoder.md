@@ -210,11 +210,11 @@ Rounding only v0 lowers this diagnostic score for every family; standardizing x 
 
 ## Result files and reproduction
 
-The tables come from [pilot records](first_trial_of_encoders_gpu.json) and [full records](second_trial_of_encoders_full_gpu.json). Each JSON contains configurations, selected epochs, training summaries, evaluation results, and diagnostics. Individual artifacts are stored under:
+The tables come from [pilot records](first_trial_of_encoders_gpu.json) and [full records](second_trial_of_encoders_full_gpu.json). Each JSON contains configurations, selected epochs, training summaries, evaluation results, and diagnostics. Artifacts for the retained full runs are stored under:
 
 ```text
-experiments/runs/first_trial_of_encoders_gpu_<benchmark>_<family>_baseline_pilot_s0/
-experiments/runs/second_trial_of_encoders_full_gpu_<benchmark>_<family>_baseline_full_s0/
+experiments/runs/kin_<family>_s0/
+experiments/runs/bal_<family>_s0/
 ```
 
 Each run contains `config.json`, `log.csv`, `summary.json`, `model.pt`, `last_model.pt`, and evaluation/diagnostic outputs. Run directories are ignored by Git; the report JSON files keep the reported numbers available without model weights.
