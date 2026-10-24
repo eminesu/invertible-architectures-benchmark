@@ -1,0 +1,15 @@
+{
+  "run": "kin_K16_s0",
+  "problem": "kinematics",
+  "components": 16,
+  "n_params": 2995197,
+  "hidden": 959,
+  "layers": 4,
+  "val_nll": -6.946176052093506,
+  "test_nll": -7.015829086303711,
+  "err_resim_provisional": 0.0006400576410360761,
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.2936249580234289,
+  "inference_setup": "4000 samples for each of 1000 y*, device=cpu",
+  "train_seconds": 1089.2107141017914
+}

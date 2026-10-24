@@ -1,0 +1,50 @@
+{
+  "benchmark": "ballistics",
+  "model": "bal_bf_npse_s1_eulerx8",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 111,
+  "err_post": {
+    "mean": 0.008355595576701468,
+    "mean_clamped": 0.008355595576701468,
+    "median": 0.006526215323585688,
+    "q1": 0.0037869103926766456,
+    "q3": 0.010409286985419236,
+    "max": 0.06860822418039914,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.013918379805007876,
+    "mean_clamped": 0.013918379805007876,
+    "median": 0.012097249851729441,
+    "q1": 0.009500108849410882,
+    "q3": 0.015825940748599804,
+    "max": 0.09417637012895186,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.007862389629734564,
+    "mean_clamped": 0.007862389629734564,
+    "median": 0.005297606506777589,
+    "q1": 0.002841177400079938,
+    "q3": 0.009762711124559996,
+    "max": 0.1425781634457991,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 3e-06,
+  "inference_seconds": 139.72969283303246,
+  "inference_ms_per_condition": 139.72969283303246,
+  "clamp": 10.0,
+  "method": "euler",
+  "steps": 8,
+  "nfe": 8,
+  "n_params": 2993900,
+  "device": "cpu",
+  "implementation": "bayesflow 2.0.14",
+  "load_avg_before": [
+    2.31787109375,
+    3.3095703125,
+    3.35302734375
+  ],
+  "seconds_per_nfe": 17.466211604129057
+}

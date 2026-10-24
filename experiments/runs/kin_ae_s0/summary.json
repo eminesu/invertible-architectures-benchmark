@@ -1,0 +1,18 @@
+{
+  "run": "kin_ae_s0",
+  "problem": "kinematics",
+  "model": "autoencoder",
+  "n_params": 2999078,
+  "hidden": 705,
+  "layers": 4,
+  "z_dims": 2,
+  "w_y": 1.0,
+  "w_z": 100.0,
+  "latent_mmd": "joint",
+  "val_recon": 0.0009325959370471537,
+  "val_y": 0.00028075148293282837,
+  "val_z": -0.00039498209953308104,
+  "val_resim_provisional": 0.00039938811559915653,
+  "val_resim_failed_fraction": 0.0,
+  "train_seconds": 2118.9321558475494
+}

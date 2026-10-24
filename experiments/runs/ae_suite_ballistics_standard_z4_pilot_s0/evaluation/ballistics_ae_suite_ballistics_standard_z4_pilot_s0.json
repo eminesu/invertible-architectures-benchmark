@@ -1,0 +1,43 @@
+{
+  "benchmark": "ballistics",
+  "model": "ae_suite_ballistics_standard_z4_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 256,
+  "err_post": {
+    "mean": 0.05208445092692139,
+    "mean_clamped": 0.05208445092692139,
+    "median": 0.039775257484915644,
+    "q1": 0.013304253212044093,
+    "q3": 0.09346708152854458,
+    "max": 0.14156338523460832,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.07396795435829515,
+    "mean_clamped": 0.07396795435829515,
+    "median": 0.06165879003517985,
+    "q1": 0.03556904730874447,
+    "q3": 0.11498131243693863,
+    "max": 0.16271567279327204,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 3.4982663726532537,
+    "mean_clamped": 3.4982663726532537,
+    "median": 3.495165741946785,
+    "q1": 2.928876413744606,
+    "q3": 3.7747730022864827,
+    "max": 6.770853297737207,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.02685546875,
+  "inference_seconds": 0.007389746999933777,
+  "inference_ms_per_condition": 0.4618591874958611,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  }
+}

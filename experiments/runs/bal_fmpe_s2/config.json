@@ -1,0 +1,23 @@
+{
+  "problem": "ballistics",
+  "blocks": 6,
+  "hidden": null,
+  "param_budget": 3000000,
+  "activation": "silu",
+  "sigma_min": 0.0001,
+  "alpha": 1.0,
+  "n_train": 1000000,
+  "n_val": 20000,
+  "epochs": 50,
+  "batch_size": 1000,
+  "lr": 0.001,
+  "weight_decay": 1e-05,
+  "grad_clip": 10.0,
+  "seed": 2,
+  "device": "mps",
+  "run_name": "bal_fmpe_s2",
+  "hidden_resolved": 497,
+  "n_params": 2993435,
+  "device_resolved": "mps",
+  "torch": "2.14.1"
+}

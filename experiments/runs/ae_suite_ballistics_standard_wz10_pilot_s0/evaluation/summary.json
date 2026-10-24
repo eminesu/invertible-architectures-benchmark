@@ -1,0 +1,63 @@
+{
+  "benchmark": "ballistics",
+  "model": "ae_suite_ballistics_standard_wz10_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 256,
+  "err_post": {
+    "mean": 0.011692046509813297,
+    "mean_clamped": 0.011692046509813297,
+    "median": 0.011519233583714011,
+    "q1": 0.007271521808930731,
+    "q3": 0.01294816091663048,
+    "max": 0.03538900807810752,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.03337873604576474,
+    "mean_clamped": 0.03337873604576474,
+    "median": 0.033214449623209436,
+    "q1": 0.028433630140549865,
+    "q3": 0.03466846401857682,
+    "max": 0.05596157243524369,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.3319457786324055,
+    "mean_clamped": 0.3319457786324055,
+    "median": 0.1355289746632528,
+    "q1": 0.0371954139397995,
+    "q3": 0.4231907952316646,
+    "max": 1.7498187522171458,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.000244140625,
+  "inference_seconds": 0.008026311999969948,
+  "inference_ms_per_condition": 0.5016444999981218,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  },
+  "training_profile": "pilot",
+  "hardware": {
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "torch": "2.6.0+cpu",
+    "device": "cpu",
+    "gpu": null,
+    "threads": 4
+  },
+  "evaluation_seed": 0,
+  "metric_settings": {
+    "kernel": "IMQ",
+    "bandwidths": [
+      0.05,
+      0.2,
+      0.9
+    ],
+    "units": "raw",
+    "ballistics_clamp": 10,
+    "sigma": 0.02
+  }
+}

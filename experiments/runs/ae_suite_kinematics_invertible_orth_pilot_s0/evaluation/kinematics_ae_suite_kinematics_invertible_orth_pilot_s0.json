@@ -1,0 +1,43 @@
+{
+  "benchmark": "kinematics",
+  "model": "ae_suite_kinematics_invertible_orth_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 206,
+  "err_post": {
+    "mean": 0.12936064178759743,
+    "mean_clamped": 0.12936064178759743,
+    "median": 0.11140292290010823,
+    "q1": 0.059119070220297054,
+    "q3": 0.15180658323576013,
+    "max": 0.4427663478840729,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.14763874530330137,
+    "mean_clamped": 0.14763874530330137,
+    "median": 0.12974693025992978,
+    "q1": 0.07734424572330922,
+    "q3": 0.16939526451685355,
+    "max": 0.459990632367425,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.026356058322787063,
+    "mean_clamped": 0.026356058322787063,
+    "median": 0.015770086597113576,
+    "q1": 0.013564165443062607,
+    "q3": 0.024309520269344572,
+    "max": 0.11249472465486977,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.03310181599999851,
+  "inference_ms_per_condition": 2.0688634999999067,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  }
+}

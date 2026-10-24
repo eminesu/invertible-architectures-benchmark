@@ -1,0 +1,43 @@
+{
+  "benchmark": "ballistics",
+  "model": "bal_fmpe_p300000_s0_midpointx4",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 111,
+  "err_post": {
+    "mean": 0.007740077020534044,
+    "mean_clamped": 0.007740077020534044,
+    "median": 0.006819450496021784,
+    "q1": 0.0035946461934650425,
+    "q3": 0.01084893690147426,
+    "max": 0.024330062047218548,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.013304123575936426,
+    "mean_clamped": 0.013304123575936426,
+    "median": 0.012355421855595156,
+    "q1": 0.009276972129548602,
+    "q3": 0.01627589462120338,
+    "max": 0.04752781307533804,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.00510051405626438,
+    "mean_clamped": 0.00510051405626438,
+    "median": 0.003667813878143478,
+    "q1": 0.0015447537036351868,
+    "q3": 0.00688253960871958,
+    "max": 0.0475921610832757,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 20.234708832984325,
+  "inference_ms_per_condition": 20.234708832984325,
+  "clamp": 10.0,
+  "method": "midpoint",
+  "steps": 4,
+  "nfe": 8,
+  "n_params": 297449,
+  "device": "cpu"
+}

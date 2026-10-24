@@ -1,0 +1,56 @@
+{
+  "run": "first_trial_of_encoders_gpu_ballistics_invertible_baseline_pilot_s0",
+  "profile": "pilot",
+  "diagnostic_seed": 0,
+  "forward_y_mse_standardized": 0.002011185744777322,
+  "joint_latent_mmd": 0.0005500425450272184,
+  "reconstruction_rmse_raw": 0.060309331864118576,
+  "reconstruction_median_raw": [
+    -5.4316660680342466e-05,
+    0.00028053572168573737,
+    0.0009376512607559562,
+    -0.0008819345966912806
+  ],
+  "latent_mean": [
+    0.0017547414172440767,
+    -0.032154832035303116,
+    0.01721678301692009
+  ],
+  "latent_std": [
+    0.9714173078536987,
+    1.0130164623260498,
+    1.0036520957946777
+  ],
+  "max_abs_latent_y_correlation": 0.04290648309266158,
+  "orthogonality_error_per_layer": [
+    192.30130004882812,
+    0.5534278750419617,
+    0.5551194548606873,
+    0.5529013872146606,
+    0.5857653617858887
+  ],
+  "resim": {
+    "mean": 0.09464684829891998,
+    "mean_clamped": 0.09464684829891998,
+    "median": 0.050318215888622925,
+    "q1": 0.028275160141696332,
+    "q3": 0.14145088096991698,
+    "max": 0.4527051197740626,
+    "n_finite": 64
+  },
+  "failed_fraction": 0.000244140625,
+  "posterior_variance_raw_mean": [
+    0.24201380818416235,
+    0.2466473817323055,
+    0.07261136822142483,
+    8.20509486507147
+  ],
+  "mean_distance_v0_to_integer": 0.2501127650612034,
+  "negative_launch_height_fraction": 0.001220703125,
+  "supplemental_v0_sensitivity": {
+    "n_conditions": 8,
+    "raw": 0.008154899909460389,
+    "standardized": 0.0015159420491027212,
+    "rounded_v0": 0.002739739614001334
+  }
+}

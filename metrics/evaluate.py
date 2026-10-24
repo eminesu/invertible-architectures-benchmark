@@ -83,6 +83,8 @@ def _sync():
         import torch
         if torch.cuda.is_available():
             torch.cuda.synchronize()
+        if torch.backends.mps.is_available():
+            torch.mps.synchronize()
     except ImportError:
         pass
 
@@ -105,23 +107,38 @@ def timed_sampling(sample_fn, y_star, n, n_warmup=3):
 def summarize(values):
     v = np.asarray(values, dtype=np.float64)
     v = v[np.isfinite(v)]
+    if not len(v):
+        return {**dict.fromkeys(('mean', 'mean_clamped', 'median', 'q1', 'q3', 'max'), None),
+                'n_finite': 0}
     q1, med, q3 = np.quantile(v, [0.25, 0.5, 0.75])
     return {'mean': float(v.mean()), 'mean_clamped': float(np.minimum(v, CLAMP).mean()),
             'median': float(med), 'q1': float(q1), 'q3': float(q3), 'max': float(v.max()),
             'n_finite': int(len(v))}
 
 
-def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DIR, verbose=True, prior_params=None):
+def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DIR, verbose=True,
+             n_conditions=None, gt_options=None, prior_params=None):
     """Score one model on the shared test conditions; saves the per-y* arrays to
     <out_dir>/<benchmark>_<name>.npz and the summary to .json next to it.
     prior_params (data.toy_data.PRIOR_PARAMS): score against the ground truth under
     that prior instead of the benchmark prior; sample_fn must then sample
     p(x | y*, prior_params)."""
     y_star, _ = load_test_conditions(benchmark)
-    gt = ground_truth_posterior(benchmark, y_star, verbose=verbose, prior_params=prior_params)
+    if n_conditions is not None:
+        if not 1 <= n_conditions <= len(y_star):
+            raise ValueError('n_conditions must be between 1 and 1000')
+        y_star = y_star[:n_conditions]
+    if n_samples < 2:
+        raise ValueError('MMD evaluation requires at least two samples')
+    gt_options = gt_options or {}
+    gt = ground_truth_posterior(benchmark, y_star, verbose=verbose, prior_params=prior_params, **gt_options)
+    if any(len(g) < 2 for g in gt):
+        raise ValueError('Ground truth has fewer than two samples for a condition; increase proposal cap')
 
     x, seconds = timed_sampling(sample_fn, y_star, n_samples)
     assert x.shape == (len(y_star), n_samples, 4), f'sample() returned {x.shape}'
+    if not np.isfinite(x).all():
+        raise ValueError('Model produced non-finite posterior samples')
 
     post, _ = err_post(x, gt)
     post_biased, _ = err_post(x, gt, unbiased=False)
@@ -135,6 +152,8 @@ def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DI
         'inference_seconds': seconds,
         'inference_ms_per_condition': 1000 * seconds / len(y_star),
         'clamp': CLAMP,
+        'evaluation_scope': 'full' if n_conditions is None and n_samples == N_SAMPLES and not gt_options else 'pilot',
+        'gt_options': gt_options,
     }
     if prior_params is not None:
         summary.update(zip(PRIOR_PARAMS[benchmark]['names'], map(float, np.ravel(prior_params))))
@@ -150,6 +169,9 @@ def evaluate(sample_fn, benchmark, name, n_samples=N_SAMPLES, out_dir=RESULTS_DI
 
 def print_row(s):
     p, r = s['err_post'], s['err_resim']
+    if r['n_finite'] == 0:
+        print(f"{s['benchmark']} {s['model']}: all re-simulations failed; Err_resim undefined")
+        return
     print(f"{s['benchmark']:<11} {s['model']:<16} "
           f"Err_post {p['mean']:.4f}  Err_resim {r['mean']:.4f}  "
           f"time {s['inference_seconds'] * 1000:.0f} ms ({s['n_conditions']} y* x {s['n_samples']})")

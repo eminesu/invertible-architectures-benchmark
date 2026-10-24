@@ -1,0 +1,54 @@
+{
+  "run": "ilk_deneme_ballistics_cvae_baseline_pilot_s0",
+  "profile": "pilot",
+  "diagnostic_seed": 0,
+  "kl_per_dimension": [
+    2.938711643218994,
+    2.8585457801818848,
+    2.8418657779693604
+  ],
+  "inactive_latent_dimensions_kl_below_0_01": 0,
+  "reconstruction_kind": "posterior mean latent (not stochastic training loss)",
+  "reconstruction_rmse_raw": 0.16779682040214539,
+  "reconstruction_median_raw": [
+    -0.007927384227514267,
+    -0.008731294423341751,
+    -0.0053583672270178795,
+    -0.16646496951580048
+  ],
+  "latent_mean": [
+    -0.21044659614562988,
+    -0.06305321305990219,
+    0.17712369561195374
+  ],
+  "latent_std": [
+    1.2656503915786743,
+    1.181057095527649,
+    1.189008355140686
+  ],
+  "max_abs_latent_y_correlation": 0.10881821444533142,
+  "resim": {
+    "mean": 0.14425565828913636,
+    "mean_clamped": 0.14425565828913636,
+    "median": 0.03741997853198454,
+    "q1": 0.033473763397975496,
+    "q3": 0.08972489084069254,
+    "max": 1.8662531456001963,
+    "n_finite": 64
+  },
+  "failed_fraction": 0.0,
+  "posterior_variance_raw_mean": [
+    0.18417657460306963,
+    0.17526908142963726,
+    0.04188594518617268,
+    4.619777491410406
+  ],
+  "mean_distance_v0_to_integer": 0.24987580263405107,
+  "negative_launch_height_fraction": 0.00018310546875,
+  "supplemental_v0_sensitivity": {
+    "n_conditions": 8,
+    "raw": 0.03639927018567861,
+    "standardized": 0.030966490035666337,
+    "rounded_v0": 0.03278971446779847
+  }
+}

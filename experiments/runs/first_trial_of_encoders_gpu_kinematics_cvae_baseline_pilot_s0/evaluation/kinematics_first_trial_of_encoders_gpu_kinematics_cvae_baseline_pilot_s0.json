@@ -1,0 +1,43 @@
+{
+  "benchmark": "kinematics",
+  "model": "first_trial_of_encoders_gpu_kinematics_cvae_baseline_pilot_s0",
+  "n_conditions": 16,
+  "n_samples": 256,
+  "n_gt_min": 206,
+  "err_post": {
+    "mean": 0.10427551972768184,
+    "mean_clamped": 0.10427551972768184,
+    "median": 0.08950354299944996,
+    "q1": 0.04908724360631783,
+    "q3": 0.15271649161385134,
+    "max": 0.2531887384811846,
+    "n_finite": 16
+  },
+  "err_post_biased": {
+    "mean": 0.1223835532826796,
+    "mean_clamped": 0.1223835532826796,
+    "median": 0.10907239295643723,
+    "q1": 0.06695727785229916,
+    "q3": 0.17025719114333246,
+    "max": 0.2715917894217148,
+    "n_finite": 16
+  },
+  "err_resim": {
+    "mean": 0.056017186519849035,
+    "mean_clamped": 0.056017186519849035,
+    "median": 0.02753943832220552,
+    "q1": 0.01594058347428018,
+    "q3": 0.047693825464318135,
+    "max": 0.35482828970978,
+    "n_finite": 16
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.0016228999011218548,
+  "inference_ms_per_condition": 0.10143124382011592,
+  "clamp": 10.0,
+  "evaluation_scope": "pilot",
+  "gt_options": {
+    "n_gt": 256,
+    "max_proposals": 20000000
+  }
+}

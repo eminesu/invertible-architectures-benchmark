@@ -1,0 +1,15 @@
+{
+  "run": "first_trial_of_encoders_gpu_kinematics_invertible_baseline_pilot_s0",
+  "profile": "pilot",
+  "best_epoch": 12,
+  "validation_selection_score": 0.014799398440185022,
+  "train_seconds": 23.423684699926525,
+  "n_params": 99364,
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch": "2.14.1+cu126",
+    "device": "cuda",
+    "gpu": "NVIDIA GeForce GTX 1650 Ti",
+    "threads": 4
+  }
+}
