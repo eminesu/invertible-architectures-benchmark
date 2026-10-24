@@ -113,6 +113,19 @@ def calibration_report(samples, x_true, gt_samples=None, scale=None, levels=COVE
     of M arrays (n_i, d) from the ground-truth posterior."""
     S, xt = _as_np(samples), _as_np(x_true)
     scale = xt.std(0) if scale is None else np.asarray(scale)
+    # Non-finite samples (e.g. an inverse that blows up) would silently count as
+    # "below x_true" in the ranks and crash the k-NN step. Conditions with any
+    # such sample are left out, and the fractions are reported.
+    ok = np.isfinite(S).all(axis=(1, 2))
+    bad = {'nonfinite_sample_fraction': float(1 - np.isfinite(S).mean()),
+           'nonfinite_condition_fraction': float(1 - ok.mean())}
+    if ok.sum() < 50:
+        raise ValueError(f'only {int(ok.sum())} of {len(ok)} conditions have all-finite samples; '
+                         f'calibration is not meaningful ({bad})')
+    if not ok.all():
+        S, xt = S[ok], xt[ok]
+        if gt_samples is not None:
+            gt_samples = [g for g, k in zip(gt_samples, ok) if k]
     S, xt = S / scale, xt / scale
     rng = np.random.RandomState(seed)
     M, _, d = S.shape
@@ -128,7 +141,7 @@ def calibration_report(samples, x_true, gt_samples=None, scale=None, levels=COVE
     se_joint = float((cov_joint - levels).mean())
 
     rep = {
-        'n_conditions': int(M),
+        'n_conditions': int(M), 'n_conditions_total': int(len(ok)), **bad,
         'levels': levels.tolist(),
         'marginal': {'coverage': cov.tolist(), 'signed_error': se, 'abs_error': float(np.abs(cov - levels).mean()),
                      'verdict': verdict(se), **_uniformity(r),
@@ -171,6 +184,9 @@ def calibration(sample_fn, benchmark, name=None, n_samples=1000, with_ground_tru
 
 def print_report(rep):
     m, j = rep['marginal'], rep['joint']
+    if rep.get('nonfinite_condition_fraction', 0) > 0:
+        print(f"WARNING {rep['benchmark']} {rep.get('model') or ''}: {100 * rep['nonfinite_condition_fraction']:.1f}% of y* "
+              f"have non-finite samples and were left out ({100 * rep['nonfinite_sample_fraction']:.2f}% of all samples)")
     print(f"{rep['benchmark']:<11} {rep.get('model') or '':<16} "
           f"marginal: {m['verdict']} (signed err {m['signed_error']:+.3f}, tails {m['tail_mass']:.3f} vs 0.100)   "
           f"joint: {j['verdict']} ({j['signed_error']:+.3f})")
@@ -214,3 +230,89 @@ def plot(reports, out_path):
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
     return fig
+
+
+def plot_summary(results_dir, out_dir=None, tol=TOL):
+    """One set of PNGs per benchmark from every *_calibration.{json,npz} in results_dir:
+      <bench>_signed_error.png   bar chart, one row per run: left of 0 = over-confident,
+                                 right = under-confident, green band = calibrated
+      <bench>_rank_histograms.png  small multiples of the SBC rank histogram per run (flat = calibrated)
+      <bench>_coverage_curves.png  marginal and joint coverage curves of all runs (diagonal = calibrated)
+    Returns the list of files written."""
+    import json
+    from pathlib import Path
+
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    results_dir = Path(results_dir)
+    out_dir = Path(out_dir) if out_dir else results_dir / 'calibration_plots'
+    out_dir.mkdir(parents=True, exist_ok=True)
+    by_bench = {}
+    for f in sorted(results_dir.glob('*_calibration.json')):
+        npz = f.with_suffix('.npz')
+        if not npz.exists():
+            continue
+        rep = json.load(open(f))
+        d = np.load(npz)
+        rep['_arrays'] = {k: d[k] for k in d.files}
+        by_bench.setdefault(rep['benchmark'], {})[rep['model']] = rep
+    colour = {'over-confident': 'tab:red', 'under-confident': 'tab:blue', 'calibrated': 'tab:green'}
+    written = []
+    for bench, runs in by_bench.items():
+        names = sorted(runs, key=lambda n: runs[n]['marginal']['signed_error'])
+
+        fig, ax = plt.subplots(figsize=(10, max(3.0, 0.34 * len(names) + 1.6)))
+        y, h = np.arange(len(names)), 0.38
+        ax.barh(y - h / 2, [runs[n]['marginal']['signed_error'] for n in names], h, label='marginal (per dimension, averaged)')
+        ax.barh(y + h / 2, [runs[n]['joint']['signed_error'] for n in names], h, label='joint (HPD-like)')
+        ax.axvspan(-tol, tol, color='green', alpha=0.12, label=f'calibrated (±{tol})')
+        ax.axvline(0, color='k', lw=0.8)
+        ax.set_yticks(y)
+        ax.set_yticklabels(names, fontsize=8)
+        ax.set_xlabel('signed coverage error   (← over-confident  |  under-confident →)')
+        ax.set_title(f'{bench}: confidence of each model')
+        ax.legend(fontsize=8, loc='lower right')
+        fig.tight_layout()
+        p = out_dir / f'{bench}_signed_error.png'
+        fig.savefig(p, dpi=150)
+        plt.close(fig)
+        written.append(str(p))
+
+        ncols = min(4, len(names))
+        nrows = int(np.ceil(len(names) / ncols))
+        fig, axes = plt.subplots(nrows, ncols, figsize=(3.2 * ncols, 2.4 * nrows), squeeze=False)
+        for a in axes.ravel():
+            a.axis('off')
+        for a, n in zip(axes.ravel(), names):
+            a.axis('on')
+            a.hist(runs[n]['_arrays']['ranks'].ravel(), bins=20, range=(0, 1), density=True, color='gray')
+            a.axhline(1, color='k', ls='--', lw=0.8)
+            a.set_title(f"{n}\n{runs[n]['marginal']['verdict']}", fontsize=7, color=colour[runs[n]['marginal']['verdict']])
+            a.tick_params(labelsize=6)
+        fig.suptitle(f'{bench}: rank of x_true among posterior samples (flat = calibrated, U = over-, hump = under-confident)',
+                     fontsize=9)
+        fig.tight_layout()
+        p = out_dir / f'{bench}_rank_histograms.png'
+        fig.savefig(p, dpi=130)
+        plt.close(fig)
+        written.append(str(p))
+
+        fig, ax = plt.subplots(1, 2, figsize=(13, 5))
+        for n in names:
+            lv = runs[n]['levels']
+            ax[0].plot(lv, runs[n]['marginal']['coverage'], lw=1, label=n)
+            ax[1].plot(lv, runs[n]['joint']['coverage'], lw=1, label=n)
+        for a, t in zip(ax, ['Marginal central-interval coverage', 'Joint (HPD-like) coverage']):
+            a.plot([0, 1], [0, 1], 'k--', lw=1)
+            a.set(xlabel='nominal level', ylabel='empirical coverage', title=f'{bench}: {t}')
+            a.text(0.55, 0.08, 'over-confident', color='gray')
+            a.text(0.03, 0.88, 'under-confident', color='gray')
+        ax[1].legend(fontsize=6, ncol=2, loc='lower right')
+        fig.tight_layout()
+        p = out_dir / f'{bench}_coverage_curves.png'
+        fig.savefig(p, dpi=130)
+        plt.close(fig)
+        written.append(str(p))
+    return written

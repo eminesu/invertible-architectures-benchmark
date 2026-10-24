@@ -13,7 +13,8 @@
 #   PY [python]      interpreter           DEVICE [cuda]   cuda | cpu
 #   SEEDS [0]        seeds to run          EVAL [0]        1 = score after each run, end = score all at the end
 #   EVAL_DEVICE [cpu]      device for evaluate_inn.py; cpu keeps inference times comparable with the other
-#                          models and the existing kin_cinn_s0 result (training stays on DEVICE)
+#                          models and the existing kin_cinn_s0 result (training stays on DEVICE
+
 #   PROBLEMS [kinematics ballistics]       DEQUANT [0]     1 = --dequantize-v0 on ballistics
 #   EXTRA []         extra train_inn.py args for every run (e.g. "--epochs 15 --n-train 200000")
 #   TAG []           suffix added to every run name (e.g. TAG=pilot), so cheap pilot runs never
