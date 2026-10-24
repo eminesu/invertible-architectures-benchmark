@@ -1,6 +1,6 @@
 [
   {
-    "run": "second_trial_of_encoders_full_gpu_kinematics_standard_baseline_full_s0",
+    "run": "kin_standard_s0",
     "problem": "kinematics",
     "family": "standard",
     "ablation": "baseline",
@@ -9,7 +9,7 @@
     "diagnose": "complete"
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_kinematics_cvae_baseline_full_s0",
+    "run": "kin_cvae_s0",
     "problem": "kinematics",
     "family": "cvae",
     "ablation": "baseline",
@@ -18,7 +18,7 @@
     "diagnose": "complete"
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_kinematics_invertible_baseline_full_s0",
+    "run": "kin_invertible_s0",
     "problem": "kinematics",
     "family": "invertible",
     "ablation": "baseline",
@@ -27,7 +27,7 @@
     "diagnose": "complete"
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_ballistics_standard_baseline_full_s0",
+    "run": "bal_standard_s0",
     "problem": "ballistics",
     "family": "standard",
     "ablation": "baseline",
@@ -36,7 +36,7 @@
     "diagnose": "complete"
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_ballistics_cvae_baseline_full_s0",
+    "run": "bal_cvae_s0",
     "problem": "ballistics",
     "family": "cvae",
     "ablation": "baseline",
@@ -45,7 +45,7 @@
     "diagnose": "complete"
   },
   {
-    "run": "second_trial_of_encoders_full_gpu_ballistics_invertible_baseline_full_s0",
+    "run": "bal_invertible_s0",
     "problem": "ballistics",
     "family": "invertible",
     "ablation": "baseline",
