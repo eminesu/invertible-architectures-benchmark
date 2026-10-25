@@ -97,10 +97,11 @@ def test_noise_bridge_two_dimensional_scaling_and_covariance():
 
 
 @pytest.mark.parametrize('problem,y_dims,z_dims', [('kinematics', 2, 2), ('ballistics', 1, 3)])
-def test_training_gradients_and_checkpoint_roundtrip(tmp_path, problem, y_dims, z_dims):
+@pytest.mark.parametrize('arch', ['mlp', 'paper'])
+def test_training_gradients_and_checkpoint_roundtrip(tmp_path, problem, y_dims, z_dims, arch):
     torch.manual_seed(4)
     model = FIF(y_dims=y_dims, z_dims=z_dims, hidden=12, layers=2, kde_points=16,
-                discrete_speed=problem == 'ballistics').double()
+                discrete_speed=problem == 'ballistics', arch=arch).double()
     x = torch.randn(32, 4, dtype=torch.float64)
     x[:, 3] = torch.arange(32) % 20
     y = torch.randn(32, y_dims, dtype=torch.float64)
@@ -111,7 +112,7 @@ def test_training_gradients_and_checkpoint_roundtrip(tmp_path, problem, y_dims, 
     path = tmp_path / 'model.pt'
     torch.save(model.state_dict(), path)
     restored = FIF(y_dims=y_dims, z_dims=z_dims, hidden=12, layers=2, kde_points=16,
-                   discrete_speed=problem == 'ballistics').double()
+                   discrete_speed=problem == 'ballistics', arch=arch).double()
     restored.load_state_dict(torch.load(path, weights_only=True))
     a = model.sample(y[:3], 17, generator=torch.Generator().manual_seed(2))
     b = restored.sample(y[:3], 17, generator=torch.Generator().manual_seed(2))
@@ -120,12 +121,13 @@ def test_training_gradients_and_checkpoint_roundtrip(tmp_path, problem, y_dims, 
         assert (a[..., 3] >= 0).all() and torch.equal(a[..., 3], a[..., 3].round())
 
 
-def test_parameter_budget_and_invalid_inputs():
-    width = width_for_budget(2, 2, 3_000_000)
-    model = FIF(hidden=width)
-    assert sum(p.numel() for p in model.parameters()) == parameter_count(4, 2, 2, width, 4)
-    assert parameter_count(4, 2, 2, width, 4) <= 3_000_000
-    assert parameter_count(4, 2, 2, width + 1, 4) > 3_000_000
+@pytest.mark.parametrize('arch,layers', [('mlp', 4), ('paper', 2)])
+def test_parameter_budget_and_invalid_inputs(arch, layers):
+    width = width_for_budget(2, 2, 3_000_000, arch=arch)
+    model = FIF(hidden=width, arch=arch)
+    assert sum(p.numel() for p in model.parameters()) == parameter_count(4, 2, 2, width, layers, arch)
+    assert parameter_count(4, 2, 2, width, layers, arch) <= 3_000_000
+    assert parameter_count(4, 2, 2, width + 1, layers, arch) > 3_000_000
     with pytest.raises(ValueError):
         FIF(z_dims=4)
     with pytest.raises(RuntimeError, match='fit'):
@@ -134,6 +136,175 @@ def test_parameter_budget_and_invalid_inputs():
         model.sample(np.zeros((1, 3)), 3)
     with pytest.raises(ValueError):
         model.sample(np.zeros((1, 2)), 0)
+    with pytest.raises(ValueError):
+        FIF(arch='unknown')
+    with pytest.raises(ValueError):
+        FIF(arch='paper', blocks=-1)
+
+
+def test_paper_architecture_order_and_residual_identity():
+    model = FIF(arch='paper', sigma=0)
+    assert len(model.encoder.mlp.hidden) == 2
+    assert model.encoder.mlp.hidden[0].out_features == 256
+    assert len(model.encoder.residuals) == len(model.decoder.residuals) == 2
+    assert all(isinstance(net.activation, nn.ReLU)
+               for net in model.modules() if hasattr(net, 'activation'))
+    assert not any(isinstance(net, (nn.BatchNorm1d, nn.LayerNorm)) for net in model.modules())
+    encoder_ids = {id(p) for p in model.encoder.parameters()}
+    assert not encoder_ids.intersection(id(p) for p in model.decoder.parameters())
+
+    events, handles = [], []
+    for name, net in [('encode', model.encoder), ('decode', model.decoder)]:
+        for part in ('mlp', 'residuals'):
+            modules = [net.mlp] if part == 'mlp' else list(net.residuals)
+            for module in modules:
+                label = f'{name}:{part}'
+                handles.append(module.register_forward_hook(
+                    lambda module, inputs, output, label=label: events.append(label)))
+    x, y, z = torch.randn(5, 4), torch.randn(5, 2), torch.randn(5, 2)
+    model.encoder(x, y)
+    model.decoder(z, y)
+    assert events == ['encode:mlp', 'encode:residuals', 'encode:residuals',
+                      'decode:residuals', 'decode:residuals', 'decode:mlp']
+    for handle in handles:
+        handle.remove()
+    for net in (model.encoder, model.decoder):
+        for block in net.residuals:
+            for parameter in block.parameters():
+                nn.init.zeros_(parameter)
+    assert torch.equal(model.encoder(x, y), model.encoder.mlp(x, y))
+    assert torch.equal(model.decoder(z, y), model.decoder.mlp(z, y))
+    assert not torch.allclose(model.encoder(x, y), model.encoder(x, y + 1))
+
+
+@pytest.mark.parametrize('y_dims,z_dims', [(2, 2), (1, 3)])
+def test_paper_trace_gradient_stays_with_encoder(y_dims, z_dims):
+    torch.manual_seed(12)
+    model = FIF(y_dims=y_dims, z_dims=z_dims, hidden=12, arch='paper', sigma=0)
+    terms = model.loss_terms(torch.randn(6, 4), torch.randn(6, y_dims))
+    (-terms['trace']).backward()
+    assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in model.encoder.parameters())
+    assert all(p.grad is None for p in model.decoder.parameters())
+
+
+@pytest.mark.parametrize('arch', ['mlp', 'paper'])
+def test_evaluator_loads_architecture_from_config(tmp_path, arch):
+    from experiments.evaluate_fif import load_run
+
+    settings = dict(hidden=8, layers=2, sigma=0, kde_points=4)
+    if arch == 'paper':
+        settings.update(arch=arch, blocks=2)
+    # A legacy MLP config has no architecture field.
+    model = FIF(**settings)
+    torch.save(model.state_dict(), tmp_path / 'model.pt')
+    (tmp_path / 'config.json').write_text(json.dumps(
+        {'method': 'FIF', 'prior_mode': 'fixed', 'model': settings}), encoding='utf-8')
+    restored, _, _ = load_run(tmp_path)
+    assert restored.arch == arch
+    y = torch.randn(2, 2)
+    assert torch.equal(model.sample(y, 4, generator=torch.Generator().manual_seed(9)),
+                       restored.sample(y, 4, generator=torch.Generator().manual_seed(9)))
+
+
+@pytest.mark.parametrize('problem,y_dims', [('kinematics', 2), ('ballistics', 1)])
+@pytest.mark.parametrize('arch', ['mlp', 'paper'])
+def test_cli_architecture_defaults_without_training(tmp_path, monkeypatch, capsys, problem, y_dims, arch):
+    import experiments.train_fif as training
+
+    settings = {}
+    constructor = training.FIF
+
+    def capture(**kwargs):
+        settings.update(kwargs)
+        model = constructor(**kwargs)
+        settings['n_params'] = sum(p.numel() for p in model.parameters())
+        return model
+
+    class StopBeforeData(Exception):
+        pass
+
+    def stop(*args):
+        raise StopBeforeData
+
+    monkeypatch.setattr(training, 'FIF', capture)
+    monkeypatch.setattr(training, 'dataset', stop)
+    arguments = ['--problem', problem, '--out', str(tmp_path / 'run'), '--device', 'cpu']
+    if arch == 'paper':
+        arguments += ['--arch', 'paper']
+    with pytest.raises(StopBeforeData):
+        training.main(arguments)
+    assert settings['arch'] == arch
+    assert settings['layers'] == (2 if arch == 'paper' else 4)
+    expected_width = {('mlp', 2): 701, ('mlp', 1): 702,
+                      ('paper', 2): 697, ('paper', 1): 698}[arch, y_dims]
+    assert settings['hidden'] == expected_width
+    assert 2_990_000 <= settings['n_params'] <= 3_000_000
+    output = capsys.readouterr().out
+    assert f'arch={arch}' in output
+    prefix = 'kin' if problem == 'kinematics' else 'bal'
+    suffix = '_p' if arch == 'paper' else ''
+    assert f'{prefix}_fif{suffix}_s0' in output
+
+
+@pytest.mark.parametrize('problem', ['kinematics', 'ballistics'])
+def test_training_rejects_existing_folder_without_touching_checkpoint(tmp_path, monkeypatch, problem):
+    import experiments.train_fif as training
+
+    checkpoint = tmp_path / 'model.pt'
+    checkpoint.write_bytes(b'previous best checkpoint')
+
+    def fail_if_called(*args):
+        pytest.fail('Existing runs must be rejected before preparing training data')
+
+    monkeypatch.setattr(training, 'dataset', fail_if_called)
+    with pytest.raises(SystemExit) as error:
+        training.main(['--problem', problem, '--arch', 'paper', '--out', str(tmp_path)])
+    assert error.value.code == 2
+    assert checkpoint.read_bytes() == b'previous best checkpoint'
+    assert sorted(p.name for p in tmp_path.iterdir()) == ['model.pt']
+
+
+@pytest.mark.parametrize('problem', ['kinematics', 'ballistics'])
+@pytest.mark.parametrize('previous_evaluations', [0, 2])
+def test_evaluation_preserves_existing_outputs(tmp_path, monkeypatch, problem, previous_evaluations):
+    from types import SimpleNamespace
+    import experiments.evaluate_fif as scoring
+
+    prefix = 'kin' if problem == 'kinematics' else 'bal'
+    run = f'{prefix}_fif_p_s0'
+    folder = tmp_path / run
+    folder.mkdir()
+    (folder / 'model.pt').write_bytes(b'previous best checkpoint')
+    for index in range(1, previous_evaluations + 1):
+        out = folder / ('evaluation' if index == 1 else f'evaluation_{index}')
+        out.mkdir()
+        (out / 'summary.json').write_text(json.dumps({'previous': index}), encoding='utf-8')
+    previous_files = {p: p.read_bytes() for p in folder.rglob('*') if p.is_file()}
+    model = SimpleNamespace(sample=object(), arch='paper', sigma=0.01,
+                            discrete_speed=problem == 'ballistics')
+    config = {'problem': problem, 'run': run}
+    monkeypatch.setattr(scoring, 'load_run', lambda *args: (model, config, folder))
+    outputs = []
+
+    def fake_evaluate(sample, benchmark, name, **kwargs):
+        # Verify output routing without sampling or computing benchmark metrics.
+        assert sample is model.sample and benchmark == problem and name == run
+        outputs.append(kwargs['out_dir'])
+        return {'test_output': len(outputs)}
+
+    monkeypatch.setattr(scoring, 'evaluate', fake_evaluate)
+    scoring.main([run, '--threads', '1'])
+    scoring.main([run, '--threads', '1'])
+    expected = [folder / ('evaluation' if i == 1 else f'evaluation_{i}')
+                for i in range(previous_evaluations + 1, previous_evaluations + 3)]
+    assert outputs == expected
+    for path, contents in previous_files.items():
+        assert path.read_bytes() == contents
+    for number, out in enumerate(outputs, start=1):
+        result = json.loads((out / 'summary.json').read_text(encoding='utf-8'))
+        assert result['test_output'] == number
+        assert result['arch'] == 'paper'
+        assert (out / f'{problem}_{run}.json').is_file()
 
 
 @pytest.mark.parametrize('problem', ['kinematics', 'ballistics'])

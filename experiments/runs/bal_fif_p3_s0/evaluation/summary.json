@@ -1,0 +1,48 @@
+{
+  "benchmark": "ballistics",
+  "model": "bal_fif_p3_s0",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 111,
+  "err_post": {
+    "mean": 0.020232200654537864,
+    "mean_clamped": 0.020232200654537864,
+    "median": 0.019269150594037415,
+    "q1": 0.013434702363466486,
+    "q3": 0.02502799819843024,
+    "max": 0.14725964086155371,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.025839305599125173,
+    "mean_clamped": 0.025839305599125173,
+    "median": 0.024805025699154576,
+    "q1": 0.019124612374891423,
+    "q3": 0.030485754601345075,
+    "max": 0.1528932341590072,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.027842763765208858,
+    "mean_clamped": 0.027842763765208858,
+    "median": 0.028128255023284757,
+    "q1": 0.019096231450367283,
+    "q3": 0.03649818319014237,
+    "max": 0.07034314706710651,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.000518,
+  "inference_seconds": 3.86958240007516,
+  "inference_ms_per_condition": 3.86958240007516,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "prior_mode": "fixed",
+  "method": "conditional FIF with clean-output KDE bridge",
+  "arch": "paper",
+  "sampling_sigma": 0.02,
+  "reference_sigma": 0.02,
+  "discrete_speed": true,
+  "evaluation_seed": 0,
+  "device": "cuda"
+}

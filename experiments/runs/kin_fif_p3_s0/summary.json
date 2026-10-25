@@ -1,0 +1,9 @@
+{
+  "run": "kin_fif_p3_s0",
+  "problem": "kinematics",
+  "prior_mode": "fixed",
+  "best_epoch": 34,
+  "validation_resim": 0.0007379111334784202,
+  "n_params": 2992932,
+  "seconds": 2806.091846400057
+}

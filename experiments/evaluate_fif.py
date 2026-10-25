@@ -29,6 +29,19 @@ def load_run(run, device='cpu'):
     return model.eval(), config, folder
 
 
+def new_evaluation_dir(folder):
+    """Reserve a fresh directory without replacing any previous evaluation."""
+    index = 1
+    while True:
+        out = folder / ('evaluation' if index == 1 else f'evaluation_{index}')
+        try:
+            out.mkdir()
+        except FileExistsError:
+            index += 1
+        else:
+            return out
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('run', help='Run name or path, e.g. kin_fif_s0')
@@ -50,10 +63,12 @@ def main(argv=None):
         options['n_gt'] = args.gt_samples
     if args.max_proposals is not None:
         options['max_proposals'] = args.max_proposals
-    out = folder / 'evaluation'
+    out = new_evaluation_dir(folder)
+    print(f'Saving evaluation to {out}', flush=True)
     summary = evaluate(model.sample, config['problem'], config['run'], n_samples=args.samples,
                        n_conditions=args.conditions, gt_options=options, out_dir=out)
     summary.update(prior_mode='fixed', method='conditional FIF with clean-output KDE bridge',
+                   arch=model.arch,
                    sampling_sigma=model.sigma, reference_sigma=GT_SIGMA[config['problem']],
                    discrete_speed=model.discrete_speed, evaluation_seed=args.seed,
                    device=args.device)
