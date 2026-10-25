@@ -1,203 +1,113 @@
-# FIF results
+# FIF Training Configuration
 
-This report compares the saved test results of `kin_fif_s0` and `bal_fif_s0`.
-The figures and tables were generated from existing evaluation files;
-training and evaluation were not rerun.
+Architecture options, shared training settings, and problem-specific parameters
 
-## Test results
+## 1.0 Overview
 
-Both models were evaluated on **1,000 test observations × 1,000 posterior
-samples per observation**. The training and evaluation seeds are 0, and the
-device is CUDA. The runs use the fixed benchmark priors and target
-`p(x | y_star)`. They do not include the prior-conditioned extension
-`p(x | y_star, c)`.
+For FIF, we used **two architectures: the original MLP and the paper (p3) variant**.
 
-| Problem | Run | Mean Err_post | Mean Err_resim | Failed samples | Total sampling time |
-|---|---|---:|---:|---:|---:|
-| Kinematics | `kin_fif_s0` | 0.002793585 | 0.000270041 | 0% | 3040.08 ms |
-| Ballistics | `bal_fif_s0` | 0.001340090 | 0.026532042 | 0% | 3273.69 ms |
+The shared training settings were:
 
-The times cover **generating all 1,000 × 1,000 samples** in the table.
-They exclude training and metric computation.
+### Shared Training Settings
 
-![FIF: mean Err_post and Err_resim for kinematics and ballistics](fif.png)
+| Parameter | Value |
+|---|---|
+| Training / validation samples | 1,000,000 / 20,000 |
+| Epochs / batch size | 50 / 1,000 |
+| Optimizer | Adam |
+| Initial learning rate | 0.001 |
+| Learning-rate schedule | Cosine annealing |
+| Weight decay | 1e-5 |
+| Reconstruction weight β | 100 |
+| Gradient clipping | 10 |
+| Parameter budget | 3 million |
+| Seed / device | 0 / CUDA |
+| KDE centers | 1,024 |
 
-The figure uses point plots in the same style as the autoencoder report.
-The top row shows kinematics and the bottom row shows ballistics;
-the left column shows `Err_post` and the right column shows `Err_resim`.
-The vertical axes are logarithmic, with the same range for both problems
-within each column. Each point represents a test mean, rather than an epoch
-in a training curve.
+## 2.0 Architecture Settings
 
-## What do the errors measure?
+The architecture settings were:
 
-- **Err_post:** The unbiased IMQ MMD² estimate between generated parameter
-  samples and reference posterior samples, computed in raw parameter units.
-  For the same problem and evaluation protocol, a lower value indicates a
-  closer match to the reference distribution under this metric.
-- **Err_resim:** The mean squared distance between the output obtained by
-  passing generated parameters through the true simulator and the target
-  observation: `mean(||f(x) - y_star||²)`. A lower value indicates that the
-  samples reproduce the target observation more closely.
+### Architecture Comparison
 
-The table and figure use the mean of the per-condition errors. Applying the
-recorded `clamp = 10` leaves both runs' means unchanged. `err_post_biased` is
-a separate MMD² estimate and should be kept distinct from the `Err_post`
-reported here. The unbiased estimate can be negative for individual conditions.
-
-## Comparing kinematics and ballistics
-
-**Posterior error:** Ballistics has a lower raw mean `Err_post`, but a higher
-median. Some observations with large errors raise the kinematics mean:
-
-| Problem | Median Err_post | Maximum Err_post | Median Err_resim |
+| Experiment | Hidden width | Hidden layers per MLP | Total parameters |
 |---|---:|---:|---:|
-| Kinematics | 0.000429334 | 0.091130372 | 0.000205954 |
-| Ballistics | 0.001087937 | 0.008297377 | 0.028302289 |
+| Kinematics, original MLP | 701 | 4 | 2,996,080 |
+| Ballistics, original MLP | 702 | 4 | 2,994,739 |
+| Kinematics, paper | 697 | 2 | 2,992,932 |
+| Ballistics, paper | 698 | 2 | 2,991,647 |
 
-The mean alone therefore does not establish better overall posterior recovery
-for ballistics. The two problems have different parameter distributions and
-scales; raw MMD² is not a shared accuracy percentage across problems.
+### Activations and Residual Blocks
 
-**Re-simulation error:** The raw mean `Err_resim` for ballistics is approximately
-**98.25 times** the kinematics value. In these records, the error in reproducing
-the target output is substantially higher for ballistics. However, kinematics
-measures a two-dimensional endpoint, whereas ballistics measures a
-one-dimensional impact position. Their reference observation-noise widths are
-also different: `sigma = 0.01` and `sigma = 0.02`, respectively. This ratio
-should not be interpreted as a normalized accuracy ratio across problems.
+The original MLP used **SiLU**. The paper variant used **ReLU**, with **two latent residual blocks each in the encoder and decoder**, and two hidden layers per block.
 
-Both models have a failed-simulation rate of 0%. This means that the simulator
-returns a defined output for the generated parameters; it does not by itself
-show that the output is close to the target.
+## 3.0 Problem-Specific Settings
 
-The initial speed in ballistics is a discrete, Poisson-distributed variable.
-The current FIF uses a continuous approximation by adding `U(-0.5, 0.5)` noise
-to the speed during training, then rounding sampled speeds to integers and
-clamping them to nonnegative values. This is an approximation rather than an
-exact discrete likelihood model. This approximation and the simulator's
-discrete time grid are relevant limitations; the saved metrics alone do not
-identify the cause of the larger error. The results also cover only one
-training seed.
+Problem-specific settings:
 
-## Training summary
+- **Kinematics:** `x_dim=4`, `y_dim=2`, `z_dim=2`, observation noise `σ=0.01`.
+- **Ballistics:** `x_dim=4`, `y_dim=1`, `z_dim=3`, `σ=0.02`. For discrete speed, we added `U(-0.5, 0.5)` noise during training and rounded generated speeds during sampling.
 
-Both runs used 1,000,000 training pairs and 20,000 validation pairs, a batch
-size of 1,000, 50 epochs, and an initial learning rate of 0.001. Checkpoint
-selection used validation re-simulation error; test results were not used
-for selection.
+## 4.0 Shared Modeling and Selection Approach
 
-| Problem | Parameter count | Latent dimension | Selected epoch | Best validation resim |
-|---|---:|---:|---:|---:|
-| Kinematics | 2,996,080 | 2 | 48 | 0.000208860 |
-| Ballistics | 2,994,739 | 3 | 48 | 0.027597337 |
+Both variants used a **fixed prior** and **exact trace computation**. We selected checkpoints using **validation re-simulation error**.
 
-Validation values come from a different data split and sampling procedure;
-they should not be treated as the same measurement as the test `Err_resim`.
+## 5.0 Why FIF Is Well Suited to These Problems
 
-## Choosing the training architecture
+FIF is well suited to these inverse problems because multiple parameter combinations can produce the same observation. Its lower-dimensional latent space provides a natural representation of the uncertainty that remains after conditioning on an observation.
 
-The saved results above use the original `--arch mlp` architecture. A new
-`--arch paper` option follows the tabular architecture in
-[Appendix E.2 of the FIF paper](https://arxiv.org/html/2306.01843v5#A5.SS2),
-adapted to our conditional inverse problems. No benchmark results for this
-new option have been generated yet.
+### 1. Geometry Aligned with the Inverse Problem
 
-| Setting | `--arch mlp` (default) | `--arch paper` |
-|---|---|---|
-| Activation | SiLU | ReLU |
-| Hidden layers per MLP | 4 | 2 |
-| Default hidden width | Largest width within the parameter budget | Largest width within the parameter budget |
-| Encoder | Conditional MLP | Conditional MLP, then 2 latent residual blocks |
-| Decoder | Conditional MLP | 2 latent residual blocks, then conditional MLP |
-| Normalization layers | None | None |
+Kinematics has four unknown parameters and two observed coordinates. Fixing the observation generally leaves two degrees of freedom, consistent with **z_dim=2**. Ballistics has four parameters and one observation, motivating **z_dim=3** under our continuous approximation. This lower-dimensional solution structure is precisely what injective flows are designed to model.
 
-Each residual block has two hidden layers and maps the latent space back to
-itself: `R(u, t) = u + B(u, t)`. Encoder and decoder weights are separate.
-The clean simulator output `t` conditions every hidden layer through the same
-scale-and-shift mechanism as the original model. All Jacobians hold `t` fixed.
-Thus the new networks implement `e(x,t) = R_e(A_e(x,t),t)` and
-`g(z,t) = A_g(R_g(z,t),t)` within the existing conditional FIF formulation.
+### 2. Diverse Plausible Solutions
 
-The switch changes the architecture. The benchmark training defaults remain
-Adam, cosine learning-rate scheduling, `beta = 100`, and an exact trace.
-The paper's stochastic trace estimator and tabular training recipe are not
-enabled by this switch. The fixed priors, KDE observation-noise bridge, and
-ballistics speed approximation also remain in use.
+For a fixed observation, varying the latent sample produces different parameter combinations. FIF combines a reconstruction term with a density-learning objective, aiming to learn both the solution set and the probability distribution over that set. Whether all posterior modes are recovered must still be verified empirically.
 
-To train the new architecture:
+### 3. Flexible Network Design
 
-```powershell
-.\.venv\Scripts\python.exe experiments/train_fif.py --problem kinematics --arch paper --run kin_fif_p3_s0 --device cuda
-.\.venv\Scripts\python.exe experiments/train_fif.py --problem ballistics --arch paper --run bal_fif_p3_s0 --device cuda
-```
+FIF permits separate encoder and decoder networks without requiring coupling layers. This flexibility allows standard MLPs or residual blocks to approximate the curved relationships induced by our simulators.
 
-These commands create `kin_fif_p3_s0` and `bal_fif_p3_s0`, preserving earlier
-smaller paper runs. Without `--run`, paper runs still default to `kin_fif_p_s0`
-or `bal_fif_p_s0`. The original architecture remains available with `--arch mlp`,
-or by omitting `--arch`. Use `--run` to choose another short name; existing
-output folders are never overwritten.
-The selected architecture is saved in `config.json` and restored automatically
-by `experiments/evaluate_fif.py`, including support for older MLP checkpoints
-whose configurations have no `arch` field.
+### 4. Efficient Sampling
 
-Training refuses to start if its output folder already exists, preserving the
-previous best checkpoint and logs. To train again with the same seed, provide
-a new `--run` name. Kinematics and ballistics have separate run folders.
+Our implementation generates parameters directly through the decoder, without numerical ODE integration. For the original MLP, generating one million samples took approximately **3.04 seconds** for kinematics and **3.27 seconds** for ballistics on CUDA, counting sampling time only.
 
-Evaluation writes inside the selected run: first to `evaluation/`, then to
-`evaluation_2/`, `evaluation_3/`, and so on on repeated invocations. Existing
-evaluation files and checkpoints are preserved. The chosen output folder is
-printed in the terminal. To evaluate the paper variants after training:
+**Implementation qualifications.** Noisy observations require a distribution over clean outputs, which we approximate using a KDE bridge. Ballistics also includes a discrete speed variable, handled through dequantization during training and rounding during sampling. Consequently, the geometric motivation is strongest for kinematics, whereas ballistics requires additional care.
 
-```powershell
-.\.venv\Scripts\python.exe experiments/evaluate_fif.py kin_fif_p3_s0 --device cuda
-.\.venv\Scripts\python.exe experiments/evaluate_fif.py bal_fif_p3_s0 --device cuda
-```
+## 6.0 FIF Architectures Used in Our Experiments
 
-Use `--hidden`, `--layers`, and `--blocks` to customize the new architecture.
-`--layers` controls the hidden-layer count in both the main MLP and each
-residual block; `--blocks` applies only to `--arch paper`. Both architectures
-now automatically choose the largest integer hidden width within the default
-3,000,000-parameter budget, unless `--hidden` is explicitly provided:
+In the tables, `C` denotes scale-and-shift conditioning before the hidden-layer activation. The conditioning dimension is 2 for kinematics and 1 for ballistics.
 
-| Problem | Original MLP parameters | Paper width | Paper parameters |
-|---|---:|---:|---:|
-| Kinematics | 2,996,080 | 697 | 2,992,932 |
-| Ballistics | 2,994,739 | 698 | 2,991,647 |
+### Original MLP Architecture
 
-Integer widths make these counts approximately, rather than exactly, 3 million.
-The early paper preset used width 256 (421,902 parameters for kinematics and
-418,323 for ballistics). Existing runs and checkpoints keep their recorded
-architecture; this correction affects new training runs only. To reproduce
-the smaller preset explicitly, pass `--hidden 256`.
+| Component | Kinematics | Ballistics |
+|---|:---:|:---:|
+| **Encoder input** | **(4,)** | **(4,)** |
+| Layer 1 | Linear(4, 701), C, SiLU | Linear(4, 702), C, SiLU |
+| Layers 2–4 | 3 × [Linear(701, 701), C, SiLU] | 3 × [Linear(702, 702), C, SiLU] |
+| Layer 5 | Linear(701, 2) | Linear(702, 3) |
+| **Decoder input** | **(2,)** | **(3,)** |
+| Layer 1 | Linear(2, 701), C, SiLU | Linear(3, 702), C, SiLU |
+| Layers 2–4 | 3 × [Linear(701, 701), C, SiLU] | 3 × [Linear(702, 702), C, SiLU] |
+| Layer 5 | Linear(701, 4) | Linear(702, 4) |
+| **Normalization** | **None** | **None** |
+| **#Parameters** | **2,996,080** | **2,994,739** |
 
-Architecture comparisons should match parameter budgets, data, training
-schedule, and evaluation settings. Since the paper variant also changes the
-activation and depth, this compares complete architectures; it does not
-isolate the effect of residual blocks alone.
+### Paper-Inspired Architecture (with Resblocks)
 
-## Sources and recreating the figure
+[Appendix E.2 of the FIF paper](https://arxiv.org/html/2306.01843v5#A5.SS2)
 
-- Kinematics: [test results](../../experiments/runs/kin_fif_s0/evaluation/summary.json),
-  [training summary](../../experiments/runs/kin_fif_s0/summary.json),
-  [configuration](../../experiments/runs/kin_fif_s0/config.json).
-- Ballistics: [test results](../../experiments/runs/bal_fif_s0/evaluation/summary.json),
-  [training summary](../../experiments/runs/bal_fif_s0/summary.json),
-  [configuration](../../experiments/runs/bal_fif_s0/config.json).
-- [Figure data and source paths](fif.json).
-- [Shared metric code](../../metrics/evaluate.py).
-
-The minimum reference posterior sample count per condition is 444 for
-kinematics and 111 for ballistics; not every condition has 1,000 reference
-samples. This difference matters when interpreting MMD estimation uncertainty.
-
-To plot the saved results from the repository root:
-
-```powershell
-.\.venv\Scripts\python.exe experiments/plot_fif.py
-```
-
-The [plotting script](../../experiments/plot_fif.py) generates `fif.png` and
-`fif.json` in this folder using saved results, without loading a model or
-running training or evaluation.
+| Component | Kinematics | Ballistics |
+|---|:---:|:---:|
+| **Encoder input** | **(4,)** | **(4,)** |
+| Layer 1 | Linear(4, 697), C, ReLU | Linear(4, 698), C, ReLU |
+| Layer 2 | Linear(697, 697), C, ReLU | Linear(698, 698), C, ReLU |
+| Layer 3 | Linear(697, 2) | Linear(698, 3) |
+| Layers 4–5 | 2 × ResBlock(2, 697) | 2 × ResBlock(3, 698) |
+| **Decoder input** | **(2,)** | **(3,)** |
+| Layers 1–2 | 2 × ResBlock(2, 697) | 2 × ResBlock(3, 698) |
+| Layer 3 | Linear(2, 697), C, ReLU | Linear(3, 698), C, ReLU |
+| Layer 4 | Linear(697, 697), C, ReLU | Linear(698, 698), C, ReLU |
+| Layer 5 | Linear(697, 4) | Linear(698, 4) |
+| **Normalization** | **None** | **None** |
+| **#Parameters** | **2,992,932** | **2,991,647** |
