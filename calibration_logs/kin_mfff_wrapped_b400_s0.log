@@ -1,0 +1,6 @@
+kinematics  kin_mfff_wrapped_b400_s0 marginal: calibrated (signed err -0.004, tails 0.099 vs 0.100)   joint: under-confident (+0.034)
+                             x0: calibrated      signed err +0.005  KS 0.019  tails 0.101
+                             x1: calibrated      signed err -0.008  KS 0.025  tails 0.099
+                             x2: calibrated      signed err +0.003  KS 0.036  tails 0.095
+                             x3: calibrated      signed err -0.015  KS 0.032  tails 0.102
+                             spread / ground truth: median x1.00 (calibrated); 0% of y* >25% too narrow, 1% >25% too wide

@@ -1,0 +1,6 @@
+ballistics  bal_inn_ml_s1    marginal: under-confident (signed err +0.095, tails 0.037 vs 0.100)   joint: under-confident (+0.100)
+                             x0: under-confident signed err +0.070  KS 0.092  tails 0.039
+                             x1: under-confident signed err +0.182  KS 0.162  tails 0.006
+                             x2: under-confident signed err +0.081  KS 0.069  tails 0.047
+                             x3: under-confident signed err +0.046  KS 0.078  tails 0.058
+                             spread / ground truth: median x1.39 (under-confident); 0% of y* >25% too narrow, 97% >25% too wide

@@ -1,0 +1,6 @@
+ballistics  bal_fff_s0       marginal: calibrated (signed err -0.003, tails 0.099 vs 0.100)   joint: calibrated (-0.004)
+                             x0: calibrated      signed err -0.020  KS 0.032  tails 0.108
+                             x1: calibrated      signed err +0.000  KS 0.023  tails 0.092
+                             x2: calibrated      signed err +0.002  KS 0.017  tails 0.102
+                             x3: calibrated      signed err +0.004  KS 0.022  tails 0.094
+                             spread / ground truth: median x1.00 (calibrated); 0% of y* >25% too narrow, 0% >25% too wide

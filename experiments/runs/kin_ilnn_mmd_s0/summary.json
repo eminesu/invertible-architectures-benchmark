@@ -1,0 +1,18 @@
+{
+  "run": "kin_ilnn_mmd_s0",
+  "problem": "kinematics",
+  "model": "ilnn",
+  "n_params": 2999312,
+  "hidden": 427,
+  "blocks": 8,
+  "unfolds": 4,
+  "dt": 0.25,
+  "z_dims": 2,
+  "val_loss": -0.06626284262165427,
+  "val_y": 0.004298624861985445,
+  "val_z": -0.0003893330693244934,
+  "val_x": -0.00031628161668777465,
+  "err_resim_provisional": 0.0034189906726603708,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 10436.466320991516
+}

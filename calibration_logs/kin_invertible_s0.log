@@ -1,0 +1,6 @@
+kinematics  kin_invertible_s0 marginal: calibrated (signed err -0.008, tails 0.107 vs 0.100)   joint: over-confident (-0.074)
+                             x0: calibrated      signed err +0.003  KS 0.032  tails 0.111
+                             x1: calibrated      signed err -0.014  KS 0.027  tails 0.105
+                             x2: calibrated      signed err -0.001  KS 0.037  tails 0.097
+                             x3: calibrated      signed err -0.020  KS 0.033  tails 0.117
+                             spread / ground truth: median x1.03 (calibrated); 0% of y* >25% too narrow, 8% >25% too wide
