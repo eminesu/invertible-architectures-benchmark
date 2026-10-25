@@ -167,11 +167,18 @@ class ILNN(_FlowModel):
     loss_terms = ('y', 'z', 'x')
 
     def __init__(self, x_dims, y_dims, n_blocks=8, hidden=256, unfolds=4, dt=0.25, clamp=2.0,
-                 latent_mmd='joint', perm_seed=0):
+                 latent_mmd='joint', perm_seed=0, loss='mmd', sigma_y=0.05):
         super().__init__(x_dims, y_dims)
         assert latent_mmd in ('joint', 'marginal')
+        assert loss in ('mmd', 'ml')
         self.z_dims = x_dims - y_dims
         self.latent_mmd = latent_mmd
+        # loss='mmd' is the paper's Eq. (16). loss='ml' trains the same flow by maximum likelihood
+        # (the INN's Eq. 4: Gaussian y_hat | y with std sigma_y, standard normal z, log-det), which is
+        # a deviation from the paper; report it as a separate variant.
+        self.loss_kind, self.sigma_y = loss, sigma_y
+        if loss == 'ml':
+            self.loss_terms = ('nll',)
         self.flow = LiquidFlow(x_dims, n_blocks, hidden, unfolds, dt, clamp, perm_seed)
 
     def forward(self, x):
@@ -182,9 +189,12 @@ class ILNN(_FlowModel):
 
     def losses(self, x, y):
         x_n, y_n = self._norm(x, y)
-        out, _ = self.flow(x_n)
+        out, log_det = self.flow(x_n)
         y_hat, z = out[:, :self.y_dims], out[:, self.y_dims:]
         y_err = ((y_hat - y_n) ** 2).sum(1).mean()
+        if self.loss_kind == 'ml':
+            nll = (0.5 * (((y_hat - y_n) ** 2).sum(1) / self.sigma_y ** 2 + (z ** 2).sum(1)) - log_det).mean()
+            return {'nll': nll, 'y': y_err.detach(), 'z': (z ** 2).sum(1).mean().detach()}
         eps = torch.randn_like(z)
         if self.latent_mmd == 'joint':
             a, b = torch.cat([y_hat.detach(), z], 1), torch.cat([y_n, eps], 1)

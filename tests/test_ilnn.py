@@ -123,3 +123,17 @@ def test_sampling_is_reproducible_with_generator():
     a = m.sample(y, 5, generator=torch.Generator().manual_seed(7))
     b = m.sample(y, 5, generator=torch.Generator().manual_seed(7))
     assert torch.equal(a, b)
+
+
+def test_ml_loss_is_finite_differentiable_and_uses_only_nll():
+    model = randomize(ILNN(N, DY, n_blocks=2, hidden=8, unfolds=2, loss='ml').to(torch.float64), scale=0.1)
+    assert model.loss_terms == ('nll',)
+    terms = model.losses(rand(B, N, seed=1), rand(B, DY, seed=2))
+    assert set(terms) == {'nll', 'y', 'z'} and all(torch.isfinite(v) for v in terms.values())
+    terms['nll'].backward()
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters())
+
+
+def test_default_loss_is_the_papers_eq16():
+    model = ILNN(N, DY, n_blocks=2, hidden=8, unfolds=2)
+    assert model.loss_terms == ('y', 'z', 'x')

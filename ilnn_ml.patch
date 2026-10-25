@@ -1,0 +1,126 @@
+diff --git a/experiments/train_ilnn.py b/experiments/train_ilnn.py
+index cc36e4b..f750f97 100644
+--- a/experiments/train_ilnn.py
++++ b/experiments/train_ilnn.py
+@@ -41,7 +41,8 @@ def build_model(cfg, x_dims, y_dims):
+     """Model for a config dict (command-line arguments, or a saved config.json)."""
+     return ILNN(x_dims, y_dims, n_blocks=cfg['blocks'], hidden=cfg['hidden_resolved'],
+                 unfolds=cfg['unfolds'], dt=cfg['dt'], clamp=cfg['clamp'],
+-                latent_mmd=cfg['latent_mmd'], perm_seed=cfg['seed'])
++                latent_mmd=cfg['latent_mmd'], perm_seed=cfg['seed'],
++                loss=cfg.get('loss', 'mmd'), sigma_y=cfg.get('sigma_y', 0.05))  # old configs: paper loss
+ 
+ 
+ def main():
+@@ -58,6 +59,9 @@ def main():
+     p.add_argument('--w-y', type=float, default=1.0, help='Eq. (16): weight of L_y')
+     p.add_argument('--w-z', type=float, default=100.0, help='Eq. (16): lambda_z, weight of the latent MMD')
+     p.add_argument('--w-x', type=float, default=100.0, help='Eq. (16): lambda_x, weight of the backward MMD')
++    p.add_argument('--loss', choices=['mmd', 'ml'], default='mmd',
++                   help="'mmd': the paper's Eq. (16); 'ml': maximum likelihood like the INN (a deviation from the paper)")
++    p.add_argument('--sigma-y', type=float, default=0.05, help="--loss ml: std of y_hat around y, as the INN's sigma_y")
+     p.add_argument('--latent-mmd', choices=['joint', 'marginal'], default='joint',
+                    help="MMD on [y_hat, z] vs [y, eps] ('joint', as train_inn.py) or on z vs eps alone ('marginal')")
+     p.add_argument('--dequantize-v0', action='store_true',
+@@ -86,7 +90,9 @@ def main():
+     cfg = {**vars(args), 'model': 'ilnn', 'hidden_resolved': hidden}
+     model = build_model(cfg, x_dims, y_dims)
+     n_params = count_parameters(model)
+-    weights = {'y': args.w_y, 'z': args.w_z, 'x': args.w_x}
++    weights = {'nll': 1.0, 'y': args.w_y, 'z': args.w_z, 'x': args.w_x}
++    if device.type == 'cuda':
++        torch.set_float32_matmul_precision('high')  # TF32 matmuls: the 427x427 recurrent products dominate
+ 
+     run_name = args.run_name or f'{args.problem}_ilnn_s{args.seed}_{time.strftime("%Y%m%d-%H%M%S")}'
+     out = os.path.join(RUNS, run_name)
+@@ -112,7 +118,7 @@ def main():
+     steps_per_epoch = args.n_train // args.batch_size
+     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs * steps_per_epoch)
+ 
+-    terms_logged = sorted(TERMS)
++    terms_logged = sorted(set(TERMS + ('nll',)) & set(model.losses(x_va[:8], y_va[:8]).keys()))
+     log = csv.writer(open(os.path.join(out, 'log.csv'), 'w', newline=''))
+     log.writerow(['epoch', 'step', 'train_loss', 'val_loss'] + [f'val_{k}' for k in terms_logged]
+                  + ['val_resim', 'val_resim_failed', 'lr', 'seconds'])
+@@ -126,13 +132,16 @@ def main():
+             x_b = dequantize(x_tr[idx]) if args.dequantize_v0 else x_tr[idx]
+             terms = model.losses(x_b, y_tr[idx])
+             loss = sum(weights[k] * terms[k] for k in model.loss_terms)
+-            if not torch.isfinite(loss):
++            if step % 100 == 0 and not torch.isfinite(loss):  # .item() syncs the GPU, so not every step
+                 raise RuntimeError(f'non-finite loss at step {step}: { {k: v.item() for k, v in terms.items()} }')
+             opt.zero_grad(set_to_none=True)
+             loss.backward()
+             torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+             opt.step(); sched.step()
+-            running += loss.item(); step += 1
++            running = running + loss.detach(); step += 1   # stays on the GPU until the epoch ends
++        running = float(running)
++        if running != running or running in (float('inf'), float('-inf')):
++            raise RuntimeError(f'non-finite training loss in epoch {epoch}')
+         model.eval()
+         val, val_loss = evaluate_losses(model, x_va, y_va, args.batch_size, weights)
+         resim, failed = provisional_resim(model, args.problem, y_va)
+diff --git a/models/ilnn.py b/models/ilnn.py
+index 2cb4a92..8563ab3 100644
+--- a/models/ilnn.py
++++ b/models/ilnn.py
+@@ -167,11 +167,18 @@ class ILNN(_FlowModel):
+     loss_terms = ('y', 'z', 'x')
+ 
+     def __init__(self, x_dims, y_dims, n_blocks=8, hidden=256, unfolds=4, dt=0.25, clamp=2.0,
+-                 latent_mmd='joint', perm_seed=0):
++                 latent_mmd='joint', perm_seed=0, loss='mmd', sigma_y=0.05):
+         super().__init__(x_dims, y_dims)
+         assert latent_mmd in ('joint', 'marginal')
++        assert loss in ('mmd', 'ml')
+         self.z_dims = x_dims - y_dims
+         self.latent_mmd = latent_mmd
++        # loss='mmd' is the paper's Eq. (16). loss='ml' trains the same flow by maximum likelihood
++        # (the INN's Eq. 4: Gaussian y_hat | y with std sigma_y, standard normal z, log-det), which is
++        # a deviation from the paper; report it as a separate variant.
++        self.loss_kind, self.sigma_y = loss, sigma_y
++        if loss == 'ml':
++            self.loss_terms = ('nll',)
+         self.flow = LiquidFlow(x_dims, n_blocks, hidden, unfolds, dt, clamp, perm_seed)
+ 
+     def forward(self, x):
+@@ -182,9 +189,12 @@ class ILNN(_FlowModel):
+ 
+     def losses(self, x, y):
+         x_n, y_n = self._norm(x, y)
+-        out, _ = self.flow(x_n)
++        out, log_det = self.flow(x_n)
+         y_hat, z = out[:, :self.y_dims], out[:, self.y_dims:]
+         y_err = ((y_hat - y_n) ** 2).sum(1).mean()
++        if self.loss_kind == 'ml':
++            nll = (0.5 * (((y_hat - y_n) ** 2).sum(1) / self.sigma_y ** 2 + (z ** 2).sum(1)) - log_det).mean()
++            return {'nll': nll, 'y': y_err.detach(), 'z': (z ** 2).sum(1).mean().detach()}
+         eps = torch.randn_like(z)
+         if self.latent_mmd == 'joint':
+             a, b = torch.cat([y_hat.detach(), z], 1), torch.cat([y_n, eps], 1)
+diff --git a/tests/test_ilnn.py b/tests/test_ilnn.py
+index 09f8eca..72991fb 100644
+--- a/tests/test_ilnn.py
++++ b/tests/test_ilnn.py
+@@ -122,4 +122,18 @@ def test_sampling_is_reproducible_with_generator():
+     y = rand(2, DY, seed=3, dtype=torch.float32)
+     a = m.sample(y, 5, generator=torch.Generator().manual_seed(7))
+     b = m.sample(y, 5, generator=torch.Generator().manual_seed(7))
+-    assert torch.equal(a, b)
+\ No newline at end of file
++    assert torch.equal(a, b)
++
++
++def test_ml_loss_is_finite_differentiable_and_uses_only_nll():
++    model = randomize(ILNN(N, DY, n_blocks=2, hidden=8, unfolds=2, loss='ml').to(torch.float64), scale=0.1)
++    assert model.loss_terms == ('nll',)
++    terms = model.losses(rand(B, N, seed=1), rand(B, DY, seed=2))
++    assert set(terms) == {'nll', 'y', 'z'} and all(torch.isfinite(v) for v in terms.values())
++    terms['nll'].backward()
++    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters())
++
++
++def test_default_loss_is_the_papers_eq16():
++    model = ILNN(N, DY, n_blocks=2, hidden=8, unfolds=2)
++    assert model.loss_terms == ('y', 'z', 'x')
