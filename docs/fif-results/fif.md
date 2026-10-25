@@ -76,7 +76,12 @@ Our implementation generates parameters directly through the decoder, without nu
 
 ## 6.0 FIF Architectures Used in Our Experiments
 
-In the tables, `C` denotes scale-and-shift conditioning before the hidden-layer activation. The conditioning dimension is 2 for kinematics and 1 for ballistics.
+In the tables, **C stands for condition**:
+
+- **Kinematics:** The desired arm-tip position: horizontal and vertical coordinates, $(u^*, v^*)$.
+- **Ballistics:** The desired horizontal landing position, $x_{\mathrm{impact}}^*$.
+
+The condition is applied through scale and shift before each hidden-layer activation. Its dimension is 2 for kinematics and 1 for ballistics.
 
 ### Original MLP Architecture
 
