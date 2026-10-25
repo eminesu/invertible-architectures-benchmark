@@ -16,7 +16,7 @@ The row title gives the fraction of samples inside all four bounds.
 Any model plugs in through `posterior_figure(problem, sample, label, ...)` with
 `sample(y_star (M, dim_y), n) -> x (M, n, 4)`. The command line loads a trained
 run (MDN, hand-rolled FMPE, BayesFlow FMPE, diffusion, standard AE, cVAE,
-invertible AE or FIF) and calls it:
+invertible AE, FIF, INN, INN (L2+MMD), cINN or iLNN) and calls it:
 
     .venv/bin/python experiments/plot_posterior.py kin_K16_s0
     .venv/bin/python experiments/plot_posterior.py bal_bf_fmpe_s0 --sampler euler:32
@@ -69,6 +69,16 @@ def valid_fraction(x, ranges):
     return ok.mean()
 
 
+def histogram_range(x, gt, valid):
+    """Histogram range: the ground truth's bulk and the valid range, widened to the model's bulk
+    by at most half that span, so a few far outliers cannot squash the plot."""
+    lo, hi = np.quantile(gt, [0.002, 0.998])
+    lo, hi = min(lo, valid[0]), max(hi, valid[1])
+    pad = 0.5 * (hi - lo)
+    mlo, mhi = np.nanquantile(x, [0.002, 0.998])
+    return max(min(lo, mlo), lo - pad), min(max(hi, mhi), hi + pad)
+
+
 def draw_trajectories(ax, sim, x, color, alpha, label):
     xs, ys = sim.trajectories_from_parameters(x)
     for i, (xt, yt) in enumerate(zip(xs, ys)):
@@ -88,6 +98,7 @@ def draw_left(ax, problem, sim, x, gt, resim, y, ranges, label, n_draw):
         ax.add_patch(plt.Rectangle((xl, yl), xh - xl, yh - yl, color=VALID_COLOR, alpha=0.15, lw=0,
                                    label='valid launch region'))
         draw_trajectories(ax, sim, gt[:n_draw], 'gray', 0.15, 'ground truth')
+        frame = ax.dataLim.frozen()
         draw_trajectories(ax, sim, x[:n_draw], 'tab:blue', 0.12, label)
         ax.axhline(0, color='gray', lw=0.5)
         ax.scatter(resim[:, 0], np.zeros(len(resim)), s=2, color='tab:orange', zorder=3, label=f'f(x), {label}')
@@ -98,10 +109,15 @@ def draw_left(ax, problem, sim, x, gt, resim, y, ranges, label, n_draw):
         ax.add_patch(plt.Rectangle((-0.06, lo), 0.12, hi - lo, color=VALID_COLOR, alpha=0.35, lw=0,
                                    label='valid rail range'))
         draw_arms(ax, sim, gt[:n_draw], 'gray', 0.15, 'ground truth')
+        frame = ax.dataLim.frozen()
         draw_arms(ax, sim, x[:n_draw], 'tab:blue', 0.12, label)
         ax.scatter(resim[:, 0], resim[:, 1], s=2, color='tab:orange', zorder=3, label=f'f(x), {label}')
         ax.scatter(*y, marker='+', s=200, color='k', zorder=4, label='y*')
         ax.set_aspect('equal', adjustable='box')
+    # Frame of the valid region + ground truth, so far-off model samples cannot shrink the panel.
+    pad_x, pad_y = 0.05 * frame.width, 0.05 * frame.height
+    ax.set_xlim(frame.x0 - pad_x, frame.x1 + pad_x)
+    ax.set_ylim(frame.y0 - pad_y, frame.y1 + pad_y)
 
 
 def posterior_figure(problem, sample, label, indices=(0, 1, 2), n=1000, n_draw=100, suptitle=None, out=None):
@@ -134,8 +150,7 @@ def posterior_figure(problem, sample, label, indices=(0, 1, 2), n=1000, n_draw=1
             row[0].legend(loc='upper left', bbox_to_anchor=(1.02, 1), fontsize=7)
 
         for d, axd in enumerate(row[1:]):
-            lo, hi = np.nanquantile(np.concatenate([x[:, d], gt[:, d]]), [0.002, 0.998])
-            lo, hi = min(lo, ranges[d][0]), max(hi, ranges[d][1])  # show the valid range's edges
+            lo, hi = histogram_range(x[:, d], gt[:, d], ranges[d])
             if problem == 'ballistics' and d == 3:  # integer v0: one bin per value
                 bins = np.arange(np.floor(lo) - 0.5, np.ceil(hi) + 1.5)
             else:
@@ -144,6 +159,10 @@ def posterior_figure(problem, sample, label, indices=(0, 1, 2), n=1000, n_draw=1
             axd.hist(gt[:, d], bins, density=True, alpha=0.5, color='gray', label=f'ground truth ({len(gt)})')
             axd.hist(x[:, d], bins, density=True, histtype='step', color='tab:blue', lw=1.5,
                      label=f'{label} ({len(x)})')
+            outside = np.sum((x[:, d] < bins[0]) | (x[:, d] > bins[-1]) | np.isnan(x[:, d]))
+            if outside:  # far outliers are counted, not drawn, so the bulk stays readable
+                axd.text(0.02, 0.97, f'{outside} outside', transform=axd.transAxes, ha='left', va='top',
+                         fontsize=7, color='tab:red')
             axd.set_xlabel(NAMES[problem][d])
             axd.set_yticks([])
         if r == 0:
@@ -226,9 +245,29 @@ def load_fif(run, args):
     return cfg['problem'], sample, 'FIF', f'fif_posterior_{run}', f'FIF posterior vs. rejection ground truth, run {run}'
 
 
+INN_LABELS = {'inn_ml': 'INN', 'inn_l2mmd': 'INN (L2+MMD)', 'cinn': 'cINN',
+              'ilnn_ml': 'iLNN (ML)', 'ilnn_mmd': 'iLNN (MMD)'}
+
+
+def load_inn(run, args):
+    """INN, INN (L2+MMD), cINN (experiments/train_inn.py) or iLNN (train_ilnn.py) run."""
+    kind = next(k for k in INN_LABELS if f'_{k}_' in run)
+    if kind.startswith('ilnn'):
+        from experiments.evaluate_ilnn import load_run
+    else:
+        from experiments.evaluate_inn import load_run
+    model, cfg = load_run(run)
+    label = INN_LABELS[kind]
+    sample = lambda y, n: model.sample(torch.as_tensor(y, dtype=torch.float32), n).detach().cpu().numpy()  # noqa: E731
+    return (cfg['problem'], sample, label, f'{kind.split("_")[0].replace("cinn", "inn")}_posterior_{run}',
+            f'{label} posterior vs. rejection ground truth, run {run}')
+
+
 def load(run, args):
     if '_bf_' in run:
         return load_bayesflow(run, args)
+    if any(f'_{kind}_' in run for kind in INN_LABELS):
+        return load_inn(run, args)
     if any(f'_{family}_' in run for family in AE_LABELS):
         return load_autoencoder(run, args)
     if '_fif' in run:
