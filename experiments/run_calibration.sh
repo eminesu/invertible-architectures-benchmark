@@ -81,7 +81,8 @@ for f in sorted(glob.glob('metrics/results/*_calibration.json')):
            'joint_err': j['signed_error'], 'joint_verdict': j['verdict']}
     for p in m['per_dim']:
         row[f"x{p['dim']}_err"] = p['signed_error']
-    row.update(spread_ratio=s.get('median_ratio', ''), spread_verdict=s.get('verdict', ''),
+    agree = '' if not s else ('yes' if s['verdict'] == m['verdict'] else 'no')
+    row.update(spread_ratio=s.get('median_ratio', ''), spread_verdict=s.get('verdict', ''), agree=agree,
                frac_narrow=s.get('frac_too_narrow', ''), frac_wide=s.get('frac_too_wide', ''),
                nonfinite_frac=r.get('nonfinite_condition_fraction', 0.0))
     rows.append(row)
@@ -91,13 +92,14 @@ cols = sorted({k for r in rows for k in r}, key=lambda k: list(rows[0]).index(k)
 with open('metrics/results/calibration_summary.csv', 'w', newline='') as fh:
     w = csv.DictWriter(fh, fieldnames=cols); w.writeheader(); w.writerows(rows)
 g = lambda v, fmt: format(v, fmt) if isinstance(v, (int, float)) else '-'
-print(f"\n{'bench':<11}{'model':<36}{'marg':>7} {'verdict':<16}{'joint':>7} {'verdict':<16}{'tails':>6}{'spread/GT':>10}{'narrow':>7}{'wide':>6}{'nonfin':>7}")
+print(f"\n{'bench':<11}{'model':<36}{'marg':>7} {'verdict':<16}{'joint':>7} {'verdict':<16}{'tails':>6}{'spread/GT':>10} {'GT says':<16}{'agree':>6}{'nonfin':>7}")
 for r in rows:
     print(f"{r['benchmark']:<11}{r['model']:<36}{r['marg_err']:>+7.3f} {r['marg_verdict']:<16}{r['joint_err']:>+7.3f} "
-          f"{r['joint_verdict']:<16}{r['tails']:>6.3f}{g(r['spread_ratio'], '.2f'):>10}"
-          f"{g(r['frac_narrow'], '.0%'):>7}{g(r['frac_wide'], '.0%'):>6}{g(r['nonfinite_frac'], '.0%'):>7}")
+          f"{r['joint_verdict']:<16}{r['tails']:>6.3f}{g(r['spread_ratio'], '.2f'):>10} {r['spread_verdict'] or '-':<16}"
+          f"{r['agree'] or '-':>6}{g(r['nonfinite_frac'], '.0%'):>7}")
 print('\nmarg/joint = signed coverage error (<-0.03 over-confident, >+0.03 under-confident); tails ideal = 0.100;')
-print('spread/GT = median model width / ground-truth width (<1 too narrow); narrow/wide = share of y* off by >25%;')
+print('spread/GT = median model width / ground-truth width (<1 too narrow, >1 too wide); GT says = verdict from that width alone;')
+print('agree = does it match the coverage verdict (a model can be calibrated yet wider or narrower than the idealised reference);')
 print('nonfin = share of y* dropped because a sample was NaN/inf. Saved metrics/results/calibration_summary.csv')
 PYEOF
 
