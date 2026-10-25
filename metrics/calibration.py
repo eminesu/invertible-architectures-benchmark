@@ -238,6 +238,9 @@ def plot_summary(results_dir, out_dir=None, tol=TOL):
                                  right = under-confident, green band = calibrated
       <bench>_rank_histograms.png  small multiples of the SBC rank histogram per run (flat = calibrated)
       <bench>_coverage_curves.png  marginal and joint coverage curves of all runs (diagonal = calibrated)
+      <bench>_spread_vs_calibration.png  (runs scored with the ground truth) posterior width vs the ground truth, and
+                                 that against the calibration verdict: do the two checks agree?
+      <bench>_spread_distribution.png  per-y* spread ratio of every run
     Returns the list of files written."""
     import json
     from pathlib import Path
@@ -313,6 +316,57 @@ def plot_summary(results_dir, out_dir=None, tol=TOL):
         fig.tight_layout()
         p = out_dir / f'{bench}_coverage_curves.png'
         fig.savefig(p, dpi=130)
+        plt.close(fig)
+        written.append(str(p))
+
+        # ---- ground-truth spread vs the calibration check (needs the runs scored with GT=1) ----
+        gt_names = [n for n in names if 'spread_vs_ground_truth' in runs[n] and 'log_spread_ratio' in runs[n]['_arrays']]
+        if not gt_names:
+            continue
+        ratio = {n: runs[n]['spread_vs_ground_truth']['median_ratio'] for n in gt_names}
+        order = sorted(gt_names, key=lambda n: ratio[n])
+        sv_colour = {'over-confident': 'tab:red', 'under-confident': 'tab:blue', 'calibrated': 'tab:green'}
+
+        fig, ax = plt.subplots(1, 2, figsize=(15, max(4.5, 0.34 * len(order) + 1.8)))
+        y = np.arange(len(order))
+        ax[0].barh(y, [np.log2(ratio[n]) for n in order],
+                   color=[sv_colour[runs[n]['spread_vs_ground_truth']['verdict']] for n in order])
+        ax[0].axvline(0, color='k', lw=0.8)
+        ax[0].axvspan(-0.15, 0.15, color='green', alpha=0.12)
+        ax[0].set_yticks(y)
+        ax[0].set_yticklabels(order, fontsize=8)
+        ax[0].set_xlabel('log2( model spread / ground-truth spread )    (← too narrow | too wide →)')
+        ax[0].set_title(f'{bench}: width of the posterior vs the ground truth (median over y*)')
+        for yi, n in zip(y, order):
+            ax[0].text(ax[0].get_xlim()[1], yi, f' x{ratio[n]:.2f}', va='center', fontsize=7)
+        xs = np.array([runs[n]['marginal']['signed_error'] for n in gt_names])
+        ys = np.array([np.log2(ratio[n]) for n in gt_names])
+        ax[1].axhline(0, color='k', lw=0.8)
+        ax[1].axvline(0, color='k', lw=0.8)
+        ax[1].axvspan(-tol, tol, color='green', alpha=0.12)
+        ax[1].scatter(xs, ys, c=[colour[runs[n]['marginal']['verdict']] for n in gt_names], s=36, zorder=3)
+        for n, a, b in zip(gt_names, xs, ys):
+            ax[1].annotate(n, (a, b), fontsize=6, xytext=(3, 3), textcoords='offset points')
+        ax[1].set_xlabel('calibration check: signed coverage error  (← over-confident | under-confident →)')
+        ax[1].set_ylabel('ground-truth check: log2 spread ratio  (↓ too narrow | too wide ↑)')
+        ax[1].set_title('two independent checks: points in the lower-left / upper-right agree')
+        fig.tight_layout()
+        p = out_dir / f'{bench}_spread_vs_calibration.png'
+        fig.savefig(p, dpi=140)
+        plt.close(fig)
+        written.append(str(p))
+
+        fig, ax = plt.subplots(figsize=(10, max(3.0, 0.34 * len(order) + 1.6)))
+        ax.boxplot([np.log2(np.exp(runs[n]['_arrays']['log_spread_ratio'])) for n in order], vert=False, whis=(5, 95),
+                   showfliers=False, labels=order)
+        ax.axvline(0, color='k', lw=0.8)
+        ax.axvspan(-0.32, 0.32, color='green', alpha=0.12)
+        ax.set_xlabel('per-y* log2( model spread / ground-truth spread )   (green band = within 25%)')
+        ax.set_title(f'{bench}: spread ratio over the 1000 test observations (box = quartiles, whiskers = 5-95%)')
+        ax.tick_params(axis='y', labelsize=8)
+        fig.tight_layout()
+        p = out_dir / f'{bench}_spread_distribution.png'
+        fig.savefig(p, dpi=140)
         plt.close(fig)
         written.append(str(p))
     return written

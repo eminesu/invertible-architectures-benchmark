@@ -1,0 +1,42 @@
+{
+  "benchmark": "ballistics",
+  "model": "bal_ilnn_s0",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 111,
+  "err_post": {
+    "mean": 0.008714697908563353,
+    "mean_clamped": 0.008714697908563353,
+    "median": 0.00714946050199225,
+    "q1": 0.004532793631809071,
+    "q3": 0.0104145679913836,
+    "max": 0.1926724364537151,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.01428033370428899,
+    "mean_clamped": 0.01428033370428899,
+    "median": 0.012682923306536281,
+    "q1": 0.010204259396891388,
+    "q3": 0.015840550838663273,
+    "max": 0.19826272981399032,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.012937093743781497,
+    "mean_clamped": 0.012937093743781497,
+    "median": 0.00878293068892512,
+    "q1": 0.005406289862654197,
+    "q3": 0.011819418790124233,
+    "max": 1.72456548593869,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.00051,
+  "inference_seconds": 325.56083670000226,
+  "inference_ms_per_condition": 325.56083670000226,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "n_params": 2999312,
+  "device": "cpu"
+}

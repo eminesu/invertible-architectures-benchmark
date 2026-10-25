@@ -1,0 +1,5 @@
+kinematics  kin_ilnn_s0      marginal: calibrated (signed err -0.024, tails 0.135 vs 0.100)   joint: over-confident (-0.124)
+                             x0: calibrated      signed err -0.027  KS 0.054  tails 0.165
+                             x1: over-confident  signed err -0.035  KS 0.046  tails 0.138
+                             x2: calibrated      signed err -0.020  KS 0.045  tails 0.141
+                             x3: calibrated      signed err -0.014  KS 0.030  tails 0.096
