@@ -10,7 +10,6 @@
   "w_z": 100.0,
   "w_x": 100.0,
   "loss": "mmd",
-  "sigma_y": 0.05,
   "latent_mmd": "joint",
   "dequantize_v0": false,
   "n_train": 1000000,
