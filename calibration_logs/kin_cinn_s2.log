@@ -1,0 +1,6 @@
+kinematics  kin_cinn_s2      marginal: calibrated (signed err -0.001, tails 0.101 vs 0.100)   joint: calibrated (-0.011)
+                             x0: calibrated      signed err +0.006  KS 0.026  tails 0.103
+                             x1: calibrated      signed err -0.004  KS 0.022  tails 0.103
+                             x2: calibrated      signed err +0.009  KS 0.037  tails 0.097
+                             x3: calibrated      signed err -0.015  KS 0.027  tails 0.102
+                             spread / ground truth: median x1.01 (calibrated); 1% of y* >25% too narrow, 0% >25% too wide

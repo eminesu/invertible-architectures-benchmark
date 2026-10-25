@@ -1,0 +1,1 @@
+epoch,step,train_loss,val_loss,val_nll,val_resim,val_resim_failed,lr,seconds

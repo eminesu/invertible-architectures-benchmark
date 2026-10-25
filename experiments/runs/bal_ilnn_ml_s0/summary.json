@@ -1,0 +1,18 @@
+{
+  "run": "bal_ilnn_ml_s0",
+  "problem": "ballistics",
+  "model": "ilnn",
+  "n_params": 2999312,
+  "hidden": 427,
+  "blocks": 8,
+  "unfolds": 4,
+  "dt": 0.25,
+  "z_dims": 3,
+  "val_loss": 1.3604532718658446,
+  "val_nll": 1.3604532718658446,
+  "val_y": 1.1416789493523539e-05,
+  "val_z": 3.008907949924469,
+  "err_resim_provisional": 0.00011536775642597243,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 3432.2281744480133
+}
