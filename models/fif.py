@@ -15,34 +15,67 @@ from torch import nn
 class ConditionedNet(nn.Module):
     """A dense network with condition-dependent scale and shift at each layer."""
 
-    def __init__(self, inputs, outputs, context, hidden, layers):
+    def __init__(self, inputs, outputs, context, hidden, layers, activation=nn.SiLU):
         super().__init__()
         self.hidden = nn.ModuleList(
             nn.Linear(inputs if i == 0 else hidden, hidden) for i in range(layers))
         self.condition = nn.ModuleList(nn.Linear(context, 2 * hidden) for _ in range(layers))
         self.output = nn.Linear(hidden, outputs)
+        self.activation = activation()
 
     def forward(self, value, context):
         for layer, conditioning in zip(self.hidden, self.condition):
             scale, shift = conditioning(context).chunk(2, dim=-1)
-            value = torch.nn.functional.silu(layer(value) * (1 + 0.1 * scale.tanh()) + shift)
+            value = self.activation(layer(value) * (1 + 0.1 * scale.tanh()) + shift)
         return self.output(value)
 
 
-def parameter_count(x_dims, y_dims, z_dims, hidden, layers):
+class PaperNet(nn.Module):
+    """Appendix E.2 ordering, adapted with the same conditioning as the MLP."""
+
+    def __init__(self, inputs, outputs, context, hidden, layers, blocks, encode):
+        super().__init__()
+        self.encode = encode
+        self.mlp = ConditionedNet(inputs, outputs, context, hidden, layers, nn.ReLU)
+        latent = outputs if encode else inputs
+        self.residuals = nn.ModuleList(
+            ConditionedNet(latent, latent, context, hidden, layers, nn.ReLU)
+            for _ in range(blocks))
+
+    def forward(self, value, context):
+        if self.encode:
+            value = self.mlp(value, context)
+        for block in self.residuals:
+            value = value + block(value, context)
+        return value if self.encode else self.mlp(value, context)
+
+
+def parameter_count(x_dims, y_dims, z_dims, hidden, layers, arch='mlp', blocks=2):
+    if arch not in ('mlp', 'paper') or layers < 1 or blocks < 0:
+        raise ValueError('Invalid architecture, layer count or residual block count')
     linear = 2 * (x_dims + z_dims) + 2 * layers + 4 * layers * (y_dims + 1)
-    return 2 * (layers - 1) * hidden**2 + linear * hidden + x_dims + z_dims
+    count = 2 * (layers - 1) * hidden**2 + linear * hidden + x_dims + z_dims
+    if arch == 'paper':
+        residual = ((layers - 1) * hidden**2
+                    + (2 * z_dims + layers + 2 * layers * (y_dims + 1)) * hidden + z_dims)
+        count += 2 * blocks * residual
+    return count
 
 
-def width_for_budget(y_dims, z_dims, budget, layers=4, x_dims=4):
-    if layers < 1 or budget < parameter_count(x_dims, y_dims, z_dims, 1, layers):
+def width_for_budget(y_dims, z_dims, budget, layers=None, x_dims=4, arch='mlp', blocks=2):
+    layers = (2 if arch == 'paper' else 4) if layers is None else layers
+
+    def count(hidden):
+        return parameter_count(x_dims, y_dims, z_dims, hidden, layers, arch, blocks)
+
+    if layers < 1 or budget < count(1):
         raise ValueError('Invalid layer count or parameter budget')
     low, high = 1, 2
-    while parameter_count(x_dims, y_dims, z_dims, high, layers) <= budget:
+    while count(high) <= budget:
         high *= 2
     while high - low > 1:
         mid = (low + high) // 2
-        if parameter_count(x_dims, y_dims, z_dims, mid, layers) <= budget:
+        if count(mid) <= budget:
             low = mid
         else:
             high = mid
@@ -50,9 +83,13 @@ def width_for_budget(y_dims, z_dims, budget, layers=4, x_dims=4):
 
 
 class FIF(nn.Module):
-    def __init__(self, x_dims=4, y_dims=2, z_dims=2, hidden=256, layers=4,
-                 beta=100.0, sigma=0.01, kde_points=1024, discrete_speed=False):
+    def __init__(self, x_dims=4, y_dims=2, z_dims=2, hidden=256, layers=None,
+                 beta=100.0, sigma=0.01, kde_points=1024, discrete_speed=False,
+                 arch='mlp', blocks=2):
         super().__init__()
+        if arch not in ('mlp', 'paper') or blocks < 0:
+            raise ValueError('Expected arch="mlp" or "paper" and nonnegative blocks')
+        layers = (2 if arch == 'paper' else 4) if layers is None else layers
         if not 1 <= z_dims < x_dims or min(y_dims, hidden, layers, kde_points) < 1:
             raise ValueError('FIF needs positive dimensions and a genuine bottleneck')
         if not math.isfinite(beta) or beta <= 0 or not math.isfinite(sigma) or sigma < 0:
@@ -61,8 +98,13 @@ class FIF(nn.Module):
             raise ValueError('Discrete speed is specific to the 4-D ballistics parameters')
         self.x_dims, self.y_dims, self.z_dims = x_dims, y_dims, z_dims
         self.beta, self.sigma, self.discrete_speed = beta, sigma, discrete_speed
-        self.encoder = ConditionedNet(x_dims, z_dims, y_dims, hidden, layers)
-        self.decoder = ConditionedNet(z_dims, x_dims, y_dims, hidden, layers)
+        self.arch = arch
+        if arch == 'paper':
+            self.encoder = PaperNet(x_dims, z_dims, y_dims, hidden, layers, blocks, encode=True)
+            self.decoder = PaperNet(z_dims, x_dims, y_dims, hidden, layers, blocks, encode=False)
+        else:
+            self.encoder = ConditionedNet(x_dims, z_dims, y_dims, hidden, layers)
+            self.decoder = ConditionedNet(z_dims, x_dims, y_dims, hidden, layers)
         for name, dims in (('x', x_dims), ('y', y_dims)):
             self.register_buffer(name + '_mean', torch.zeros(dims))
             self.register_buffer(name + '_std', torch.ones(dims))

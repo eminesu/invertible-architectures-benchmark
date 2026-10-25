@@ -95,6 +95,88 @@ for selection.
 Validation values come from a different data split and sampling procedure;
 they should not be treated as the same measurement as the test `Err_resim`.
 
+## Choosing the training architecture
+
+The saved results above use the original `--arch mlp` architecture. A new
+`--arch paper` option follows the tabular architecture in
+[Appendix E.2 of the FIF paper](https://arxiv.org/html/2306.01843v5#A5.SS2),
+adapted to our conditional inverse problems. No benchmark results for this
+new option have been generated yet.
+
+| Setting | `--arch mlp` (default) | `--arch paper` |
+|---|---|---|
+| Activation | SiLU | ReLU |
+| Hidden layers per MLP | 4 | 2 |
+| Default hidden width | Largest width within the parameter budget | Largest width within the parameter budget |
+| Encoder | Conditional MLP | Conditional MLP, then 2 latent residual blocks |
+| Decoder | Conditional MLP | 2 latent residual blocks, then conditional MLP |
+| Normalization layers | None | None |
+
+Each residual block has two hidden layers and maps the latent space back to
+itself: `R(u, t) = u + B(u, t)`. Encoder and decoder weights are separate.
+The clean simulator output `t` conditions every hidden layer through the same
+scale-and-shift mechanism as the original model. All Jacobians hold `t` fixed.
+Thus the new networks implement `e(x,t) = R_e(A_e(x,t),t)` and
+`g(z,t) = A_g(R_g(z,t),t)` within the existing conditional FIF formulation.
+
+The switch changes the architecture. The benchmark training defaults remain
+Adam, cosine learning-rate scheduling, `beta = 100`, and an exact trace.
+The paper's stochastic trace estimator and tabular training recipe are not
+enabled by this switch. The fixed priors, KDE observation-noise bridge, and
+ballistics speed approximation also remain in use.
+
+To train the new architecture:
+
+```powershell
+.\.venv\Scripts\python.exe experiments/train_fif.py --problem kinematics --arch paper --run kin_fif_p3_s0 --device cuda
+.\.venv\Scripts\python.exe experiments/train_fif.py --problem ballistics --arch paper --run bal_fif_p3_s0 --device cuda
+```
+
+These commands create `kin_fif_p3_s0` and `bal_fif_p3_s0`, preserving earlier
+smaller paper runs. Without `--run`, paper runs still default to `kin_fif_p_s0`
+or `bal_fif_p_s0`. The original architecture remains available with `--arch mlp`,
+or by omitting `--arch`. Use `--run` to choose another short name; existing
+output folders are never overwritten.
+The selected architecture is saved in `config.json` and restored automatically
+by `experiments/evaluate_fif.py`, including support for older MLP checkpoints
+whose configurations have no `arch` field.
+
+Training refuses to start if its output folder already exists, preserving the
+previous best checkpoint and logs. To train again with the same seed, provide
+a new `--run` name. Kinematics and ballistics have separate run folders.
+
+Evaluation writes inside the selected run: first to `evaluation/`, then to
+`evaluation_2/`, `evaluation_3/`, and so on on repeated invocations. Existing
+evaluation files and checkpoints are preserved. The chosen output folder is
+printed in the terminal. To evaluate the paper variants after training:
+
+```powershell
+.\.venv\Scripts\python.exe experiments/evaluate_fif.py kin_fif_p3_s0 --device cuda
+.\.venv\Scripts\python.exe experiments/evaluate_fif.py bal_fif_p3_s0 --device cuda
+```
+
+Use `--hidden`, `--layers`, and `--blocks` to customize the new architecture.
+`--layers` controls the hidden-layer count in both the main MLP and each
+residual block; `--blocks` applies only to `--arch paper`. Both architectures
+now automatically choose the largest integer hidden width within the default
+3,000,000-parameter budget, unless `--hidden` is explicitly provided:
+
+| Problem | Original MLP parameters | Paper width | Paper parameters |
+|---|---:|---:|---:|
+| Kinematics | 2,996,080 | 697 | 2,992,932 |
+| Ballistics | 2,994,739 | 698 | 2,991,647 |
+
+Integer widths make these counts approximately, rather than exactly, 3 million.
+The early paper preset used width 256 (421,902 parameters for kinematics and
+418,323 for ballistics). Existing runs and checkpoints keep their recorded
+architecture; this correction affects new training runs only. To reproduce
+the smaller preset explicitly, pass `--hidden 256`.
+
+Architecture comparisons should match parameter budgets, data, training
+schedule, and evaluation settings. Since the paper variant also changes the
+activation and depth, this compares complete architectures; it does not
+isolate the effect of residual blocks alone.
+
 ## Sources and recreating the figure
 
 - Kinematics: [test results](../../experiments/runs/kin_fif_s0/evaluation/summary.json),

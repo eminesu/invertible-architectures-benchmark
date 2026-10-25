@@ -61,7 +61,7 @@ def validation(model, x, y, batch_size, problem):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--problem', choices=tuple(MODELS), required=True)
-    parser.add_argument('--run', help='Short folder name; default: kin_fif_s0 or bal_fif_s0')
+    parser.add_argument('--run', help='Short folder name; paper runs add _p, e.g. kin_fif_p_s0')
     parser.add_argument('--out', type=Path, help='Explicit output folder, useful for small checks')
     parser.add_argument('--device', choices=('auto', 'cpu', 'cuda'), default='auto')
     parser.add_argument('--seed', type=int, default=0)
@@ -70,8 +70,11 @@ def main(argv=None):
     parser.add_argument('--n-val', type=int, default=20_000)
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch-size', type=int, default=1000)
-    parser.add_argument('--hidden', type=int)
-    parser.add_argument('--layers', type=int, default=4)
+    parser.add_argument('--arch', choices=('mlp', 'paper'), default='mlp',
+                        help='mlp: original SiLU network; paper: ReLU MLP + latent residual blocks')
+    parser.add_argument('--hidden', type=int, help='Hidden width; default: largest width within --param-budget for either architecture')
+    parser.add_argument('--layers', type=int, help='Hidden layers per MLP; default: 4 for mlp, 2 for paper')
+    parser.add_argument('--blocks', type=int, help='Latent residual blocks per network; paper only, default: 2')
     parser.add_argument('--param-budget', type=int, default=3_000_000)
     parser.add_argument('--beta', type=float, default=100.0)
     parser.add_argument('--lr', type=float, default=0.001)
@@ -84,7 +87,16 @@ def main(argv=None):
         parser.error('--lr must be finite and positive')
     if args.hidden is not None and args.hidden < 1:
         parser.error('--hidden must be positive')
-    name = args.run or f'{"kin" if args.problem == "kinematics" else "bal"}_fif_s{args.seed}'
+    if args.layers is None:
+        args.layers = 2 if args.arch == 'paper' else 4
+    if args.layers < 1 or args.param_budget < 1:
+        parser.error('--layers and --param-budget must be positive')
+    if args.blocks is not None and (args.arch != 'paper' or args.blocks < 0):
+        parser.error('--blocks requires --arch paper and a nonnegative count')
+    if args.arch == 'paper' and args.blocks is None:
+        args.blocks = 2
+    suffix = '_p' if args.arch == 'paper' else ''
+    name = args.run or f'{"kin" if args.problem == "kinematics" else "bal"}_fif{suffix}_s{args.seed}'
     if name in ('.', '..') or Path(name).name != name or '/' in name or '\\' in name:
         parser.error('--run must be a folder name, without path components')
     folder = args.out or ROOT / 'experiments' / 'runs' / name
@@ -96,18 +108,25 @@ def main(argv=None):
     torch.set_num_threads(args.threads)
     torch.manual_seed(args.seed)
     y_dims = MODELS[args.problem].n_observations
-    hidden = args.hidden or width_for_budget(y_dims, 4 - y_dims, args.param_budget, args.layers)
+    hidden = args.hidden
+    if hidden is None:
+        hidden = width_for_budget(y_dims, 4 - y_dims, args.param_budget, args.layers,
+                                  arch=args.arch, blocks=args.blocks or 0)
     settings = dict(x_dims=4, y_dims=y_dims, z_dims=4 - y_dims, hidden=hidden,
                     layers=args.layers, beta=args.beta,
                     sigma=GT_SIGMA[args.problem] if args.sigma is None else args.sigma,
-                    kde_points=args.kde_points, discrete_speed=args.problem == 'ballistics')
+                    kde_points=args.kde_points, discrete_speed=args.problem == 'ballistics',
+                    arch=args.arch)
+    if args.arch == 'paper':
+        settings['blocks'] = args.blocks
     model = FIF(**settings)
     count = sum(p.numel() for p in model.parameters())
     if count > args.param_budget:
         parser.error(f'Model has {count:,} parameters, above --param-budget')
     folder.mkdir(parents=True, exist_ok=False)
     started = time.perf_counter()
-    print(f'{name} | device={device} | parameters={count:,} | '
+    print(f'{name} | arch={args.arch} | hidden={hidden} | layers={args.layers} | '
+          f'blocks={args.blocks or 0} | device={device} | parameters={count:,} | '
           f'train={args.n_train:,} | validation={args.n_val:,}', flush=True)
     print('Preparing training data...', flush=True)
     x, y, rejected = dataset(args.problem, args.n_train, 10000 + args.seed)

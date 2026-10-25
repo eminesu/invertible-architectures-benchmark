@@ -1,0 +1,9 @@
+{
+  "run": "bal_fif_p3_s0",
+  "problem": "ballistics",
+  "prior_mode": "fixed",
+  "best_epoch": 38,
+  "validation_resim": 0.028963923165579497,
+  "n_params": 2991647,
+  "seconds": 3351.8977401000448
+}
