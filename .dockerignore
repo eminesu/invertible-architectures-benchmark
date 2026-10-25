@@ -1,0 +1,32 @@
+# Prune environments, caches, credentials and generated artifacts. Avoid
+# negated patterns so Windows can skip inaccessible cache directories early.
+.git
+.agents
+.codex
+.aws
+.env
+.env.*
+.venv
+.python
+.uv-cache
+.pytest_cache
+node_modules
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pt
+**/*.pth
+**/*.keras
+**/*.log
+**/*.patch
+experiments/runs
+experiments/figures
+metrics/cache
+metrics/results
+data/*.npz
+data/*.npy
+docs
+output
+outputs
+tmp
+calibration_logs

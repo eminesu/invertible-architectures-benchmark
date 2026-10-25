@@ -1,0 +1,14 @@
+# Linux / Python 3.12 environment for every model family.
+# Core package versions match the current local environment; BayesFlow and
+# Keras match the versions recorded in the saved BayesFlow run configurations.
+# Regenerate requirements-docker.lock with the command in docs/docker.md.
+--extra-index-url https://download.pytorch.org/whl/cu126
+
+torch==2.14.1+cu126
+numpy==2.5.3
+scipy==1.18.1
+matplotlib==3.11.2
+pytest==9.1.1
+bayesflow==2.0.14
+keras==3.15.1
+FrEIA @ git+https://github.com/vislearn/FrEIA.git@421249652c478b3f240f124f69eb5777b6a76bf2
