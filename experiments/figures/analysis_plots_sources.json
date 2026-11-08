@@ -1,0 +1,1468 @@
+{
+  "loglog_plotted": {
+    "kin_fmpe_s0": {
+      "final_train": 3.3021943011283876,
+      "final_val": 3.3103952407836914,
+      "final_gap_val_minus_train": 0.008200939655303774,
+      "final_gap_percent_of_train": 0.24834818631058275,
+      "max_abs_gap_last_10_epochs": 0.0133509700298311,
+      "slope_epochs_1_5": -0.06173255997425936,
+      "slope_epochs_5_25": -0.014574271340418887,
+      "slope_epochs_25_50": -0.023807038678599672,
+      "flatten_epoch_95pct_of_drop": 36,
+      "source": "experiments/runs/kin_fmpe_s0/log.csv"
+    },
+    "kin_bf_npse_s0": {
+      "final_train": 0.1904064267873764,
+      "final_val": 0.18780122697353363,
+      "final_gap_val_minus_train": -0.0026051998138427734,
+      "final_gap_percent_of_train": -1.3682310296973093,
+      "max_abs_gap_last_10_epochs": 0.0032739341259002686,
+      "slope_epochs_1_5": -0.150425408187225,
+      "slope_epochs_5_25": -0.024853668266703394,
+      "slope_epochs_25_50": -0.0296721740390241,
+      "flatten_epoch_95pct_of_drop": 27,
+      "source": "experiments/runs/kin_bf_npse_s0/log.csv"
+    },
+    "kin_cfmpe_s0": {
+      "final_train": 3.12108473443985,
+      "final_val": 3.123781204223633,
+      "final_gap_val_minus_train": 0.0026964697837827956,
+      "final_gap_percent_of_train": 0.08639527642516052,
+      "max_abs_gap_last_10_epochs": 0.011098211526870738,
+      "slope_epochs_1_5": -0.07464996455844077,
+      "slope_epochs_5_25": -0.018036724966079633,
+      "slope_epochs_25_50": -0.03307776429790804,
+      "flatten_epoch_95pct_of_drop": 36,
+      "source": "experiments/runs/kin_cfmpe_s0/log.csv"
+    },
+    "kin_fff_s0": {
+      "final_train": 1.6771174871325494,
+      "final_val": 1.6644281148910522,
+      "final_gap_val_minus_train": -0.012689372241497132,
+      "final_gap_percent_of_train": -0.7566179673669003,
+      "max_abs_gap_last_10_epochs": 0.4505579765290022,
+      "slope_epochs_1_5": -0.13995280940750315,
+      "slope_epochs_5_25": -0.08267976297559036,
+      "slope_epochs_25_50": -0.05693373079607776,
+      "flatten_epoch_95pct_of_drop": 34,
+      "source": "experiments/runs/kin_fff_s0/log.csv"
+    },
+    "kin_mfff_s0": {
+      "final_train": 4.153707570433617,
+      "final_val": 4.127064645290375,
+      "final_gap_val_minus_train": -0.026642925143241847,
+      "final_gap_percent_of_train": -0.6414251531063011,
+      "max_abs_gap_last_10_epochs": 0.18987540960311922,
+      "slope_epochs_1_5": 0.09306119250840703,
+      "slope_epochs_5_25": 0.039351643017490896,
+      "slope_epochs_25_50": -0.2764611101116108,
+      "flatten_epoch_95pct_of_drop": 48,
+      "source": "experiments/runs/kin_mfff_s0/log.csv"
+    },
+    "bal_fmpe_s0": {
+      "final_train": 4.690692142009735,
+      "final_val": 4.680129766464233,
+      "final_gap_val_minus_train": -0.010562375545501546,
+      "final_gap_percent_of_train": -0.22517733472433937,
+      "max_abs_gap_last_10_epochs": 0.01879432964324934,
+      "slope_epochs_1_5": -0.018877037517419242,
+      "slope_epochs_5_25": -0.00497774224298284,
+      "slope_epochs_25_50": -0.005225592207678271,
+      "flatten_epoch_95pct_of_drop": 43,
+      "source": "experiments/runs/bal_fmpe_s0/log.csv"
+    },
+    "bal_bf_npse_s0": {
+      "final_train": 0.27302998304367065,
+      "final_val": 0.2718769907951355,
+      "final_gap_val_minus_train": -0.0011529922485351562,
+      "final_gap_percent_of_train": -0.422295103153831,
+      "max_abs_gap_last_10_epochs": 0.0016707777976989746,
+      "slope_epochs_1_5": -0.06273190001931805,
+      "slope_epochs_5_25": -0.007693911569734543,
+      "slope_epochs_25_50": -0.007970070584997862,
+      "flatten_epoch_95pct_of_drop": 23,
+      "source": "experiments/runs/bal_bf_npse_s0/log.csv"
+    },
+    "bal_cfmpe_s0": {
+      "final_train": 4.594921536922455,
+      "final_val": 4.6066272258758545,
+      "final_gap_val_minus_train": 0.011705688953399296,
+      "final_gap_percent_of_train": 0.2547527495157061,
+      "max_abs_gap_last_10_epochs": 0.021140564918518123,
+      "slope_epochs_1_5": -0.020092789164765434,
+      "slope_epochs_5_25": -0.005371225831399475,
+      "slope_epochs_25_50": -0.007331587255950137,
+      "flatten_epoch_95pct_of_drop": 32,
+      "source": "experiments/runs/bal_cfmpe_s0/log.csv"
+    }
+  },
+  "loglog_excluded": [
+    {
+      "run": "kin_mfff_wrapped_b400_s0",
+      "family": "fff",
+      "train_nonpositive_epochs": 32,
+      "val_nonpositive_epochs": 34,
+      "train_min": -0.4019700085999211,
+      "val_min": -0.6602150350809097,
+      "val_nonpositive_at_epoch": [
+        8,
+        10,
+        14,
+        15,
+        18,
+        19,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "run": "kin_K16_s0",
+      "family": "mdn",
+      "train_nonpositive_epochs": 45,
+      "val_nonpositive_epochs": 50,
+      "train_min": -3.465730808019638,
+      "val_min": -6.946176052093506,
+      "val_nonpositive_at_epoch": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "run": "kin_cinn_s0",
+      "family": "cinn",
+      "train_nonpositive_epochs": 50,
+      "val_nonpositive_epochs": 50,
+      "train_min": -11.414314750671387,
+      "val_min": -11.346249055862426,
+      "val_nonpositive_at_epoch": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "run": "kin_cinn_s1",
+      "family": "cinn",
+      "train_nonpositive_epochs": 50,
+      "val_nonpositive_epochs": 50,
+      "train_min": -11.287834834098815,
+      "val_min": -11.209883069992065,
+      "val_nonpositive_at_epoch": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "run": "kin_cinn_s2",
+      "family": "cinn",
+      "train_nonpositive_epochs": 50,
+      "val_nonpositive_epochs": 50,
+      "train_min": -11.32593043899536,
+      "val_min": -11.270688343048096,
+      "val_nonpositive_at_epoch": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "run": "bal_fff_s0",
+      "family": "fff",
+      "train_nonpositive_epochs": 0,
+      "val_nonpositive_epochs": 1,
+      "train_min": 1.715062701523304,
+      "val_min": -0.21335463784635067,
+      "val_nonpositive_at_epoch": [
+        12
+      ]
+    },
+    {
+      "run": "bal_K16_s0",
+      "family": "mdn",
+      "train_nonpositive_epochs": 31,
+      "val_nonpositive_epochs": 33,
+      "train_min": -0.6904040199071169,
+      "val_min": -0.681077629327774,
+      "val_nonpositive_at_epoch": [
+        16,
+        17,
+        19,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "run": "bal_cinn_s0",
+      "family": "cinn",
+      "train_nonpositive_epochs": 50,
+      "val_nonpositive_epochs": 50,
+      "train_min": -8.265441595077515,
+      "val_min": -8.209807729721069,
+      "val_nonpositive_at_epoch": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "run": "bal_cinn_s1",
+      "family": "cinn",
+      "train_nonpositive_epochs": 50,
+      "val_nonpositive_epochs": 50,
+      "train_min": -5.486053542613983,
+      "val_min": -5.467679572105408,
+      "val_nonpositive_at_epoch": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "run": "bal_cinn_s2",
+      "family": "cinn",
+      "train_nonpositive_epochs": 50,
+      "val_nonpositive_epochs": 50,
+      "train_min": -9.511847979545593,
+      "val_min": -9.496758270263673,
+      "val_nonpositive_at_epoch": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    }
+  ],
+  "loglog_missing": [
+    {
+      "run": "bal_mfff_s0",
+      "reason": "no committed log.csv"
+    },
+    {
+      "run": "bal_mfff_wrapped_b400_s0",
+      "reason": "no committed log.csv"
+    }
+  ],
+  "size": {
+    "kinematics": {
+      "FMPE": {
+        "sampler": "midpoint x16, 32 NFE",
+        "n_params": [
+          297604,
+          998716,
+          2993932
+        ],
+        "err_post": [
+          0.001616500158821253,
+          0.0016351515559378828,
+          0.001636000366452916
+        ],
+        "headline_other_seeds": {
+          "s1": 0.0016148239380715842,
+          "s2": 0.0016243981046946535
+        },
+        "sources": [
+          "metrics/results/kinematics_kin_fmpe_p300000_s0_midpointx16.json",
+          "metrics/results/kinematics_kin_fmpe_p1000000_s0_midpointx16.json",
+          "metrics/results/kinematics_kin_fmpe_s0_midpointx16.json"
+        ]
+      },
+      "NPSE": {
+        "sampler": "Euler x32, 32 NFE",
+        "n_params": [
+          297944,
+          992165,
+          2994309
+        ],
+        "err_post": [
+          0.0017219488006188165,
+          0.001740044249627449,
+          0.0017734104485362546
+        ],
+        "headline_other_seeds": {
+          "s1": 0.0017479372582925516,
+          "s2": 0.00185461502750965
+        },
+        "sources": [
+          "metrics/results/kinematics_kin_bf_npse_p300000_s0_eulerx32.json",
+          "metrics/results/kinematics_kin_bf_npse_p1000000_s0_eulerx32.json",
+          "metrics/results/kinematics_kin_bf_npse_s0_eulerx32.json"
+        ]
+      }
+    },
+    "ballistics": {
+      "FMPE": {
+        "sampler": "midpoint x16, 32 NFE",
+        "n_params": [
+          297449,
+          998430,
+          2993435
+        ],
+        "err_post": [
+          0.0071096262118148556,
+          0.007112013335585507,
+          0.00711565656555636
+        ],
+        "headline_other_seeds": {
+          "s1": 0.007109126297878279,
+          "s2": 0.007115989177205348
+        },
+        "sources": [
+          "metrics/results/ballistics_bal_fmpe_p300000_s0_midpointx16.json",
+          "metrics/results/ballistics_bal_fmpe_p1000000_s0_midpointx16.json",
+          "metrics/results/ballistics_bal_fmpe_s0_midpointx16.json"
+        ]
+      },
+      "NPSE": {
+        "sampler": "Euler x32, 32 NFE",
+        "n_params": [
+          297822,
+          991934,
+          2993900
+        ],
+        "err_post": [
+          0.007143589603191904,
+          0.007135444604160023,
+          0.007108808384295691
+        ],
+        "headline_other_seeds": {
+          "s1": 0.007150023287373939,
+          "s2": 0.007131756421923778
+        },
+        "sources": [
+          "metrics/results/ballistics_bal_bf_npse_p300000_s0_eulerx32.json",
+          "metrics/results/ballistics_bal_bf_npse_p1000000_s0_eulerx32.json",
+          "metrics/results/ballistics_bal_bf_npse_s0_eulerx32.json"
+        ]
+      }
+    }
+  },
+  "size_missing": [],
+  "alpha": {
+    "kinematics": {
+      "alpha_effective_headline": 1.0,
+      "values": {
+        "kin_fmpe_a0_s0": {
+          "midpoint_err_post": {
+            "8": 0.0016476352519921935,
+            "16": 0.0014731894443045462,
+            "32": 0.001605370758549669
+          },
+          "euler_err_post": {
+            "8": 0.008393164305720178,
+            "16": 0.00337447245452943,
+            "32": 0.0021445277280539056
+          },
+          "midpoint_err_resim": {
+            "8": 4.3246771657845944e-05,
+            "16": 7.99238108110289e-06,
+            "32": 6.631270185002469e-06
+          },
+          "euler_err_resim": {
+            "8": 2.1788072030514754e-05,
+            "16": 4.325865168600926e-06,
+            "32": 3.0278011550864784e-06
+          }
+        },
+        "kin_fmpe_s0": {
+          "midpoint_err_post": {
+            "8": 0.0016560182675712963,
+            "16": 0.0014699242604620188,
+            "32": 0.001636000366452916
+          },
+          "euler_err_post": {
+            "8": 0.008614257503972366,
+            "16": 0.0034349682811383947,
+            "32": 0.0021811663997639624
+          },
+          "midpoint_err_resim": {
+            "8": 4.812199239016164e-05,
+            "16": 5.03802514533244e-06,
+            "32": 2.7384440429934754e-06
+          },
+          "euler_err_resim": {
+            "8": 1.811195847334572e-05,
+            "16": 2.7427865375031443e-06,
+            "32": 1.4135029178867293e-06
+          }
+        },
+        "kin_fmpe_a4_s0": {
+          "midpoint_err_post": {
+            "8": 0.002066624400367019,
+            "16": 0.001988831629049368,
+            "32": 0.0022045383971858556
+          },
+          "euler_err_post": {
+            "8": 0.013539887528941153,
+            "16": 0.005635734086699085,
+            "32": 0.00345699401723272
+          },
+          "midpoint_err_resim": {
+            "8": 0.00024354000877619818,
+            "16": 0.0001326896676093744,
+            "32": 0.00010635779002517395
+          },
+          "euler_err_resim": {
+            "8": 0.00027410545100911804,
+            "16": 0.00014121947331062208,
+            "32": 0.00011131016111694569
+          }
+        }
+      },
+      "shown": [
+        [
+          "euler",
+          8
+        ],
+        [
+          "euler",
+          16
+        ],
+        [
+          "euler",
+          32
+        ],
+        [
+          "midpoint",
+          4
+        ],
+        [
+          "midpoint",
+          8
+        ],
+        [
+          "midpoint",
+          16
+        ]
+      ],
+      "in_sweep_script_but_missing": [
+        {
+          "alpha": 0,
+          "solver": "rk4",
+          "steps": 8
+        },
+        {
+          "alpha": 0,
+          "solver": "rk4",
+          "steps": 16
+        },
+        {
+          "alpha": 4,
+          "solver": "rk4",
+          "steps": 8
+        },
+        {
+          "alpha": 4,
+          "solver": "rk4",
+          "steps": 16
+        }
+      ]
+    },
+    "ballistics": {
+      "alpha_effective_headline": 1.0,
+      "values": {
+        "bal_fmpe_a0_s0": {
+          "midpoint_err_post": {
+            "8": 0.007779244461218963,
+            "16": 0.007123244525256733,
+            "32": 0.007111413472679583
+          },
+          "euler_err_post": {
+            "8": 0.011942199924109538,
+            "16": 0.008246119517001453,
+            "32": 0.00738545035348436
+          },
+          "midpoint_err_resim": {
+            "8": 0.005524127816207411,
+            "16": 0.00019820968756790276,
+            "32": 9.068196543374585e-05
+          },
+          "euler_err_resim": {
+            "8": 0.0005160026452932545,
+            "16": 6.274282800125825e-05,
+            "32": 3.648946164911303e-05
+          }
+        },
+        "bal_fmpe_s0": {
+          "midpoint_err_post": {
+            "8": 0.007704285863608017,
+            "16": 0.007128526247259836,
+            "32": 0.00711565656555636
+          },
+          "euler_err_post": {
+            "8": 0.012260346019186977,
+            "16": 0.008350174806616121,
+            "32": 0.007427925574444815
+          },
+          "midpoint_err_resim": {
+            "8": 0.004861324197698572,
+            "16": 0.0001704374253215339,
+            "32": 4.455125702822828e-05
+          },
+          "euler_err_resim": {
+            "8": 0.0005753489952254352,
+            "16": 4.9024400728385984e-05,
+            "32": 1.8819092800374668e-05
+          }
+        },
+        "bal_fmpe_a4_s0": {
+          "midpoint_err_post": {
+            "8": 0.007764655042846695,
+            "16": 0.0072236430703125605,
+            "32": 0.007219530767748548
+          },
+          "euler_err_post": {
+            "8": 0.013885070656044603,
+            "16": 0.008956690631982005,
+            "32": 0.007736713025807114
+          },
+          "midpoint_err_resim": {
+            "8": 0.004763742949340976,
+            "16": 0.0002111593066480673,
+            "32": 3.699863296970338e-05
+          },
+          "euler_err_resim": {
+            "8": 0.0005757516275020689,
+            "16": 4.016693343572188e-05,
+            "32": 1.4930303122484949e-05
+          }
+        }
+      },
+      "shown": [
+        [
+          "euler",
+          8
+        ],
+        [
+          "euler",
+          16
+        ],
+        [
+          "euler",
+          32
+        ],
+        [
+          "midpoint",
+          4
+        ],
+        [
+          "midpoint",
+          8
+        ],
+        [
+          "midpoint",
+          16
+        ]
+      ],
+      "in_sweep_script_but_missing": [
+        {
+          "alpha": 0,
+          "solver": "rk4",
+          "steps": 8
+        },
+        {
+          "alpha": 0,
+          "solver": "rk4",
+          "steps": 16
+        },
+        {
+          "alpha": 4,
+          "solver": "rk4",
+          "steps": 8
+        },
+        {
+          "alpha": 4,
+          "solver": "rk4",
+          "steps": 16
+        }
+      ]
+    }
+  },
+  "ode": {
+    "fmpe_kinematics": {
+      "euler": [
+        {
+          "nfe": 4,
+          "steps": 4,
+          "post": 0.033235739682560876,
+          "resim": 0.0001232596179601594,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_eulerx4.json"
+        },
+        {
+          "nfe": 8,
+          "steps": 8,
+          "post": 0.008614257503972366,
+          "resim": 1.811195847334572e-05,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_eulerx8.json"
+        },
+        {
+          "nfe": 16,
+          "steps": 16,
+          "post": 0.0034349682811383947,
+          "resim": 2.7427865375031443e-06,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_eulerx16.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 32,
+          "post": 0.0021811663997639624,
+          "resim": 1.4135029178867293e-06,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_eulerx32.json"
+        },
+        {
+          "nfe": 64,
+          "steps": 64,
+          "post": 0.0018391040381822447,
+          "resim": 1.3612046443234765e-06,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_eulerx64.json"
+        }
+      ],
+      "midpoint": [
+        {
+          "nfe": 4,
+          "steps": 2,
+          "post": 0.010465924253232369,
+          "resim": 0.0014434697057629934,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_midpointx2.json"
+        },
+        {
+          "nfe": 8,
+          "steps": 4,
+          "post": 0.0016560182675712963,
+          "resim": 4.812199239016164e-05,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_midpointx4.json"
+        },
+        {
+          "nfe": 16,
+          "steps": 8,
+          "post": 0.0014699242604620188,
+          "resim": 5.03802514533244e-06,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_midpointx8.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 16,
+          "post": 0.001636000366452916,
+          "resim": 2.7384440429934754e-06,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_midpointx16.json"
+        },
+        {
+          "nfe": 64,
+          "steps": 32,
+          "post": 0.0016671022842006424,
+          "resim": 2.229372921933065e-06,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_midpointx32.json"
+        }
+      ],
+      "rk4": [
+        {
+          "nfe": 8,
+          "steps": 2,
+          "post": 0.08876322165050439,
+          "resim": 0.06260722598491535,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_rk4x2.json"
+        },
+        {
+          "nfe": 16,
+          "steps": 4,
+          "post": 0.019881822267390423,
+          "resim": 0.006874019140987558,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_rk4x4.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 8,
+          "post": 0.0024952272370962207,
+          "resim": 0.0011875452535912835,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_rk4x8.json"
+        },
+        {
+          "nfe": 64,
+          "steps": 16,
+          "post": 0.0016213642993906947,
+          "resim": 0.00020341975908318922,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_rk4x16.json"
+        },
+        {
+          "nfe": 256,
+          "steps": 64,
+          "post": 0.0016272531195214118,
+          "resim": 1.054036578606247e-05,
+          "mps": true,
+          "source": "metrics/results/kinematics_kin_fmpe_s0_mps_rk4x64.json"
+        }
+      ]
+    },
+    "bf_fmpe_kinematics": {
+      "euler": [
+        {
+          "nfe": 8,
+          "steps": 8,
+          "post": 0.008235673059082913,
+          "resim": 6.172693458227353e-05,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_fmpe_s0_eulerx8.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 32,
+          "post": 0.002126768242051159,
+          "resim": 1.2807519192657338e-05,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_fmpe_s0_eulerx32.json"
+        }
+      ],
+      "rk45": [
+        {
+          "nfe": 12,
+          "steps": 2,
+          "post": 0.013327907352781929,
+          "resim": 0.05805885829536765,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_fmpe_s0_rk45x2.json"
+        },
+        {
+          "nfe": 24,
+          "steps": 4,
+          "post": 0.0038841806069360276,
+          "resim": 0.012597964669846367,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_fmpe_s0_rk45x4.json"
+        }
+      ]
+    },
+    "npse_kinematics": {
+      "euler_maruyama": [
+        {
+          "nfe": 32,
+          "steps": 32,
+          "post": 0.0021925572671750377,
+          "resim": 0.01904742055381514,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_euler_maruyamax32.json"
+        },
+        {
+          "nfe": 128,
+          "steps": 128,
+          "post": 0.0015642001493241372,
+          "resim": 0.0007432061761931126,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_euler_maruyamax128.json"
+        },
+        {
+          "nfe": 256,
+          "steps": 256,
+          "post": 0.0016009062429483657,
+          "resim": 0.00015034661972310894,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_euler_maruyamax256.json"
+        }
+      ],
+      "euler": [
+        {
+          "nfe": 4,
+          "steps": 4,
+          "post": 0.01761941153733447,
+          "resim": 0.011249472012109976,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_eulerx4.json"
+        },
+        {
+          "nfe": 8,
+          "steps": 8,
+          "post": 0.004753614483506027,
+          "resim": 0.0008119476515015057,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_eulerx8.json"
+        },
+        {
+          "nfe": 16,
+          "steps": 16,
+          "post": 0.0023658024825992372,
+          "resim": 0.00011696262754578607,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_eulerx16.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 32,
+          "post": 0.0017734104485362546,
+          "resim": 6.204235276096408e-05,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_eulerx32.json"
+        },
+        {
+          "nfe": 64,
+          "steps": 64,
+          "post": 0.0016558694630310102,
+          "resim": 5.139315869886498e-05,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_eulerx64.json"
+        }
+      ],
+      "rk45": [
+        {
+          "nfe": 12,
+          "steps": 2,
+          "post": 0.02757375198215366,
+          "resim": 0.12492811857852638,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_rk45x2.json"
+        },
+        {
+          "nfe": 24,
+          "steps": 4,
+          "post": 0.011655716766372712,
+          "resim": 0.025677726840781286,
+          "mps": false,
+          "source": "metrics/results/kinematics_kin_bf_npse_s0_rk45x4.json"
+        }
+      ]
+    },
+    "fmpe_ballistics": {
+      "euler": [
+        {
+          "nfe": 4,
+          "steps": 4,
+          "post": 0.03203722767430898,
+          "resim": 0.014022674029548586,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_eulerx4.json"
+        },
+        {
+          "nfe": 8,
+          "steps": 8,
+          "post": 0.012260346019186977,
+          "resim": 0.0005753489952254352,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_eulerx8.json"
+        },
+        {
+          "nfe": 16,
+          "steps": 16,
+          "post": 0.008350174806616121,
+          "resim": 4.9024400728385984e-05,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_eulerx16.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 32,
+          "post": 0.007427925574444815,
+          "resim": 1.8819092800374668e-05,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_eulerx32.json"
+        },
+        {
+          "nfe": 64,
+          "steps": 64,
+          "post": 0.007198478026957862,
+          "resim": 2.0225774304360816e-05,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_eulerx64.json"
+        }
+      ],
+      "midpoint": [
+        {
+          "nfe": 4,
+          "steps": 2,
+          "post": 0.012226919585877414,
+          "resim": 0.12227950477805441,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_midpointx2.json"
+        },
+        {
+          "nfe": 8,
+          "steps": 4,
+          "post": 0.007704285863608017,
+          "resim": 0.004861324197698572,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_midpointx4.json"
+        },
+        {
+          "nfe": 16,
+          "steps": 8,
+          "post": 0.007128526247259836,
+          "resim": 0.0001704374253215339,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_midpointx8.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 16,
+          "post": 0.00711565656555636,
+          "resim": 4.455125702822828e-05,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_midpointx16.json"
+        },
+        {
+          "nfe": 64,
+          "steps": 32,
+          "post": 0.007115963266491686,
+          "resim": 5.7419991836795386e-05,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_midpointx32.json"
+        }
+      ],
+      "rk4": [
+        {
+          "nfe": 8,
+          "steps": 2,
+          "post": 0.18581589208902494,
+          "resim": 7.546240399028194,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_rk4x2.json"
+        },
+        {
+          "nfe": 16,
+          "steps": 4,
+          "post": 0.04439425836714655,
+          "resim": 0.4865724367291342,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_rk4x4.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 8,
+          "post": 0.010031202304608232,
+          "resim": 0.021511007771906804,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_rk4x8.json"
+        },
+        {
+          "nfe": 64,
+          "steps": 16,
+          "post": 0.007160184183199271,
+          "resim": 0.0016300708039392443,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_rk4x16.json"
+        },
+        {
+          "nfe": 256,
+          "steps": 64,
+          "post": 0.007109643309976562,
+          "resim": 8.831208968939989e-05,
+          "mps": true,
+          "source": "metrics/results/ballistics_bal_fmpe_s0_mps_rk4x64.json"
+        }
+      ]
+    },
+    "bf_fmpe_ballistics": {
+      "euler": [
+        {
+          "nfe": 8,
+          "steps": 8,
+          "post": 0.01179837105867276,
+          "resim": 0.0009742873271928065,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_fmpe_s0_eulerx8.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 32,
+          "post": 0.007340159371459413,
+          "resim": 0.0001902172845032791,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_fmpe_s0_eulerx32.json"
+        }
+      ],
+      "rk45": [
+        {
+          "nfe": 12,
+          "steps": 2,
+          "post": 0.02869534340417494,
+          "resim": 0.6872682611289739,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_fmpe_s0_rk45x2.json"
+        },
+        {
+          "nfe": 24,
+          "steps": 4,
+          "post": 0.0135550050839162,
+          "resim": 0.12875282317752113,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_fmpe_s0_rk45x4.json"
+        }
+      ]
+    },
+    "npse_ballistics": {
+      "euler_maruyama": [
+        {
+          "nfe": 32,
+          "steps": 32,
+          "post": 0.00807564545390689,
+          "resim": 0.139123174217939,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_euler_maruyamax32.json"
+        },
+        {
+          "nfe": 128,
+          "steps": 128,
+          "post": 0.00711576123939437,
+          "resim": 0.005384209080159239,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_euler_maruyamax128.json"
+        }
+      ],
+      "euler": [
+        {
+          "nfe": 4,
+          "steps": 4,
+          "post": 0.017558022457104378,
+          "resim": 0.11173691329017914,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_eulerx4.json"
+        },
+        {
+          "nfe": 8,
+          "steps": 8,
+          "post": 0.008286135669313644,
+          "resim": 0.0076994029128866085,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_eulerx8.json"
+        },
+        {
+          "nfe": 16,
+          "steps": 16,
+          "post": 0.0072484986833965745,
+          "resim": 0.000966095624229364,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_eulerx16.json"
+        },
+        {
+          "nfe": 32,
+          "steps": 32,
+          "post": 0.007108808384295691,
+          "resim": 0.00044135117900527836,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_eulerx32.json"
+        },
+        {
+          "nfe": 64,
+          "steps": 64,
+          "post": 0.007113264792891377,
+          "resim": 0.00038359243472662247,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_eulerx64.json"
+        }
+      ],
+      "rk45": [
+        {
+          "nfe": 12,
+          "steps": 2,
+          "post": 0.018619231256694894,
+          "resim": 1.039369432909066,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_rk45x2.json"
+        },
+        {
+          "nfe": 24,
+          "steps": 4,
+          "post": 0.009731729944241332,
+          "resim": 0.21921611699035728,
+          "mps": false,
+          "source": "metrics/results/ballistics_bal_bf_npse_s0_rk45x4.json"
+        }
+      ]
+    }
+  },
+  "ode_missing": []
+}
