@@ -233,7 +233,7 @@ def plot_testing(problem, group, records, path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--out', type=Path, default=ROOT / 'plots')
+    parser.add_argument('--out', type=Path, default=ROOT / 'experiments' / 'figures' / 'shared' / 'group_errors')
     parser.add_argument('--groups', nargs='+', choices=tuple(GROUPS), default=tuple(GROUPS),
                         help='Regenerate only selected groups; source manifest always covers all groups')
     args = parser.parse_args()
