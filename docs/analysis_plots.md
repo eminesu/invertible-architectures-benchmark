@@ -11,7 +11,7 @@ Training curves use the training objective and held-out validation objective fro
 `experiments/runs/<run>/log.csv`. Final errors use the `Err_post` and `Err_resim` means from
 `metrics/results/`. The two are never mixed, and objectives from different families never
 share a y-axis. Sources and derived numbers are in
-[`analysis_plots_sources.json`](../experiments/figures/analysis_plots_sources.json).
+[`analysis_plots_sources.json`](../experiments/figures/shared/comparison/analysis_plots_sources.json).
 
 Unless stated otherwise, results are for seed 0 with 1,000 conditions × 1,000 samples.
 
@@ -38,15 +38,15 @@ Medians, tail shares and paired differences are printed by `plot_analysis.py`.
 
 | Family | Kinematics | Ballistics |
 |---|---|---|
-| FMPE | [figure](../experiments/figures/loglog_learning_curve_fmpe_kinematics.png) | [figure](../experiments/figures/loglog_learning_curve_fmpe_ballistics.png) |
-| NPSE | [figure](../experiments/figures/loglog_learning_curve_npse_kinematics.png) | [figure](../experiments/figures/loglog_learning_curve_npse_ballistics.png) |
-| Conditional FMPE | [figure](../experiments/figures/loglog_learning_curve_cfmpe_kinematics.png) | [figure](../experiments/figures/loglog_learning_curve_cfmpe_ballistics.png) |
-| FFF / M-FFF | [figure](../experiments/figures/loglog_learning_curve_fff_kinematics.png) | not plotted, see below |
+| FMPE | [figure](../experiments/figures/fmpe/learning_curves/loglog_learning_curve_fmpe_kinematics.png) | [figure](../experiments/figures/fmpe/learning_curves/loglog_learning_curve_fmpe_ballistics.png) |
+| NPSE | [figure](../experiments/figures/npse/learning_curves/loglog_learning_curve_npse_kinematics.png) | [figure](../experiments/figures/npse/learning_curves/loglog_learning_curve_npse_ballistics.png) |
+| Conditional FMPE | [figure](../experiments/figures/cfmpe/learning_curves/loglog_learning_curve_cfmpe_kinematics.png) | [figure](../experiments/figures/cfmpe/learning_curves/loglog_learning_curve_cfmpe_ballistics.png) |
+| FFF / M-FFF | [figure](../experiments/figures/fff/learning_curves/loglog_learning_curve_fff_kinematics.png) | not plotted, see below |
 | MDN, cINN | not plotted, see below | not plotted, see below |
 
-![FMPE, kinematics](../experiments/figures/loglog_learning_curve_fmpe_kinematics.png)
+![FMPE, kinematics](../experiments/figures/fmpe/learning_curves/loglog_learning_curve_fmpe_kinematics.png)
 
-![FFF and M-FFF, kinematics](../experiments/figures/loglog_learning_curve_fff_kinematics.png)
+![FFF and M-FFF, kinematics](../experiments/figures/fff/learning_curves/loglog_learning_curve_fff_kinematics.png)
 
 Training-loss slope on log-log axes, and the first epoch after which training loss stays
 within 5% of its total drop from the final value:
@@ -96,9 +96,9 @@ arbitrarily):
 
 ## 2. Final error against model size
 
-![Error against size, kinematics](../experiments/figures/error_vs_size_kinematics.png)
+![Error against size, kinematics](../experiments/figures/shared/comparison/error_vs_size_kinematics.png)
 
-![Error against size, ballistics](../experiments/figures/error_vs_size_ballistics.png)
+![Error against size, ballistics](../experiments/figures/shared/comparison/error_vs_size_ballistics.png)
 
 `Err_post` mean at 32 NFE, with parameter counts from each run's `config.json` (about 298k, about
 0.99–1.00M, about 2.99M). FMPE uses midpoint × 16 and NPSE uses Euler × 32 at every size.
@@ -124,9 +124,9 @@ noted in `docs/comparison.md`.
 
 ## 3. FMPE time-prior sweep
 
-![Alpha sweep, kinematics](../experiments/figures/fmpe_alpha_sweep_kinematics.png)
+![Alpha sweep, kinematics](../experiments/figures/fmpe/sweeps/fmpe_alpha_sweep_kinematics.png)
 
-![Alpha sweep, ballistics](../experiments/figures/fmpe_alpha_sweep_ballistics.png)
+![Alpha sweep, ballistics](../experiments/figures/fmpe/sweeps/fmpe_alpha_sweep_ballistics.png)
 
 `Err_post` mean, 3M parameters, seed 0. Alpha 1 is the headline run, `alpha_effective: 1.0`
 in its `config.json`.
@@ -180,13 +180,13 @@ records `"alpha": 0.0` but was trained at effective α = 1, which is why this sw
 
 | Model | Kinematics | Ballistics |
 |---|---|---|
-| FMPE (hand-rolled) | [figure](../experiments/figures/ode_progression_fmpe_kinematics.png) | [figure](../experiments/figures/ode_progression_fmpe_ballistics.png) |
-| FMPE (BayesFlow) | [figure](../experiments/figures/ode_progression_bf_fmpe_kinematics.png) | [figure](../experiments/figures/ode_progression_bf_fmpe_ballistics.png) |
-| NPSE | [figure](../experiments/figures/ode_progression_npse_kinematics.png) | [figure](../experiments/figures/ode_progression_npse_ballistics.png) |
+| FMPE (hand-rolled) | [figure](../experiments/figures/fmpe/ode_progression/ode_progression_fmpe_kinematics.png) | [figure](../experiments/figures/fmpe/ode_progression/ode_progression_fmpe_ballistics.png) |
+| FMPE (BayesFlow) | [figure](../experiments/figures/fmpe/ode_progression/ode_progression_bf_fmpe_kinematics.png) | [figure](../experiments/figures/fmpe/ode_progression/ode_progression_bf_fmpe_ballistics.png) |
+| NPSE | [figure](../experiments/figures/npse/ode_progression/ode_progression_npse_kinematics.png) | [figure](../experiments/figures/npse/ode_progression/ode_progression_npse_ballistics.png) |
 
-![FMPE sampling progression, kinematics](../experiments/figures/ode_progression_fmpe_kinematics.png)
+![FMPE sampling progression, kinematics](../experiments/figures/fmpe/ode_progression/ode_progression_fmpe_kinematics.png)
 
-![NPSE sampling progression, kinematics](../experiments/figures/ode_progression_npse_kinematics.png)
+![NPSE sampling progression, kinematics](../experiments/figures/npse/ode_progression/ode_progression_npse_kinematics.png)
 
 `Err_post` mean by NFE ("–" means no committed result):
 

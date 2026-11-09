@@ -56,7 +56,7 @@ ax_h.set_xlabel('||f(x) - y*||')
 ax_h.set_title(f'mean squared resim error {err.mean():.1e}')
 fig.tight_layout()
 
-out = Path(__file__).parent / 'figures' / f'ground_truth_{args.benchmark}_{args.index}.png'
-out.parent.mkdir(exist_ok=True)
+out = Path(__file__).parent / 'figures' / 'shared' / 'ground_truth' / f'ground_truth_{args.benchmark}_{args.index}.png'
+out.parent.mkdir(parents=True, exist_ok=True)
 fig.savefig(out, dpi=150)
 print(f'saved {out}')

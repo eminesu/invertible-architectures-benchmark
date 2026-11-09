@@ -40,7 +40,7 @@ def read_log(run):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('runs', nargs='+')
-    p.add_argument('--out', default=None)
+    p.add_argument('--out', type=Path, default=None)
     args = p.parse_args()
 
     fig, (ax, ax_n, ax_r) = plt.subplots(1, 3, figsize=(16, 4))
@@ -80,7 +80,8 @@ def main():
         a.legend(fontsize=8, frameon=False)
     fig.suptitle(f'Conditional FFF: {", ".join(args.runs)}', fontsize=10)
     fig.tight_layout()
-    out = args.out or Path(__file__).parent / 'figures' / f'fff_learning_curve_{"_".join(args.runs)}.png'
+    out = args.out or Path(__file__).parent / 'figures' / 'fff' / 'learning_curves' / f'fff_learning_curve_{"_".join(args.runs)}.png'
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=130)
     print(f'saved {out}')
 

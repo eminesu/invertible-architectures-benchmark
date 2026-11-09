@@ -100,7 +100,8 @@ def main(run):
 
     fig.suptitle(f'Autoencoder sanity check, run {run}: decoder samples (top), encoder diagnostics on held-out x (bottom)')
     fig.tight_layout()
-    path = os.path.join(HERE, 'figures', f'autoencoder_sanity_{run}.png')
+    path = os.path.join(HERE, 'figures', 'autoencoder', 'sanity', f'autoencoder_sanity_{run}.png')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     fig.savefig(path, dpi=110)
     print('wrote', path)
 

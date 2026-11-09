@@ -33,7 +33,7 @@ M-FFF has no conditional version, so flag that to Paul as new work.
 .venv/bin/python experiments/evaluate_fff.py kin_fff_s0 kin_mfff_s0 kin_mfff_wrapped_b400_s0 bal_fff_s0
 .venv/bin/python experiments/plot_fff_posterior.py kin_fff_s0 kin_mfff_s0 kin_mfff_wrapped_b400_s0 --index 707 695 555
 .venv/bin/python experiments/plot_fff_posterior.py bal_fff_s0 --index 200 346 966
-.venv/bin/python experiments/plot_fff_learning_curve.py kin_fff_s0 kin_mfff_s0 kin_mfff_wrapped_b400_s0 --out experiments/figures/fff_learning_curve_kin.png
+.venv/bin/python experiments/plot_fff_learning_curve.py kin_fff_s0 kin_mfff_s0 kin_mfff_wrapped_b400_s0 --out experiments/figures/fff/learning_curves/fff_learning_curve_kin.png
 .venv/bin/python experiments/plot_fff_learning_curve.py bal_fff_s0
 ```
 
@@ -187,17 +187,17 @@ never near the wrap. A torus would add only the latent problem of Finding 2.
 
 ## Figures
 
-- `experiments/figures/fff_posterior_kin_fff_s0_kin_mfff_s0_kin_mfff_wrapped_b400_s0_y{707,695,555}.png`:
+- `experiments/figures/fff/posterior/fff_posterior_kin_fff_s0_kin_mfff_s0_kin_mfff_wrapped_b400_s0_y{707,695,555}.png`:
   kinematics y* = (0.50, 1.42) near and folded, (1.53, −0.09) mid, and
   (1.95, −0.02) far, at almost full extension. Rows: Euclidean FFF, torus
   (uniform), torus (wrapped). Same layout as the conditional-FMPE figure: GT
   gray, model blue, y* black +, valid region green. Kinematics valid region:
   rail |x0| ≤ 0.75 and |φᵢ| ≤ 1.5 (3σ of the prior); the arm panel shades the
   rail segment. No separate GT row: every row already overlays the GT.
-- `experiments/figures/fff_posterior_bal_fff_s0_y{200,346,966}.png`: ballistics
+- `experiments/figures/fff/posterior/fff_posterior_bal_fff_s0_y{200,346,966}.png`: ballistics
   y* = 3, 8, 13, the conditional-FMPE indices, with its λ = 15 valid region.
   One row (Euclidean).
-- `experiments/figures/fff_learning_curve_kin.png` and
+- `experiments/figures/fff/learning_curves/fff_learning_curve_kin.png` and
   `fff_learning_curve_bal_fff_s0.png`, three panels:
   - The training objective, train vs. val. It is flat and noisy by
     construction (the surrogate's value), so the val spikes are Hutchinson

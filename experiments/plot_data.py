@@ -14,7 +14,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from data.toy_data import InverseBallisticsModel, InverseKinematicsModel
 
-OUT = os.path.join(os.path.dirname(__file__), 'figures')
+OUT = os.path.join(os.path.dirname(__file__), 'figures', 'shared', 'data')
 
 
 def main():

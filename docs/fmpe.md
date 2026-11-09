@@ -124,7 +124,7 @@ its torch device (MPS) at import time, so timing on CPU needs
    Both score 0.0071. Rounding v0 to integers (the diagnostic of
    `docs/metrics.md`) gives 0.0012 for both, so the tie is not just the shared
    integer-v0 floor. FMPE, like every continuous model, smooths the integer v0
-   (`experiments/figures/fmpe_posterior_bal_fmpe_s0.png`, x4 panel).
+   (`experiments/figures/fmpe/posterior/fmpe_posterior_bal_fmpe_s0.png`, x4 panel).
 6. **The price is inference time: ~1400× the MDN at 8 NFE.** The MDN runs its 3M
    network once per y\* and then samples a Gaussian mixture; FMPE runs its 3M
    network once per sample per NFE (1M states × NFE). On our CPU one NFE over the
@@ -220,7 +220,7 @@ norm + FiLM).
 
 ### Sanity plots
 
-`experiments/figures/fmpe_posterior_{kin,bal}_fmpe_s0.png`: three test y\*, arms /
+`experiments/figures/fmpe/posterior/fmpe_posterior_{kin,bal}_fmpe_s0.png`: three test y\*, arms /
 trajectories of FMPE samples and the 1-D marginals against the rejection ground
 truth (RK4 × 8). The marginals match. The visible deviation is v0 on ballistics
 (integer ground truth, continuous model), and on kinematics y\* #2, near the edge

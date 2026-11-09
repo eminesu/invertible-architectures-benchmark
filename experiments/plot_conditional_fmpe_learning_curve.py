@@ -32,7 +32,7 @@ def read_log(run):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('runs', nargs='+')
-    p.add_argument('--out', default=None)
+    p.add_argument('--out', type=Path, default=None)
     args = p.parse_args()
 
     fig, ax = plt.subplots(figsize=(6.4, 4))
@@ -57,7 +57,8 @@ def main():
     problems = sorted({json.load(open(RUNS / run / 'config.json'))['problem'] for run in args.runs})
     ax.set_title(f'Prior-conditioned FMPE, {", ".join(problems)}: {", ".join(args.runs)}', fontsize=10)
     fig.tight_layout()
-    out = args.out or Path(__file__).parent / 'figures' / f'cfmpe_learning_curve_{"_".join(args.runs)}.png'
+    out = args.out or Path(__file__).parent / 'figures' / 'cfmpe' / 'learning_curves' / f'cfmpe_learning_curve_{"_".join(args.runs)}.png'
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=130)
     print(f'saved {out}')
 
