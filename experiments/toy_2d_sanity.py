@@ -20,7 +20,7 @@ import torch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from models.mdn import MDN, build_cholesky
 
-OUT = os.path.join(os.path.dirname(__file__), 'figures')
+OUT = os.path.join(os.path.dirname(__file__), 'figures', 'mdn', 'sanity')
 
 
 def rotated_cov(sx, sy, angle):

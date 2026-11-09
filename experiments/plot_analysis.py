@@ -3,12 +3,12 @@
 Run from any directory:
     python experiments/plot_analysis.py
 
-Writes to experiments/figures/:
-    loglog_learning_curve_<family>_<problem>   training objective, log-log
-    error_vs_size_<problem>                    final Err_post against parameter count
-    fmpe_alpha_sweep_<problem>                 FMPE time prior against solver and NFE
-    ode_progression_<model>_<problem>          final error against solver and NFE
-    analysis_plots_sources.json                sources, skipped runs and derived numbers
+Writes under experiments/figures/:
+    <model>/learning_curves/loglog_learning_curve_<family>_<problem>   training objective, log-log
+    shared/comparison/error_vs_size_<problem>                          final Err_post against parameter count
+    fmpe/sweeps/fmpe_alpha_sweep_<problem>                             FMPE time prior against solver and NFE
+    <model>/ode_progression/ode_progression_<model>_<problem>          final error against solver and NFE
+    shared/comparison/analysis_plots_sources.json                      sources, skipped runs and derived numbers
 
 Training objectives come from experiments/runs/<run>/log.csv and final test errors from
 metrics/results/*.json. The two are never mixed, and objectives of different families
@@ -247,7 +247,8 @@ def plot_loglog(family, problem, report):
         note += ' Objectives differ between panels; each panel has its own y-axis.'
     finish(fig, f'{name}: {title} learning curves', 'Training and held-out validation objective (seed = 0)',
            note, 5.1, int(width * 15.5))
-    save_figure(fig, FIGURES / f'loglog_learning_curve_{family}_{problem}')
+    folder = {'cinn': 'inn'}.get(family, family)
+    save_figure(fig, FIGURES / folder / 'learning_curves' / f'loglog_learning_curve_{family}_{problem}')
 
 
 def plot_size(problem, report):
@@ -313,7 +314,7 @@ def plot_size(problem, report):
            'Same sampler at every size: FMPE midpoint x16, NPSE Euler x32 (both 32 NFE). '
            'The y-range spans at least a factor of 1.5, so differences of about 1% stay visually small. '
            '1,000 conditions x 1,000 samples.', 5.3, 118)
-    save_figure(fig, FIGURES / f'error_vs_size_{problem}')
+    save_figure(fig, FIGURES / 'shared' / 'comparison' / f'error_vs_size_{problem}')
     report['size'][problem] = entry
 
 
@@ -377,7 +378,7 @@ def plot_alpha(problem, report):
            'alpha = 1 is the headline run (alpha_effective = 1.0 in its config.json). Only solver settings '
            'committed for all three alphas are shown. The rk4 settings listed in sweep_alpha.sh have no '
            'committed result for alpha 0 or 4. The two panels of each row share one y-range.', 8.0, 160)
-    save_figure(fig, FIGURES / f'fmpe_alpha_sweep_{problem}')
+    save_figure(fig, FIGURES / 'fmpe' / 'sweeps' / f'fmpe_alpha_sweep_{problem}')
     missing = [{'alpha': alpha, 'solver': solver, 'steps': steps}
                for alpha, suffix, *_ in ALPHAS[::2] for solver, steps in ALPHA_SCRIPT_GRID
                if find_result(problem, f'{prefix}_{suffix}', f'_{solver}x{steps}') is None]
@@ -446,7 +447,8 @@ def plot_ode(model, title, suffix, problem, report):
     note += 'NFE is the value recorded in each file (stages x steps).'
     finish(fig, f'{name}: {title} sampling progression', 'Final error by solver and NFE; 3M parameters, seed 0; lower is better',
            note, 5.5, 175)
-    save_figure(fig, FIGURES / f'ode_progression_{model}_{problem}')
+    folder = {'bf_fmpe': 'fmpe'}.get(model, model)
+    save_figure(fig, FIGURES / folder / 'ode_progression' / f'ode_progression_{model}_{problem}')
     report['ode'][f'{model}_{problem}'] = results
 
 
@@ -531,7 +533,9 @@ def main():
         plot_alpha(problem, report)
         for model, title, suffix in ODE_MODELS:
             plot_ode(model, title, suffix, problem, report)
-    (FIGURES / 'analysis_plots_sources.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+    sources = FIGURES / 'shared' / 'comparison' / 'analysis_plots_sources.json'
+    sources.parent.mkdir(parents=True, exist_ok=True)
+    sources.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print_tables(report)
     print_robustness()
 

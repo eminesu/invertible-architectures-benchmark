@@ -178,6 +178,14 @@ def posterior_figure(problem, sample, label, indices=(0, 1, 2), n=1000, n_draw=1
     return fig
 
 
+def figure_path(tag):
+    """figures/<model>/posterior/<tag>.png, where tag is '<kind>_posterior_<run>...'."""
+    kind = tag.split('_posterior_')[0]
+    out = FIGURES / {'ae': 'autoencoder', 'bf_fmpe': 'fmpe'}.get(kind, kind) / 'posterior' / f'{tag}.png'
+    out.parent.mkdir(parents=True, exist_ok=True)
+    return out
+
+
 # --- Loaders for the trained runs on this branch: run name -> (problem, sample, label, tag) ---
 
 def load_mdn(run, args):
@@ -293,7 +301,7 @@ def main():
     problem, sample, label, tag, suptitle = load(args.run, args)
     torch.manual_seed(0)
     np.random.seed(0)
-    fig = posterior_figure(problem, sample, label, args.index, args.n, args.n_draw, suptitle, FIGURES / f'{tag}.png')
+    fig = posterior_figure(problem, sample, label, args.index, args.n, args.n_draw, suptitle, figure_path(tag))
     plt.close(fig)
 
 

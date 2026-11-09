@@ -162,7 +162,8 @@ def main():
         fig.suptitle(f'Conditional FFF vs. rejection ground truth, {bench}, runs {", ".join(args.runs)} '
                      f'(one decoder pass, 1 NFE)')
         fig.tight_layout()
-        out = Path(__file__).parent / 'figures' / f'fff_posterior_{"_".join(args.runs)}_y{i}.png'
+        out = Path(__file__).parent / 'figures' / 'fff' / 'posterior' / f'fff_posterior_{"_".join(args.runs)}_y{i}.png'
+        out.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out, dpi=110)
         plt.close(fig)
         print(f'saved {out}')

@@ -180,7 +180,8 @@ def main():
         fig.tight_layout(h_pad=2.2)
         for row, title in zip(axs, titles):
             fig.text(0.01, row[1].get_position().y1 + 0.004, title, fontsize=9, ha='left', va='bottom')
-        out = Path(__file__).parent / 'figures' / f'cfmpe_posterior_{args.run}_y{i}.png'
+        out = Path(__file__).parent / 'figures' / 'cfmpe' / 'posterior' / f'cfmpe_posterior_{args.run}_y{i}.png'
+        out.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out, dpi=110)
         plt.close(fig)
         print(f'saved {out}')

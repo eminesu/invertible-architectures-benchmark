@@ -207,7 +207,7 @@ would settle it. Kinematics has no integer dimension and shows no such trend:
 ## Figures
 
 **Learning curves**
-- `experiments/figures/cfmpe_learning_curve_{bal,kin}_cfmpe_s0.png`: train and
+- `experiments/figures/cfmpe/learning_curves/cfmpe_learning_curve_{bal,kin}_cfmpe_s0.png`: train and
   val flow-matching loss per epoch.
 - Both runs fall and converge with no overfitting. Final values: ballistics
   4.595 / 4.607 (best val at epoch 47, equal to the final one); kinematics
@@ -219,11 +219,11 @@ would settle it. Kinematics has no integer dimension and shows no such trend:
   flow matching has an irreducible floor. Err_post / Err_resim measure quality.
 
 **Posterior figures**
-- `experiments/figures/cfmpe_posterior_bal_cfmpe_s0_y{200,346,966}.png`:
+- `experiments/figures/cfmpe/posterior/cfmpe_posterior_bal_cfmpe_s0_y{200,346,966}.png`:
   y\* = 3.0, 8.0, 13.0, one row per λ ∈ {12, 15, 18}. Left: 100 ground-truth
   (gray) and 100 conditional-FMPE (blue) trajectories, with y\* marked. Right:
   the four marginals, with the prior mean marked on v0.
-- `experiments/figures/cfmpe_posterior_kin_cfmpe_s0_y{499,401,882}.png`:
+- `experiments/figures/cfmpe/posterior/cfmpe_posterior_kin_cfmpe_s0_y{499,401,882}.png`:
   y\* = (1.13, 0.51), (1.79, 0.60), (0.15, −1.10), one row per σ setting (tight,
   nominal, wide, mixed). Left: 100 GT and 100 model arm configurations, with
   re-simulated end points and y\*. Right: rail offset and the three joint angles.

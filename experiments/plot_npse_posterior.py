@@ -88,7 +88,8 @@ def main():
         row[1].legend(fontsize=7)
     fig.suptitle(f'Diffusion (BayesFlow) posterior vs. rejection ground truth, run {args.run}, {method} x {steps}')
     fig.tight_layout()
-    out = os.path.join(HERE, 'figures', f'npse_posterior_{args.run}_{method}x{steps}.png')
+    out = os.path.join(HERE, 'figures', 'npse', 'posterior', f'npse_posterior_{args.run}_{method}x{steps}.png')
+    os.makedirs(os.path.dirname(out), exist_ok=True)
     fig.savefig(out, dpi=110)
     print(f'saved {out}')
 

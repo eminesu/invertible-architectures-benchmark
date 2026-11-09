@@ -77,7 +77,8 @@ def main():
     fig.suptitle(f'FMPE posterior vs. rejection ground truth, run {args.run}, '
                  f'{method} x {steps} ({nfe(method, int(steps))} NFE)')
     fig.tight_layout()
-    out = Path(__file__).parent / 'figures' / f'fmpe_posterior_{args.run}.png'
+    out = Path(__file__).parent / 'figures' / 'fmpe' / 'posterior' / f'fmpe_posterior_{args.run}.png'
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=110)
     print(f'saved {out}')
 

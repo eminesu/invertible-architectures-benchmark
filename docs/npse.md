@@ -17,7 +17,7 @@ network pass per function evaluation (NFE) of the sampler.
 | `experiments/bayesflow_npse.py` | Training and evaluation with `models/npse.py`; same data / budget / schedule as the baselines; scores with `metrics.evaluate` and stores sampler, steps, counted NFE, parameter count, load average |
 | `experiments/plot_npse_posterior.py` | Sanity check (build step 4): samples for a few y\* against the rejection ground truth, plus per-y\* numbers |
 | `experiments/sweep_npse.sh` | Sampling-step sweep (run) and model-size sweep (not run yet) |
-| `experiments/figures/npse_posterior_*.png` | Sanity plots |
+| `experiments/figures/npse/posterior/npse_posterior_*.png` | Sanity plots |
 
 ```bash
 .venv/bin/python experiments/bayesflow_npse.py --problem kinematics --device mps --sampler   # train only
@@ -73,7 +73,7 @@ slowly.
 
 ## Sanity check (build step 4)
 
-`experiments/figures/npse_posterior_{kin,bal}_bf_npse_s0_{eulerx32,euler_maruyamax128}.png`,
+`experiments/figures/npse/posterior/npse_posterior_{kin,bal}_bf_npse_s0_{eulerx32,euler_maruyamax128}.png`,
 test y\* #0–2, 1000 samples each. On both benchmarks the re-simulated end points
 sit on y\*, the four marginals overlap the rejection ground truth, the
 per-dimension std ratio model / ground truth is 0.95–1.07, and no ballistics

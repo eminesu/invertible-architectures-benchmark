@@ -105,7 +105,7 @@ Ballistics:
   the others ≈ 0.36–0.5) gives 0.0010 and also improves the separation from the
   prior (15× → 65×).
 
-Sanity plots of one y*: `experiments/figures/ground_truth_{kinematics,ballistics}_0.png`
+Sanity plots of one y*: `experiments/figures/shared/ground_truth/ground_truth_{kinematics,ballistics}_0.png`
 (`experiments/plot_ground_truth.py`).
 
 ## Open items for the team

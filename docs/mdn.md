@@ -10,8 +10,8 @@ technical report (Kruse 2020, arXiv:2003.05739, Sec. 2).
 | `data/toy_data.py` | Vendored priors + forward processes from `vislearn/inn_toy_data` (commit 357bc08) |
 | `models/mdn.py` | Cholesky-of-precision parameterization, losses, sampling, network |
 | `tests/test_mdn.py` | Numerical checks, incl. equivalence with FrEIA's `GaussianMixtureModel` |
-| `experiments/plot_data.py` | Step 1: prior / forward-process plots → `experiments/figures/data_overview.png` |
-| `experiments/toy_2d_sanity.py` | Step 5: tilted 2-D mixture recovery → `experiments/figures/toy_2d_sanity.png` |
+| `experiments/plot_data.py` | Step 1: prior / forward-process plots → `experiments/figures/shared/data/data_overview.png` |
+| `experiments/toy_2d_sanity.py` | Step 5: tilted 2-D mixture recovery → `experiments/figures/mdn/sanity/toy_2d_sanity.png` |
 | `experiments/plot_posterior.py` | Posterior samples for a few y* of a trained kinematics run |
 | `experiments/train_mdn.py` | Training + timing + provisional re-simulation error; outputs in `experiments/runs/` (git-ignored) |
 
@@ -107,7 +107,7 @@ side. Candidate explanations, none of them checked:
 **Known weakness: low-density y\*.** At y\* = (1.5, 0), the paper's own
 example point, only 115 of 1M training points lie within 0.05. There, about
 55% of MDN samples re-simulate to within 0.05 of y\*, against 97% at a dense
-point such as (1.0, 1.2). See `experiments/figures/posterior_kin_K16_s0.png`.
+point such as (1.0, 1.2). See `experiments/figures/mdn/posterior/posterior_kin_K16_s0.png`.
 Test y\* are drawn from the prior, so the averaged Err_resim hides this. The K
 sweep and a longer schedule should test whether it improves.
 
