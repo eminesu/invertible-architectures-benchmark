@@ -13,7 +13,7 @@ Writes to experiments/figures/:
 Training objectives come from experiments/runs/<run>/log.csv and final test errors from
 metrics/results/*.json. The two are never mixed, and objectives of different families
 never share a y-axis. Only files tracked by git are used. Markdown tables of the sampler
-results are printed to stdout.
+results, and the medians and tail shares quoted in docs/analysis_plots.md, are printed to stdout.
 """
 
 import csv
@@ -464,6 +464,60 @@ def print_tables(report):
             print(f'| {SOLVERS[solver][0]} | ' + ' | '.join(cells) + ' |')
 
 
+def post_summary(benchmark, run, suffix):
+    path = find_result(benchmark, run, suffix)
+    if path is None:
+        raise FileNotFoundError(f'No committed result for {benchmark} {run}{suffix}')
+    post = read_result(path, benchmark)['err_post']
+    return post['mean'], post['median']
+
+
+def per_condition_post(benchmark, run, suffix):
+    if find_result(benchmark, run, suffix) is None:
+        raise FileNotFoundError(f'No committed result for {benchmark} {run}{suffix}')
+    with np.load(RESULTS / f'{benchmark}_{run}{suffix}.npz') as data:
+        return data['err_post'], data['y_star']
+
+
+def print_robustness():
+    """Print the median, tail-share and paired-difference numbers quoted in docs/analysis_plots.md."""
+    print('\nErr_post tail share: mean, median, share of the sum from the worst 1% and 5% of conditions\n')
+    for benchmark, run, suffix in (('kinematics', 'kin_fmpe_s0', '_midpointx16'),
+                                   ('ballistics', 'bal_fmpe_s0', '_midpointx16')):
+        values = np.sort(per_condition_post(benchmark, run, suffix)[0])
+        count = len(values)
+        print(f'| {run}{suffix} | {values.mean():.5f} | {np.median(values):.5f} '
+              f'| {values[-count // 100:].sum() / values.sum():.3f} '
+              f'| {values[-count // 20:].sum() / values.sum():.3f} |')
+
+    print('\nKinematics Err_post mean / median, midpoint by NFE\n')
+    for steps in (2, 4, 8, 16, 32):
+        mean, median = post_summary('kinematics', 'kin_fmpe_s0', f'_midpointx{steps}')
+        print(f'| {2 * steps} | {mean:.5f} | {median:.5f} |')
+
+    print('\nKinematics Err_post mean / median, alpha 0 / 1 / 4\n')
+    for suffix in ('_midpointx4', '_midpointx8', '_midpointx16', '_eulerx8', '_eulerx16', '_eulerx32'):
+        cells = [post_summary('kinematics', f'kin_{run}', suffix) for run in ('fmpe_a0_s0', 'fmpe_s0', 'fmpe_a4_s0')]
+        print(f'| {suffix[1:]} | ' + ' | '.join(f'{mean:.5f} / {median:.5f}' for mean, median in cells) + ' |')
+
+    print('\nKinematics Err_post mean / median by model size\n')
+    for label, model, suffix, *_ in SIZE_MODELS:
+        cells = [post_summary('kinematics', f'kin_{model}_{budget}s0', suffix) for budget in SIZE_BUDGETS]
+        print(f'| {label} | ' + ' | '.join(f'{mean:.5f} / {median:.5f}' for mean, median in cells) + ' |')
+
+    print('\nRK4 x16 against the other solvers at 64 NFE: means, paired difference and its standard error\n')
+    for benchmark, prefix in (('kinematics', 'kin'), ('ballistics', 'bal')):
+        rk4, y_star = per_condition_post(benchmark, f'{prefix}_fmpe_s0', '_rk4x16')
+        for suffix in ('_midpointx32', '_eulerx64'):
+            other, other_y = per_condition_post(benchmark, f'{prefix}_fmpe_s0', suffix)
+            if not np.array_equal(y_star, other_y):
+                raise ValueError(f'Conditions differ for {benchmark} {suffix}')
+            difference = rk4 - other
+            print(f'| {benchmark} | {suffix[1:]} | {rk4.mean():.5f} | {other.mean():.5f} '
+                  f'| {difference.mean():+.5f} | {difference.std(ddof=1) / np.sqrt(len(difference)):.5f} '
+                  f'| {np.median(rk4):.5f} | {np.median(other):.5f} |')
+
+
 def main():
     plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 11,
                          'svg.fonttype': 'none', 'axes.labelcolor': '#273441',
@@ -479,6 +533,7 @@ def main():
             plot_ode(model, title, suffix, problem, report)
     (FIGURES / 'analysis_plots_sources.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print_tables(report)
+    print_robustness()
 
 
 if __name__ == '__main__':

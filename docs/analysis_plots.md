@@ -19,6 +19,21 @@ As `docs/comparison.md` notes, `Err_resim` below about 2e-4 (kinematics) or 4e-4
 is under the ground truth's own floor and no longer ranks posteriors. Several comparisons
 below are affected and say so.
 
+Two properties of `Err_post` limit how far the means in this document can be read:
+
+- **Kinematics means are set by a few conditions.** For `kin_fmpe_s0` midpoint × 16 the mean is
+  0.00164 and the median 0.00017; the worst 1% of conditions contribute 54% of the mean and the
+  worst 5% contribute 81%. On ballistics the two agree much better (0.00712 and 0.00642, worst 1%
+  contribute 3%). Where the kinematics median tells a different story, the text below says so.
+  The figures and the larger tables show means.
+- **Ballistics scores are mostly the integer-v0 effect.** Ground-truth v0 is an integer and the
+  models output continuous values. Rounding v0 takes FMPE from 0.0071 to 0.00116 and diffusion to
+  0.00117 (`docs/comparison.md`), so over 80% of the raw score is this effect. Rounded scores exist
+  only for those headline settings, not for the size, α or solver runs here, so small percentage
+  differences on ballistics are measured against an inflated baseline.
+
+Medians, tail shares and paired differences are printed by `plot_analysis.py`.
+
 ## 1. Log-log learning curves
 
 | Family | Kinematics | Ballistics |
@@ -52,16 +67,21 @@ between epoch ranges. The flow-matching and score-matching objectives keep a lar
 convergence (3.30 and 0.19 on kinematics), so these slopes describe the approach to a plateau
 rather than a convergence rate, and their absolute size should not be compared across
 objectives. Training and validation track each other: the final gap is at most 1.4% of the
-training loss in every plotted run, and the sign varies, so there is no sign of overfitting
-over the 50 epochs. Most of the drop comes in the first few epochs, but the 95% point falls
-late (epoch 23–43) because the curves keep falling slowly. `kin_fmpe_s0` decays its learning
-rate from 1e-3 to 0 over training, which is consistent with the slightly steeper slope after
-epoch 25 but is not tested here.
+training loss in every plotted run, and the sign varies. For FMPE, NPSE and conditional FMPE
+the gap also stays at most about 0.021 through the last 10 epochs, so these families show no sign
+of overfitting over the 50 epochs. For FFF and M-FFF the final-epoch gap says little, because
+their validation objective is noisy (below). Most of the drop comes in the first few epochs, but
+the 95% point falls late (epoch 23–43) because the curves keep falling slowly.
 
 FFF and M-FFF behave differently. Their validation objective is noisy (for `kin_fff_s0`, up to
-0.45 from training even in the last 10 epochs), and the `kin_mfff_s0` training objective ends up below its start only
-after rising to a peak near epoch 14, so its "flat by epoch 48" means it is still improving
-near the end of training.
+0.45 from training even in the last 10 epochs). The `kin_mfff_s0` training objective rises from
+4.22 to a peak of 5.59 at epoch 14 and ends at 4.15, so its "flat by epoch 48" means the objective
+is still moving late in training. That small net drop is not a better likelihood term: the training
+NLL surrogate goes from 3.26 to 4.03, while the reconstruction error falls from 0.0096 to 0.0013
+(β = 100, so its contribution falls from 0.96 to 0.13). The validation exact NLL also goes from
+0.77 at epoch 1 to 2.91 at the end. The epoch 1 value comes from a model with six times the final
+validation reconstruction error, so it may be unreliable, but the objective alone should not be
+read as an improved density fit.
 
 **Families excluded from log-log** (a run is drawn only if every training and validation value
 is strictly positive; nothing was clipped or shifted, because a shift would set the slope
@@ -90,10 +110,13 @@ arbitrarily):
 | Ballistics | FMPE | 0.00711 | 0.00711 | 0.00712 | 0.00711, 0.00712 | 86 / 193 / 374 s |
 | Ballistics | NPSE | 0.00714 | 0.00714 | 0.00711 | 0.00715, 0.00713 | 137 / 274 / 554 s |
 
-**Interpretation.** Error has plateaued by 300k parameters: going from 300k to 3M changes
-`Err_post` by at most about 3%, and on kinematics the smallest network is nominally the best for
-both models. The differences are comparable to the spread between seeds at 3M (NPSE kinematics
-spans 0.00175–0.00185). Inference time grows about 4.0–5.2× over the same range, so at this
+**Interpretation.** At 32 NFE, error has plateaued by 300k parameters, the smallest size tried:
+going from 300k to 3M changes `Err_post` by at most about 3%, and on kinematics the smallest network
+is nominally the best for both models. The differences are comparable to the spread between seeds at
+3M (NPSE kinematics spans 0.00175–0.00185). The kinematics medians do not favour the larger networks
+either (300k / 1M / 3M: FMPE 0.00018 / 0.00020 / 0.00017, NPSE 0.00015 / 0.00017 / 0.00022, and NPSE
+seeds 1 and 2 at 3M are 0.00019 and 0.00023). On ballistics the flat 0.0071 is dominated by the
+integer-v0 effect, so it is weaker evidence; the largest absolute change is still only 3e-5. Inference time grows about 4.0–5.2× over the same range, so at this
 training budget the extra cost comes from network size and buys no measurable `Err_post`. The
 caveats are that only seed 0 exists at 300k and 1M, and that all sizes share the 3M schedule
 (1M pairs, 50 epochs) and one sampler setting. Timings carry the ±15% between-session variation
@@ -123,10 +146,25 @@ in its `config.json`.
 | | Euler × 16 (16) | 0.00825 | 0.00835 | 0.00896 |
 | | Euler × 32 (32) | 0.00739 | 0.00743 | 0.00774 |
 
-**Interpretation.** α = 0 and α = 1 agree within about 3% on `Err_post` at every setting, so
-α = 0 is safe to report, as `docs/comparison.md` says. α = 4 is clearly worse on kinematics
-(25–35% with midpoint, 57–64% with Euler). On ballistics it is only slightly worse with midpoint
-at 16–32 NFE (1–1.5%), level at 8 NFE, and 4–13% worse with Euler.
+Kinematics `Err_post` mean / median:
+
+| Solver (NFE) | α = 0 | α = 1 | α = 4 |
+|---|---|---|---|
+| midpoint × 4 (8) | 0.00165 / 0.00047 | 0.00166 / 0.00045 | 0.00207 / 0.00076 |
+| midpoint × 8 (16) | 0.00147 / 0.00019 | 0.00147 / 0.00019 | 0.00199 / 0.00060 |
+| midpoint × 16 (32) | 0.00161 / 0.00018 | 0.00164 / 0.00017 | 0.00220 / 0.00063 |
+| Euler × 8 (8) | 0.00839 / 0.00646 | 0.00861 / 0.00673 | 0.01354 / 0.01104 |
+| Euler × 16 (16) | 0.00337 / 0.00178 | 0.00343 / 0.00186 | 0.00564 / 0.00372 |
+| Euler × 32 (32) | 0.00214 / 0.00062 | 0.00218 / 0.00064 | 0.00346 / 0.00174 |
+
+**Interpretation.** α = 0 and α = 1 agree within about 3% on the `Err_post` mean at every setting,
+so α = 0 is safe to report, as `docs/comparison.md` says. α = 4 is clearly worse on kinematics, and
+the mean understates by how much for a typical condition: 25–35% worse in the mean with midpoint but
+1.7× worse in the median at 8 NFE and 3.2–3.7× at 16–32 NFE. With Euler it is 57–64% worse in the
+mean and 1.6–2.7× in the median. On ballistics the mean is only slightly worse with midpoint at
+16–32 NFE (1–1.5%), level at 8 NFE, and 4–13% worse with Euler, but those percentages are against a
+baseline dominated by the integer-v0 effect. The 1e-4 midpoint difference would be several percent of
+the 0.0012 left after rounding, if the two parts were roughly additive, which was not measured.
 
 `Err_resim` does not follow the same order. On ballistics α = 4 has the lowest `Err_resim` at 32
 NFE (midpoint × 16: 3.7e-5, against 4.5e-5 for α = 1 and 9.1e-5 for α = 0), and on kinematics
@@ -195,16 +233,32 @@ records `"alpha": 0.0` but was trained at effective α = 1, which is why this sw
 
 The 256-NFE RK4 entry is the reference evaluated on MPS rather than CPU.
 
-**Interpretation.** At low budgets the solver matters more than NFE. At 8 NFE on kinematics,
-`Err_post` runs from 0.0017 (midpoint) through 0.0086 (Euler) to 0.0888 (RK4), about a 54× range,
-while midpoint itself changes little from 8 to 64 NFE. Midpoint converges at 8 NFE on kinematics
-and 16 NFE on ballistics, matching the 8–32 NFE range in `docs/fmpe.md`. The 0.0015 at 16 NFE on
-kinematics is the lowest entry, but midpoint does not improve monotonically from there.
+Kinematics midpoint, `Err_post` mean / median:
 
-The gap closes with budget, so "Euler and midpoint beat RK4 at equal NFE" holds only up to 32 NFE.
-At 64 NFE RK4 is level: on kinematics it is nominally best (0.00162, against 0.00167 midpoint and
-0.00184 Euler), and on ballistics it sits between midpoint and Euler (0.00716, against 0.00712 and
-0.00720). `docs/comparison.md` states that RK4 and RK45 lose at equal NFE, which needs this
+| NFE | 4 | 8 | 16 | 32 | 64 |
+|---|---|---|---|---|---|
+| Mean | 0.01047 | 0.00166 | 0.00147 | 0.00164 | 0.00167 |
+| Median | 0.00608 | 0.00045 | 0.00019 | 0.00017 | 0.00017 |
+
+**Interpretation.** At low budgets both the solver and the NFE have large effects. At 8 NFE on
+kinematics, `Err_post` runs from 0.0017 (midpoint) through 0.0086 (Euler) to 0.0888 (RK4), about a
+54× range, but RK4 alone drops by the same factor from 8 to 64 NFE (55×), because 8 NFE is only 2
+RK4 steps. Between midpoint and Euler the two effects are of similar size: 5× between the solvers at
+8 NFE, and 4.7× for Euler from 8 to 64 NFE.
+
+Midpoint's mean flattens at 8 NFE on kinematics and 16 NFE on ballistics, matching the 8–32 NFE
+range in `docs/fmpe.md`, but on kinematics that mean is set by the tail. The median is 2.4× higher at
+8 NFE than at 16 NFE (0.00045 against 0.00019) and only flattens at 16–32 NFE, so most conditions
+are not yet converged at 8 NFE. The 0.0015 mean at 16 NFE is the lowest entry, but the median at
+32–64 NFE is lower, so 16 NFE is not better on both measures. On ballistics, convergence means
+reaching 0.0071, which is mostly the integer-v0 effect.
+
+The gap to RK4 closes with budget, so "Euler and midpoint beat RK4 at equal NFE" holds only up to
+32 NFE. At 64 NFE on kinematics RK4's mean (0.00162) is 12% below Euler (0.00184) and 3% below
+midpoint (0.00167); both paired differences exceed the condition-to-condition standard error (one
+training seed). RK4's median beats Euler (0.00019 against 0.00034) but not midpoint (0.00017). On
+ballistics at 64 NFE RK4's mean (0.00716) is within 0.6% of both midpoint (0.00712) and Euler (0.00720).
+`docs/comparison.md` states that RK4 and RK45 lose at equal NFE, which needs this
 qualification for RK4 at 64 NFE. RK45 cannot be compared at equal NFE at all, because it exists only
 at 12 and 24 NFE and the Euler grids do not include those budgets. NPSE RK45 at 24 NFE is worse than Euler at 8 NFE on both benchmarks. BayesFlow FMPE
 RK45 at 24 NFE is worse than Euler at 8 NFE on ballistics, but on kinematics it falls between
@@ -216,11 +270,13 @@ The reverse SDE loses to Euler at the one shared budget, 32 NFE (kinematics 0.00
 ballistics 0.0081 against 0.0071). At 128–256 NFE its `Err_post` on kinematics (0.0016) is
 nominally below Euler at 64 NFE (0.0017), and no Euler result exists at those budgets to compare
 directly. Its `Err_resim` stays far worse: 7.4e-4 at 128 NFE against 5.1e-5 for Euler at 64 NFE on
-kinematics, and the 128-NFE value is above the ground-truth floor.
+kinematics, and the 128-NFE value is above the ground-truth floor. At 256 NFE it is 1.5e-4, below
+the floor, so the two can no longer be ranked there.
 
-Read `Err_resim` together with `Err_post`: on kinematics Euler has the lowest FMPE `Err_resim` at
-every NFE even where its `Err_post` is much worse, the collapse effect described in `docs/fmpe.md`
-Finding 4.
+Read `Err_resim` together with `Err_post`. Euler × 8 on kinematics has `Err_resim` 1.8e-5 with an
+`Err_post` five times midpoint's, the collapse effect of `docs/fmpe.md` Finding 4: a low `Err_resim`
+does not certify the posterior. Euler and midpoint `Err_resim` on kinematics are 1.4e-6 to 4.8e-5 at
+8–64 NFE, all below the floor, so their order there is not evidence for either solver.
 
 ## Run report
 
