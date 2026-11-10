@@ -1,0 +1,23 @@
+{
+  "run": "kin_ilnn_ml_s0_h96b16all",
+  "problem": "kinematics",
+  "model": "ilnn",
+  "n_params": 331904,
+  "hidden": 96,
+  "blocks": 16,
+  "unfolds": 4,
+  "dt": 0.25,
+  "z_dims": 2,
+  "val_loss": 2.105240190029144,
+  "val_nll": 2.105240190029144,
+  "val_y": 0.00026803754444699736,
+  "val_z": 1.9792009532451629,
+  "err_resim_provisional": 0.0003186810845655965,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 4292.381641864777,
+  "lam_init_std": 0.5,
+  "perm_mode": "mixing",
+  "no_wd_cell_scalars": true,
+  "lam_abs_mean": 0.3496517837047577,
+  "tau_mean": 0.6801196932792664
+}
