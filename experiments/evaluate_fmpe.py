@@ -6,6 +6,7 @@ more ODE solver settings (the NFE sweep).
 
 Each --solver entry is method:steps and uses nfe(method, steps) network
 evaluations per sample. Writes metrics/results/<benchmark>_<name>_<method>x<steps>.{json,npz};
+with --split val (FR3 tasks) the files get a _val suffix, so they never overwrite the test ones;
 the json gets the solver, NFE and parameter count added. Inference time is
 measured on --device; use cpu to compare with the other models' numbers.
 """
@@ -42,6 +43,8 @@ def main():
     p.add_argument('--name', default=None, help='result name prefix; default: the run name')
     p.add_argument('--device', default='cpu')
     p.add_argument('--seed', type=int, default=0, help='seed for the x(0) draws')
+    p.add_argument('--split', default='test', choices=['test', 'val'],
+                   help="conditions to score: 'test' (reported) or 'val' (model selection, FR3 tasks)")
     args = p.parse_args()
 
     model, cfg = load_run(args.run, args.device)
@@ -49,11 +52,12 @@ def main():
         method, steps = spec.split(':')
         steps = int(steps)
         torch.manual_seed(args.seed)
-        name = f'{args.name or args.run}_{method}x{steps}'
+        name = f'{args.name or args.run}_{method}x{steps}' + ('_val' if args.split == 'val' else '')
         print(f'--- {name}: {nfe(method, steps)} NFE per sample', flush=True)
-        summary = evaluate(lambda y, n: model.sample(y, n, steps=steps, method=method), cfg['problem'], name=name)
+        summary = evaluate(lambda y, n: model.sample(y, n, steps=steps, method=method), cfg['problem'], name=name,
+                           split=args.split)
         summary.update(method=method, steps=steps, nfe=nfe(method, steps), n_params=count_parameters(model),
-                       device=args.device)
+                       device=args.device, split=args.split)
         (RESULTS_DIR / f"{cfg['problem']}_{name}.json").write_text(json.dumps(summary, indent=2))
 
 
