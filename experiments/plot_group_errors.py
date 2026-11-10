@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / 'experiments' / 'runs'
 RESULTS = ROOT / 'metrics' / 'results'
 COLORS = ('#2563a5', '#d17b18', '#22836b', '#8b5da7', '#bd4b53', '#168b98')
-PROBLEMS = {'kinematics': ('kin', 'Kinematics'), 'balistics': ('bal', 'Ballistics')}
+PROBLEMS = {'kinematics': ('kin', 'Kinematics'), 'ballistics': ('bal', 'Ballistics')}
 
 
 @dataclass(frozen=True)
@@ -72,7 +72,7 @@ def load_model(problem, model):
     benchmark = 'ballistics' if prefix == 'bal' else 'kinematics'
     run = f'{prefix}_{model.run_suffix}'
     log_path = RUNS / run / 'log.csv'
-    if problem == 'balistics' and model.run_suffix == 'mfff_s0' and not log_path.exists():
+    if problem == 'ballistics' and model.run_suffix == 'mfff_s0' and not log_path.exists():
         return dict(model=model, run=run, missing='M-FFF was not run for ballistics')
     with log_path.open(newline='', encoding='utf-8-sig') as file:
         rows = list(csv.DictReader(file))
@@ -185,7 +185,7 @@ def plot_testing(problem, group, records, path):
             axes, ('err_post', 'err_resim'),
             ('Posterior error', 'Re-simulation error'),
             ('Mean Err_post (unbiased MMD squared)',
-             'Mean Err_resim (m squared)' if problem == 'balistics'
+             'Mean Err_resim (m squared)' if problem == 'ballistics'
              else 'Mean Err_resim (squared simulator units)')):
         values = np.array([record['result'][key]['mean'] if 'missing' not in record
                            else np.nan for record in records])
@@ -233,7 +233,7 @@ def plot_testing(problem, group, records, path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--out', type=Path, default=ROOT / 'plots')
+    parser.add_argument('--out', type=Path, default=ROOT / 'experiments' / 'figures' / 'shared' / 'group_errors')
     parser.add_argument('--groups', nargs='+', choices=tuple(GROUPS), default=tuple(GROUPS),
                         help='Regenerate only selected groups; source manifest always covers all groups')
     args = parser.parse_args()
