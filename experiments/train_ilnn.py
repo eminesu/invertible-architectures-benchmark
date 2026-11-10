@@ -42,7 +42,8 @@ def build_model(cfg, x_dims, y_dims):
     return ILNN(x_dims, y_dims, n_blocks=cfg['blocks'], hidden=cfg['hidden_resolved'],
                 unfolds=cfg['unfolds'], dt=cfg['dt'], clamp=cfg['clamp'],
                 latent_mmd=cfg['latent_mmd'], perm_seed=cfg['seed'],
-                loss=cfg.get('loss', 'mmd'), sigma_y=cfg.get('sigma_y', 0.05))  # old configs: paper loss
+                loss=cfg.get('loss', 'mmd'), sigma_y=cfg.get('sigma_y', 0.05),  # old configs: paper loss
+                lam_init_std=cfg.get('lam_init_std', 0.0), perm_mode=cfg.get('perm_mode', 'random'))
 
 
 def main():
@@ -66,6 +67,17 @@ def main():
                    help="MMD on [y_hat, z] vs [y, eps] ('joint', as train_inn.py) or on z vs eps alone ('marginal')")
     p.add_argument('--dequantize-v0', action='store_true',
                    help='ballistics: add U(-.5,.5) to the integer launch speed in training/validation data')
+    # Extras (all default to the old behaviour; old config.json files still load).
+    p.add_argument('--lam-init-std', type=float, default=0.0,
+                   help='std of the N(0, s) init of the cell drive Lambda; 0 (default) = zeros as before')
+    p.add_argument('--perm-mode', choices=['random', 'mixing'], default='random',
+                   help="'random': as before; 'mixing': redraw each inter-block permutation until it mixes the two halves")
+    p.add_argument('--no-wd-cell-scalars', action='store_true',
+                   help='no weight decay on Lambda and raw_tau (default: decay on everything, as before)')
+    p.add_argument('--log-cell-stats', action='store_true',
+                   help='append mean |Lambda| and mean tau to log.csv and the epoch line')
+    p.add_argument('--compile', action='store_true',
+                   help='torch.compile the flow forward/inverse (state dict keys unchanged); untested on GPU')
     # Schedule: same placeholders as the other models.
     p.add_argument('--n-train', type=int, default=1_000_000)
     p.add_argument('--n-val', type=int, default=20_000)
@@ -101,6 +113,9 @@ def main():
               'torch': torch.__version__}
     json.dump(config, open(os.path.join(out, 'config.json'), 'w'), indent=2)
     print(f'{run_name}: liquid width={hidden}, dim z={model.z_dims}, {n_params:,} trainable parameters, device={device}')
+    report = model.flow.permutation_report()
+    print('permutations (mixing the halves: ' + f'{sum(r[2] for r in report)}/{len(report)}): '
+          + ' '.join(f'{r[1]}{"" if r[2] else "!"}' for r in report))
 
     # Same split seeds as the other models, so all models see identical data.
     t = time.time()
@@ -114,14 +129,24 @@ def main():
     if args.dequantize_v0:  # fixed noise for validation so the curves are comparable across epochs
         x_va = dequantize(x_va, torch.Generator(device=device).manual_seed(args.seed))
 
-    opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    if args.no_wd_cell_scalars:
+        scalars = [p_ for n, p_ in model.named_parameters() if n.endswith(('.lam', '.raw_tau'))]
+        rest = [p_ for n, p_ in model.named_parameters() if not n.endswith(('.lam', '.raw_tau'))]
+        opt = torch.optim.Adam([{'params': rest, 'weight_decay': args.weight_decay},
+                                {'params': scalars, 'weight_decay': 0.0}], lr=args.lr)
+    else:
+        opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    if args.compile:   # assigned on the instance, so state_dict keys and model.pt stay the same
+        model.flow.forward = torch.compile(model.flow.forward)
+        model.flow.inverse = torch.compile(model.flow.inverse)
     steps_per_epoch = args.n_train // args.batch_size
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs * steps_per_epoch)
 
     terms_logged = sorted(set(TERMS + ('nll',)) & set(model.losses(x_va[:8], y_va[:8]).keys()))
     log = csv.writer(open(os.path.join(out, 'log.csv'), 'w', newline=''))
     log.writerow(['epoch', 'step', 'train_loss', 'val_loss'] + [f'val_{k}' for k in terms_logged]
-                 + ['val_resim', 'val_resim_failed', 'lr', 'seconds'])
+                 + ['val_resim', 'val_resim_failed', 'lr', 'seconds']
+                 + (['lam_abs_mean', 'tau_mean'] if args.log_cell_stats else []))
     step, t0 = 0, time.time()
     for epoch in range(args.epochs):
         model.train()
@@ -145,18 +170,23 @@ def main():
         model.eval()
         val, val_loss = evaluate_losses(model, x_va, y_va, args.batch_size, weights)
         resim, failed = provisional_resim(model, args.problem, y_va)
+        stats = model.cell_stats() if args.log_cell_stats else {}
         log.writerow([epoch, step, running / steps_per_epoch, val_loss] + [val[k] for k in terms_logged]
-                     + [resim, failed, sched.get_last_lr()[0], time.time() - t0])
+                     + [resim, failed, sched.get_last_lr()[0], time.time() - t0] + list(stats.values()))
         print(f'epoch {epoch:3d}  train {running / steps_per_epoch:+.4f}  val {val_loss:+.4f}  '
               + '  '.join(f'{k} {val[k]:+.4f}' for k in terms_logged)
-              + f'  resim {resim:.4f}  ({time.time() - t0:.0f}s)', flush=True)
+              + f'  resim {resim:.4f}'
+              + ''.join(f'  {k} {v:.4f}' for k, v in stats.items())
+              + f'  ({time.time() - t0:.0f}s)', flush=True)
 
     torch.save(model.state_dict(), os.path.join(out, 'model.pt'))
     summary = {'run': run_name, 'problem': args.problem, 'model': 'ilnn', 'n_params': n_params,
                'hidden': hidden, 'blocks': args.blocks, 'unfolds': args.unfolds, 'dt': args.dt,
                'z_dims': model.z_dims, 'val_loss': val_loss, **{f'val_{k}': v for k, v in val.items()},
                'err_resim_provisional': resim, 'resim_failed_fraction': failed,
-               'train_seconds': time.time() - t0}
+               'train_seconds': time.time() - t0,
+               'lam_init_std': args.lam_init_std, 'perm_mode': args.perm_mode,
+               'no_wd_cell_scalars': args.no_wd_cell_scalars, **model.cell_stats()}
     json.dump(summary, open(os.path.join(out, 'summary.json'), 'w'), indent=2)
     print(json.dumps(summary, indent=2))
 

@@ -51,7 +51,7 @@ from models.mdn import count_parameters  # noqa: F401  (shared helper, re-export
 class LiquidNet(nn.Module):
     """Liquid cell (Eq. 9/11) + linear readout: d_in -> (s_raw, t) of size 2 * d_out."""
 
-    def __init__(self, d_in, d_out, hidden, unfolds, dt):
+    def __init__(self, d_in, d_out, hidden, unfolds, dt, lam_init_std=0.0):
         super().__init__()
         self.unfolds, self.dt = unfolds, dt
         self.encoder = nn.Linear(d_in, hidden)               # context -> h0
@@ -59,6 +59,9 @@ class LiquidNet(nn.Module):
         self.w_in = nn.Linear(d_in, hidden)                  # input part of g (+ bias)
         self.raw_tau = nn.Parameter(torch.zeros(hidden))     # tau = softplus(raw_tau) + 1e-3
         self.lam = nn.Parameter(torch.zeros(hidden))         # Lambda in Eq. (9)
+        if lam_init_std > 0:   # extra (default 0 = old behaviour, RNG stream untouched): non-zero drive at init
+            with torch.no_grad():
+                self.lam.normal_(0.0, lam_init_std)
         self.readout = nn.Linear(hidden, 2 * d_out)
         nn.init.zeros_(self.readout.weight)                  # identity at initialisation
         nn.init.zeros_(self.readout.bias)
@@ -66,8 +69,9 @@ class LiquidNet(nn.Module):
     def cell(self, inp):
         h = torch.tanh(self.encoder(inp))
         inv_tau = 1.0 / (F.softplus(self.raw_tau) + 1e-3)
+        a_in = self.w_in(inp)   # the input is constant over the unfolds: one matmul instead of `unfolds`
         for _ in range(self.unfolds):
-            g = torch.sigmoid(self.w_rec(h) + self.w_in(inp))
+            g = torch.sigmoid(self.w_rec(h) + a_in)
             h = (h + self.dt * g * self.lam) / (1.0 + self.dt * (inv_tau + g))
         return h
 
@@ -98,12 +102,12 @@ def width_for_budget(dim, n_blocks, target):
 class LiquidCouplingBlock(nn.Module):
     """GLOW-style affine coupling block with liquid conditioners; see the module docstring."""
 
-    def __init__(self, dim, hidden, unfolds, dt, clamp):
+    def __init__(self, dim, hidden, unfolds, dt, clamp, lam_init_std=0.0):
         super().__init__()
         self.d1, self.d2 = dim // 2, dim - dim // 2
         self.clamp = clamp
-        self.net1 = LiquidNet(self.d1, self.d2, hidden, unfolds, dt)  # v1 -> params of u2
-        self.net2 = LiquidNet(self.d2, self.d1, hidden, unfolds, dt)  # u2 -> params of u1
+        self.net1 = LiquidNet(self.d1, self.d2, hidden, unfolds, dt, lam_init_std)  # v1 -> params of u2
+        self.net2 = LiquidNet(self.d2, self.d1, hidden, unfolds, dt, lam_init_std)  # u2 -> params of u1
 
     def _params(self, net, inp, d_out):
         out = net(inp)
@@ -131,16 +135,35 @@ class LiquidFlow(nn.Module):
     """Stack of liquid coupling blocks with fixed random permutations in between
     (none after the last block); same layout as models.inn.Flow, unconditional."""
 
-    def __init__(self, dim, n_blocks=8, hidden=256, unfolds=4, dt=0.25, clamp=2.0, perm_seed=0):
+    def __init__(self, dim, n_blocks=8, hidden=256, unfolds=4, dt=0.25, clamp=2.0, perm_seed=0,
+                 lam_init_std=0.0, perm_mode='random'):
         super().__init__()
+        assert perm_mode in ('random', 'mixing')
         self.dim = dim
         self.blocks = nn.ModuleList(
-            LiquidCouplingBlock(dim, hidden, unfolds, dt, clamp) for _ in range(n_blocks))
+            LiquidCouplingBlock(dim, hidden, unfolds, dt, clamp, lam_init_std) for _ in range(n_blocks))
         g = torch.Generator().manual_seed(perm_seed)
         for i in range(n_blocks - 1):
             perm = torch.randperm(dim, generator=g)
+            if perm_mode == 'mixing':   # extra: redraw until the permutation really mixes the two halves
+                while not self.mixes_halves(perm, dim):
+                    perm = torch.randperm(dim, generator=g)
             self.register_buffer(f'perm{i}', perm)
             self.register_buffer(f'inv_perm{i}', torch.argsort(perm))
+
+    @staticmethod
+    def mixes_halves(perm, dim):
+        """True if the first half after `u[:, perm]` takes channels from both old halves
+        (dim 2: the halves are swapped). A permutation that keeps or swaps the halves gives
+        every block the same conditioning pairs as the previous one."""
+        d1 = dim // 2
+        c = int((perm[:d1] < d1).sum())      # old-first-half channels landing in the new first half
+        return (1 <= c <= d1 - 1) if d1 >= 2 else c == 0
+
+    def permutation_report(self):
+        """[(boundary, perm list, mixes_halves)] for the fixed permutations between blocks."""
+        return [(i, getattr(self, f'perm{i}').tolist(), self.mixes_halves(getattr(self, f'perm{i}'), self.dim))
+                for i in range(len(self.blocks) - 1)]
 
     def forward(self, u):
         """u (B, dim) -> (v (B, dim), log|det dv/du| (B,))."""
@@ -167,7 +190,8 @@ class ILNN(_FlowModel):
     loss_terms = ('y', 'z', 'x')
 
     def __init__(self, x_dims, y_dims, n_blocks=8, hidden=256, unfolds=4, dt=0.25, clamp=2.0,
-                 latent_mmd='joint', perm_seed=0, loss='mmd', sigma_y=0.05):
+                 latent_mmd='joint', perm_seed=0, loss='mmd', sigma_y=0.05,
+                 lam_init_std=0.0, perm_mode='random'):
         super().__init__(x_dims, y_dims)
         assert latent_mmd in ('joint', 'marginal')
         assert loss in ('mmd', 'ml')
@@ -179,7 +203,15 @@ class ILNN(_FlowModel):
         self.loss_kind, self.sigma_y = loss, sigma_y
         if loss == 'ml':
             self.loss_terms = ('nll',)
-        self.flow = LiquidFlow(x_dims, n_blocks, hidden, unfolds, dt, clamp, perm_seed)
+        self.flow = LiquidFlow(x_dims, n_blocks, hidden, unfolds, dt, clamp, perm_seed,
+                               lam_init_std=lam_init_std, perm_mode=perm_mode)
+
+    @torch.no_grad()
+    def cell_stats(self):
+        """Mean |Lambda| and mean tau over all liquid cells (diagnostic: Lambda stuck at 0 = idle cell)."""
+        lam = torch.cat([m.lam.abs().flatten() for m in self.modules() if isinstance(m, LiquidNet)])
+        tau = torch.cat([(F.softplus(m.raw_tau) + 1e-3).flatten() for m in self.modules() if isinstance(m, LiquidNet)])
+        return {'lam_abs_mean': float(lam.mean()), 'tau_mean': float(tau.mean())}
 
     def forward(self, x):
         """Raw x -> (y_hat_n, z, log_det), the first two in standardized units."""
