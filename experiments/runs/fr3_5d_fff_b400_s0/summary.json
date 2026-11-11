@@ -1,0 +1,20 @@
+{
+  "run": "fr3_5d_fff_b400_s0",
+  "problem": "fr3_5d",
+  "manifold": "euclidean",
+  "beta": 400.0,
+  "y_noise": 0.001,
+  "n_params": 2996942,
+  "hidden": 352,
+  "blocks": 6,
+  "train_loss": 4.218150616168976,
+  "val_loss": 4.381817102432251,
+  "train_recon": 0.0009112679673708044,
+  "val_recon": 0.0010280140995746478,
+  "train_nll": -7.842598046875,
+  "val_nll": -7.799998828125,
+  "err_resim_provisional": 0.263621556620684,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, one decoder pass",
+  "train_seconds": 1597.9470121860504
+}

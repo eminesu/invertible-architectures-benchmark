@@ -1,0 +1,20 @@
+{
+  "run": "fr3_6d_mfff_wrapped_b400_s0",
+  "problem": "fr3_6d",
+  "manifold": "torus",
+  "beta": 400.0,
+  "y_noise": 0.001,
+  "n_params": 2991952,
+  "hidden": 351,
+  "blocks": 6,
+  "train_loss": 7.162179739117622,
+  "val_loss": 7.270327568054199,
+  "train_recon": 0.0017620908214012162,
+  "val_recon": 0.0019469083345029503,
+  "train_nll": -2.70472392578125,
+  "val_nll": -2.664557373046875,
+  "err_resim_provisional": 2.2066552222568276,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, one decoder pass",
+  "train_seconds": 1959.3521876335144
+}
