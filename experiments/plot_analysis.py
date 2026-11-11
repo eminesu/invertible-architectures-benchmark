@@ -2,6 +2,7 @@
 
 Run from any directory:
     python experiments/plot_analysis.py
+    python experiments/plot_analysis.py --fr3   # only loglog_learning_curve_fmpe_fr3_* (nothing else is rewritten)
 
 Writes under experiments/figures/:
     <model>/learning_curves/loglog_learning_curve_<family>_<problem>   training objective, log-log
@@ -20,6 +21,7 @@ import csv
 import json
 import re
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
@@ -33,6 +35,8 @@ from plot_group_errors import COLORS, RESULTS, ROOT, RUNS, relative, save_figure
 
 FIGURES = ROOT / 'experiments' / 'figures'
 PROBLEMS = {'kinematics': ('kin', 'Kinematics'), 'ballistics': ('bal', 'Ballistics')}
+# FR3 runs are named after the full problem (fr3_6d_fmpe_s0); only the FMPE curve is drawn (--fr3).
+FR3_PROBLEMS = {'fr3_6d': ('fr3_6d', 'FR3 6-D pose'), 'fr3_5d': ('fr3_5d', 'FR3 5-D pose')}
 INK_MUTED = '#4c5967'
 VALIDATION_INK = '#273441'
 
@@ -176,7 +180,7 @@ def finish(fig, title, subtitle, note, height, width_chars):
 
 
 def plot_loglog(family, problem, report):
-    prefix, name = PROBLEMS[problem]
+    prefix, name = {**PROBLEMS, **FR3_PROBLEMS}[problem]
     title, objective, suffixes, validation = FAMILIES[family]
     panels = []
     for suffix in suffixes:
@@ -526,6 +530,12 @@ def main():
                          'text.color': '#273441', 'axes.titlecolor': '#273441'})
     report = dict(loglog_plotted={}, loglog_excluded=[], loglog_missing=[], size={}, size_missing=[],
                   alpha={}, ode={}, ode_missing=[])
+    if '--fr3' in sys.argv[1:]:
+        for problem in FR3_PROBLEMS:
+            plot_loglog('fmpe', problem, report)
+        print(json.dumps({key: report[key] for key in ('loglog_plotted', 'loglog_excluded', 'loglog_missing')},
+                         indent=2))
+        return
     for problem in PROBLEMS:
         for family in FAMILIES:
             plot_loglog(family, problem, report)
