@@ -31,17 +31,17 @@ from metrics.ground_truth import ground_truth_posterior
 from models.fmpe import nfe
 
 
-def plot_fr3(args, model, bench, method, steps):
-    """Seven joint marginals per y*, FMPE vs ground truth, joint limits marked."""
+def fr3_marginals_figure(bench, index, x_all, label, title):
+    """Seven joint marginals per y*, model samples x_all (len(index), n, 7) vs the exact
+    ground truth, joint limits marked; on fr3_5d the flat density of joint 7 as a dotted line.
+    Shared with plot_fff_posterior.py."""
     from robot_ik.kinematics import joint_limits
     lo_lim, hi_lim = (np.asarray(a, dtype=np.float64) for a in joint_limits())
     y_star, _ = load_test_conditions(bench)
     gt = ground_truth_posterior(bench, y_star, verbose=False)
-    torch.manual_seed(0)
-    x_all = model.sample(y_star[args.index], 1000, steps=int(steps), method=method).numpy().astype(np.float64)
 
-    fig, axs = plt.subplots(len(args.index), 7, figsize=(22, 2.9 * len(args.index)), squeeze=False)
-    for row, i, x in zip(axs, args.index, x_all):
+    fig, axs = plt.subplots(len(index), 7, figsize=(22, 2.9 * len(index)), squeeze=False)
+    for row, i, x in zip(axs, index, x_all):
         out = ((x < lo_lim) | (x > hi_lim)).any(1).mean()
         for d, axd in enumerate(row):
             lo, hi = np.quantile(np.concatenate([x[:, d], gt[i][:, d]]), [0.002, 0.998])
@@ -49,7 +49,7 @@ def plot_fr3(args, model, bench, method, steps):
             pad = 0.03 * (hi - lo)
             bins = np.linspace(lo - pad, hi + pad, 60)
             axd.hist(gt[i][:, d], bins, density=True, alpha=0.5, color='gray', label=f'ground truth ({len(gt[i])})')
-            axd.hist(x[:, d], bins, density=True, histtype='step', color='tab:blue', lw=1.5, label='FMPE')
+            axd.hist(x[:, d], bins, density=True, histtype='step', color='tab:blue', lw=1.5, label=label)
             for b in (lo_lim[d], hi_lim[d]):
                 axd.axvline(b, color='tab:red', ls='--', lw=1, label='joint limit' if b == lo_lim[d] else None)
             if bench == 'fr3_5d' and d == 6:
@@ -60,10 +60,19 @@ def plot_fr3(args, model, bench, method, steps):
         row[0].legend(fontsize=7)
         if bench == 'fr3_5d':
             row[6].legend(fontsize=7)
-    fig.suptitle(f'FMPE joint marginals vs. exact ground truth, run {args.run}, '
-                 f'{method} x {steps} ({nfe(method, int(steps))} NFE)')
+    fig.suptitle(title)
     fig.tight_layout()
     return fig
+
+
+def plot_fr3(args, model, bench, method, steps):
+    """Seven joint marginals per y*, FMPE vs ground truth, joint limits marked."""
+    y_star, _ = load_test_conditions(bench)
+    torch.manual_seed(0)
+    x_all = model.sample(y_star[args.index], 1000, steps=int(steps), method=method).numpy().astype(np.float64)
+    return fr3_marginals_figure(bench, args.index, x_all, 'FMPE',
+                                f'FMPE joint marginals vs. exact ground truth, run {args.run}, '
+                                f'{method} x {steps} ({nfe(method, int(steps))} NFE)')
 
 
 def main():

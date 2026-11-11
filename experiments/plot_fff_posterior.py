@@ -22,6 +22,16 @@ The row title gives the fraction of samples inside all four bounds.
 
     .venv/bin/python experiments/plot_fff_posterior.py kin_fff_s0 kin_mfff_s0 --index 52 6 296
     .venv/bin/python experiments/plot_fff_posterior.py bal_fff_s0 --index 200 346 966
+
+FR3 runs (fr3_6d, fr3_5d): one figure per run with the seven joint marginals for
+each y* (default the test poses 0 1 2, as in the FMPE figure), drawn by the FMPE
+script's fr3_marginals_figure; written to figures/fff/posterior (Euclidean) or
+figures/mfff/posterior (torus). With --joint7 on fr3_5d, one more figure: the
+joint-7 histogram pooled over all 1000 test poses for every run given, against the
+flat density of the free joint, with the per-pose KS distance from uniform.
+
+    .venv/bin/python experiments/plot_fff_posterior.py fr3_6d_fff_b400_s0 fr3_6d_mfff_wrapped_b400_s0
+    .venv/bin/python experiments/plot_fff_posterior.py fr3_5d_fff_b400_s0 fr3_5d_mfff_wrapped_b400_s0 --joint7
 """
 
 import argparse
@@ -78,16 +88,93 @@ def draw_arms(ax, sim, x, color, alpha, label):
         ax.plot(arm[:, 0], arm[:, 1], color=color, alpha=alpha, lw=1, label=label if i == 0 else None)
 
 
+def run_label(cfg):
+    label = LABELS[cfg['manifold']]
+    return label + (f" ({cfg.get('latent', 'uniform')})" if cfg['manifold'] == 'torus' else '')
+
+
+def plot_fr3(args, models, bench):
+    """One figure per run: seven joint marginals per y* vs the exact ground truth."""
+    from experiments.plot_fmpe_posterior import fr3_marginals_figure
+    y_star, _ = load_test_conditions(bench)
+    for run, (model, cfg) in zip(args.runs, models):
+        torch.manual_seed(0)
+        x_all = model.sample(y_star[args.index], 1000).cpu().numpy().astype(np.float64)
+        fig = fr3_marginals_figure(bench, args.index, x_all, run_label(cfg),
+                                   f'{run_label(cfg)} joint marginals vs. exact ground truth, run {run} '
+                                   f'(one decoder pass, 1 NFE)')
+        sub = 'mfff' if cfg['manifold'] == 'torus' else 'fff'
+        out = Path(__file__).parent / 'figures' / sub / 'posterior' / f'{sub}_posterior_{run}.png'
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out, dpi=110)
+        plt.close(fig)
+        print(f'saved {out}')
+
+
+def plot_joint7(args, models, bench):
+    """fr3_5d: joint 7 is independent of y and uniform within its limits. Histogram over all
+    test poses per run against the flat density, plus per-pose KS distances from uniform
+    (samples outside the limits moved to the nearest limit for the KS test only)."""
+    from robot_ik.kinematics import joint_limits
+    lo, hi = (float(a[6]) for a in joint_limits())
+    y_star, _ = load_test_conditions(bench)
+    gt = ground_truth_posterior(bench, y_star, verbose=False)
+
+    def ks(v):
+        u = np.sort((np.clip(v, lo, hi) - lo) / (hi - lo))
+        k = np.arange(1, len(u) + 1) / len(u)
+        return max((k - u).max(), (u - (k - 1 / len(u))).max())
+
+    ks_gt = np.array([ks(g[:, 6]) for g in gt])
+    fig, axs = plt.subplots(1, len(models), figsize=(6 * len(models), 3.8), squeeze=False, sharey=True)
+    bins = np.linspace(-np.pi, np.pi, 64)
+    for ax, run, (model, cfg) in zip(axs[0], args.runs, models):
+        torch.manual_seed(0)
+        x7 = model.sample(y_star, 1000).cpu().numpy()[..., 6].astype(np.float64)
+        ks_m = np.array([ks(v) for v in x7])
+        outside = ((x7 < lo) | (x7 > hi)).mean()
+        # 20 equal bins inside the limits, as a ratio to the flat level
+        ratio = np.histogram(x7, np.linspace(lo, hi, 21))[0] / (x7.size / 20)
+        print(f'{run}: KS per pose median {np.median(ks_m):.4f} p95 {np.quantile(ks_m, 0.95):.4f}; '
+              f'outside limits {outside:.4%}; max |x7| {np.abs(x7).max():.3f}; '
+              f'inner bin ratio min {ratio.min():.3f} max {ratio.max():.3f}; edge bins {ratio[0]:.3f} {ratio[-1]:.3f}; '
+              f'bins: {np.round(ratio, 3).tolist()}')
+        ax.hist(x7.ravel(), bins, density=True, color='tab:blue', alpha=0.6, label=run_label(cfg))
+        ax.axhline(1 / (hi - lo), color='k', ls=':', lw=1.2, label='uniform within limits')
+        for b in (lo, hi):
+            ax.axvline(b, color='tab:red', ls='--', lw=1, label='joint limit' if b == lo else None)
+        ax.set_title(f'{run}\nKS vs uniform per pose: median {np.median(ks_m):.3f} (GT {np.median(ks_gt):.3f}), '
+                     f'outside limits {outside:.2%}', fontsize=8)
+        ax.set_xlabel('joint 7 (rad), all 1000 test poses x 1000 samples')
+        ax.legend(fontsize=7, loc='lower center')
+    fig.suptitle('fr3_5d: free joint 7 vs. the flat density', fontsize=10)
+    fig.tight_layout()
+    out = Path(__file__).parent / 'figures' / 'mfff' / 'posterior' / 'fr3_5d_joint7_fff_vs_mfff.png'
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=110)
+    plt.close(fig)
+    print(f'saved {out}')
+    print(f'GT KS per pose: median {np.median(ks_gt):.4f}, p95 {np.quantile(ks_gt, 0.95):.4f}')
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('runs', nargs='+', help='FFF runs of one benchmark, one row each')
-    p.add_argument('--index', type=int, nargs='+', default=[0], help='test y* indices, one figure each')
+    p.add_argument('--index', type=int, nargs='+', default=None,
+                   help='test y* indices: one figure each (toy, default 0) / one row each (FR3, default 0 1 2)')
     p.add_argument('--n-draw', type=int, default=100, help='arms / trajectories drawn per source')
+    p.add_argument('--joint7', action='store_true', help='fr3_5d: pooled joint-7 histogram vs uniform instead')
+    p.add_argument('--device', default='cpu')
     args = p.parse_args()
 
-    models = [load_run(r) for r in args.runs]
+    models = [load_run(r, args.device) for r in args.runs]
     bench = models[0][1]['problem']
     assert all(cfg['problem'] == bench for _, cfg in models), 'all runs must be on one benchmark'
+    if bench.startswith('fr3'):
+        args.index = args.index or [0, 1, 2]
+        (plot_joint7 if args.joint7 else plot_fr3)(args, models, bench)
+        return
+    args.index = args.index or [0]
     y_star, _ = load_test_conditions(bench)
     gt_all = ground_truth_posterior(bench, y_star, verbose=False)
     sim, f = get_model(bench), forward_fn(bench)
@@ -107,12 +194,10 @@ def main():
         lims = [[np.inf, -np.inf] for _ in range(4)]
         for r, (row, (model, cfg)) in enumerate(zip(axs, models)):
             torch.manual_seed(0)
-            x = model.sample(y[None], 1000)[0].numpy().astype(np.float64)
+            x = model.sample(y[None], 1000)[0].cpu().numpy().astype(np.float64)
             resim = f(x)
             err = np.nanmean(((resim - y) ** 2).sum(1))
-            label = LABELS[cfg['manifold']]
-            if cfg['manifold'] == 'torus':
-                label += f" ({cfg.get('latent', 'uniform')})"
+            label = run_label(cfg)
 
             ax = row[0]
             if bench == 'kinematics':

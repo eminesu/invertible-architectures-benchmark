@@ -54,9 +54,14 @@ def pick_device(name):
 
 def build_model(cfg, problem):
     angle_dims = ANGLE_DIMS[cfg['problem']] if cfg['manifold'] == 'torus' else ()
-    return ConditionalFFF(problem.n_parameters, problem.n_observations, cfg['hidden_resolved'], cfg['blocks'],
-                          cfg['activation'], cfg['beta'], angle_dims, cfg['beta_z'], cfg['beta_p'],
-                          cfg.get('latent', 'uniform'))
+    model = ConditionalFFF(problem.n_parameters, problem.n_observations, cfg['hidden_resolved'], cfg['blocks'],
+                           cfg['activation'], cfg['beta'], angle_dims, cfg['beta_z'], cfg['beta_p'],
+                           cfg.get('latent', 'uniform'))
+    if angle_dims and cfg['problem'].startswith('fr3'):
+        # FR3 samples must lie inside the URDF joint limits; joint 6's range crosses pi.
+        from robot_ik.kinematics import joint_limits
+        model.set_angle_lower(joint_limits()[0][list(angle_dims)])
+    return model
 
 
 def evaluate_terms(model, x, y, v, batch_size):
@@ -114,6 +119,8 @@ def main():
     args = p.parse_args()
 
     if args.y_noise is None:
+        if args.problem not in GT_SIGMA:  # e.g. FR3: the ground truth is noiseless, there is no sigma to copy
+            p.error(f'--y-noise is required for {args.problem} (no ground-truth likelihood sigma)')
         args.y_noise = GT_SIGMA[args.problem]
     torch.manual_seed(args.seed)
     device = pick_device(args.device)
