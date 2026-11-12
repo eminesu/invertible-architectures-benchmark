@@ -1,0 +1,57 @@
+{
+  "problem": "fr3_5d",
+  "prior_min": null,
+  "prior_max": null,
+  "nominal_fraction": 0.25,
+  "blocks": 6,
+  "hidden": null,
+  "param_budget": 3000000,
+  "activation": "silu",
+  "sigma_min": 0.0001,
+  "alpha": 1.0,
+  "n_train": 1000000,
+  "n_val": 20000,
+  "epochs": 50,
+  "batch_size": 1000,
+  "lr": 0.001,
+  "weight_decay": 1e-05,
+  "grad_clip": 10.0,
+  "seed": 0,
+  "device": "cuda",
+  "threads": 4,
+  "run_name": "fr3_5d_cfmpe_s0",
+  "prior_names": [
+    "width1",
+    "width2",
+    "width3",
+    "width4",
+    "width5",
+    "width6",
+    "width7"
+  ],
+  "prior_range": [
+    0.5,
+    1.0
+  ],
+  "hidden_resolved": 496,
+  "n_params": 2999319,
+  "device_resolved": "cuda",
+  "torch": "2.14.1+cu126",
+  "method": "CFMPE",
+  "run": "fr3_5d_cfmpe_s0",
+  "prior_mode": "family",
+  "prior_default": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "data_seeds": [
+    10000,
+    20000
+  ],
+  "gpu": "NVIDIA GeForce GTX 1650 Ti"
+}
