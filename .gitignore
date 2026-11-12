@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 .pytest_cache/
 metrics/cache
+experiments/runs/fr3_6d_ikflow_paper/
