@@ -1,0 +1,27 @@
+{
+  "run": "fr3_5d_cfmpe_s0",
+  "problem": "fr3_5d",
+  "n_params": 2999319,
+  "hidden": 496,
+  "blocks": 6,
+  "prior_names": [
+    "width1",
+    "width2",
+    "width3",
+    "width4",
+    "width5",
+    "width6",
+    "width7"
+  ],
+  "prior_range": [
+    0.5,
+    1.0
+  ],
+  "nominal_fraction": 0.25,
+  "train_loss": 3.8908218109607695,
+  "val_loss": 3.9037089347839355,
+  "err_resim_provisional": 0.001095259633226906,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val (y, c) x 100 samples, rk4 16 steps (64 NFE)",
+  "train_seconds": 1032.278550863266
+}

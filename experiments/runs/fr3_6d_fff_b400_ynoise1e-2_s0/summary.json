@@ -1,0 +1,20 @@
+{
+  "run": "fr3_6d_fff_b400_ynoise1e-2_s0",
+  "problem": "fr3_6d",
+  "manifold": "euclidean",
+  "beta": 400.0,
+  "y_noise": 0.01,
+  "n_params": 2999054,
+  "hidden": 352,
+  "blocks": 6,
+  "train_loss": 3.464273023366928,
+  "val_loss": 3.5833956599235535,
+  "train_recon": 0.0017520705146016552,
+  "val_recon": 0.0018642987997736782,
+  "train_nll": -4.49026943359375,
+  "val_nll": -4.44747685546875,
+  "err_resim_provisional": 3.9756331967126926,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, one decoder pass",
+  "train_seconds": 1599.5538375377655
+}

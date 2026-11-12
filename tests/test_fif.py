@@ -281,8 +281,8 @@ def test_evaluation_preserves_existing_outputs(tmp_path, monkeypatch, problem, p
         (out / 'summary.json').write_text(json.dumps({'previous': index}), encoding='utf-8')
     previous_files = {p: p.read_bytes() for p in folder.rglob('*') if p.is_file()}
     model = SimpleNamespace(sample=object(), arch='paper', sigma=0.01,
-                            discrete_speed=problem == 'ballistics')
-    config = {'problem': problem, 'run': run}
+                            discrete_speed=problem == 'ballistics', z_dims=2, y_dims=2)
+    config = {'problem': problem, 'run': run, 'n_params': 100}
     monkeypatch.setattr(scoring, 'load_run', lambda *args: (model, config, folder))
     outputs = []
 

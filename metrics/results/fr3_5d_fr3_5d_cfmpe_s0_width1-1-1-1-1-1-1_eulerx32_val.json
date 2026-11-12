@@ -1,0 +1,96 @@
+{
+  "benchmark": "fr3_5d",
+  "model": "fr3_5d_cfmpe_s0_width1-1-1-1-1-1-1_eulerx32_val",
+  "n_conditions": 200,
+  "n_samples": 1000,
+  "n_gt_min": 1000,
+  "err_post": {
+    "mean": 0.003922538380228886,
+    "mean_clamped": 0.003922538380228886,
+    "median": 0.00195302391786642,
+    "q1": 0.000855081705163116,
+    "q3": 0.0035561446849765588,
+    "max": 0.06055249001104113,
+    "n_finite": 200
+  },
+  "err_post_biased": {
+    "mean": 0.009755276415832535,
+    "mean_clamped": 0.009755276415832535,
+    "median": 0.007795824303911333,
+    "q1": 0.006709714174100781,
+    "q3": 0.00936143733061378,
+    "max": 0.06634331827707743,
+    "n_finite": 200
+  },
+  "err_resim": {
+    "mean": 0.0012198842324563975,
+    "mean_clamped": 0.0012198842324563975,
+    "median": 0.000621495327178435,
+    "q1": 0.00033683939790899066,
+    "q3": 0.0013058644088773381,
+    "max": 0.01615873891413264,
+    "n_finite": 200
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 29.290467799990438,
+  "inference_ms_per_condition": 146.4523389999522,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "split": "val",
+  "pos_err_mm": {
+    "median": 4.0850202090403265,
+    "mean": 5.826908770364934,
+    "p95": 14.955419268102386
+  },
+  "axis_err_deg": {
+    "median": 0.5806965255652571,
+    "mean": 0.8954456811673042,
+    "p95": 2.428647864555742
+  },
+  "success_rate": {
+    "1mm_1deg": 0.035445,
+    "10mm_5deg": 0.8503
+  },
+  "joint_limit_violation_fraction": 0.056225,
+  "coverage": {
+    "delta_rad": 0.5,
+    "median": 0.9755,
+    "mean": 0.9677449999999999,
+    "p95": 1.0
+  },
+  "method": "euler",
+  "steps": 32,
+  "nfe": 32,
+  "n_params": 2999319,
+  "device": "cuda",
+  "family": "CFMPE",
+  "prior_range": [
+    0.5,
+    1.0
+  ],
+  "nominal_fraction": 0.25,
+  "training": {
+    "seed": 0,
+    "n_train": 1000000,
+    "n_val": 20000,
+    "epochs": 50,
+    "batch_size": 1000,
+    "param_budget": 3000000,
+    "lr": 0.001,
+    "weight_decay": 1e-05,
+    "blocks": 6,
+    "alpha": 1.0,
+    "sigma_min": 0.0001
+  },
+  "evaluation_seed": 0,
+  "prior_params_evaluated": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ]
+}

@@ -2,6 +2,8 @@
 
 Run from any directory:
     python experiments/plot_analysis.py
+    python experiments/plot_analysis.py --fr3   # FR3 only: loglog_learning_curve_fmpe_fr3_*[_alpha],
+                                                #   ode_progression_fmpe_fr3_*, error_vs_size_fr3_* (nothing else is rewritten)
 
 Writes under experiments/figures/:
     <model>/learning_curves/loglog_learning_curve_<family>_<problem>   training objective, log-log
@@ -20,6 +22,7 @@ import csv
 import json
 import re
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
@@ -33,6 +36,8 @@ from plot_group_errors import COLORS, RESULTS, ROOT, RUNS, relative, save_figure
 
 FIGURES = ROOT / 'experiments' / 'figures'
 PROBLEMS = {'kinematics': ('kin', 'Kinematics'), 'ballistics': ('bal', 'Ballistics')}
+# FR3 runs are named after the full problem (fr3_6d_fmpe_s0); only the FMPE curve is drawn (--fr3).
+FR3_PROBLEMS = {'fr3_6d': ('fr3_6d', 'FR3 6-D pose'), 'fr3_5d': ('fr3_5d', 'FR3 5-D pose')}
 INK_MUTED = '#4c5967'
 VALIDATION_INK = '#273441'
 
@@ -48,6 +53,9 @@ FAMILIES = {
 }
 PANEL_LABELS = {'fff_s0': 'FFF (Euclidean)', 'mfff_s0': 'M-FFF (torus, uniform)',
                 'mfff_wrapped_b400_s0': 'M-FFF (wrapped, batch 400)'}
+# FR3 only (--fr3): alpha = 0 and alpha = 1 on separate panels; written to <name>_alpha.
+FR3_ALPHA_FAMILY = ('FMPE time prior','Flow-matching loss', ('fmpe_a0_s0', 'fmpe_s0'), 'val_loss')
+FR3_ALPHA_LABELS = {'fmpe_a0_s0': 'alpha = 0 (p(t) uniform)', 'fmpe_s0': 'alpha = 1 (p(t) ∝ t, headline)'}
 SIZE_MODELS = (('FMPE', 'fmpe', '_midpointx16', 'midpoint x16, 32 NFE', COLORS[0], 'o'),
                ('NPSE', 'bf_npse', '_eulerx32', 'Euler x32, 32 NFE', COLORS[1], 's'))
 SIZE_BUDGETS = ('p300000_', 'p1000000_', '')
@@ -175,9 +183,10 @@ def finish(fig, title, subtitle, note, height, width_chars):
     fig.tight_layout(rect=(0.01, bottom, 0.99, 1 - 0.72 / height), w_pad=2.5, h_pad=2)
 
 
-def plot_loglog(family, problem, report):
-    prefix, name = PROBLEMS[problem]
-    title, objective, suffixes, validation = FAMILIES[family]
+def plot_loglog(family, problem, report, spec=None, labels=None, out_suffix=''):
+    prefix, name = {**PROBLEMS, **FR3_PROBLEMS}[problem]
+    title, objective, suffixes, validation = spec or FAMILIES[family]
+    labels = labels or PANEL_LABELS
     panels = []
     for suffix in suffixes:
         run = f'{prefix}_{suffix}'
@@ -203,7 +212,7 @@ def plot_loglog(family, problem, report):
     width = max(7.6, 5.2 * len(panels))
     fig, axes = plt.subplots(1, len(panels), figsize=(width, 5.1), squeeze=False)
     for panel, ax in zip(panels, axes.flat):
-        ax.set_title(PANEL_LABELS.get(panel['suffix'], panel['run']), loc='left',
+        ax.set_title(labels.get(panel['suffix'], panel['run']), loc='left',
                      fontweight='bold', fontsize=11.5, pad=20)
         if panel not in eligible:
             ax.text(0.5, 0.5, 'Not plotted: objective is non-positive\n'
@@ -243,12 +252,15 @@ def plot_loglog(family, problem, report):
     if excluded:
         note += (' Runs with any non-positive training or validation value are not drawn on log axes; '
                  'nothing was clipped or shifted.')
-    if len(panels) > 1:
+    if spec is FR3_ALPHA_FAMILY:
+        note += (' The two losses average the same flow-matching error over different time distributions '
+                 '(p(t) uniform vs p(t) ∝ t), so their levels are not comparable; each panel has its own y-axis.')
+    elif len(panels) > 1:
         note += ' Objectives differ between panels; each panel has its own y-axis.'
     finish(fig, f'{name}: {title} learning curves', 'Training and held-out validation objective (seed = 0)',
            note, 5.1, int(width * 15.5))
     folder = {'cinn': 'inn'}.get(family, family)
-    save_figure(fig, FIGURES / folder / 'learning_curves' / f'loglog_learning_curve_{family}_{problem}')
+    save_figure(fig, FIGURES / folder / 'learning_curves' / f'loglog_learning_curve_{family}_{problem}{out_suffix}')
 
 
 def plot_size(problem, report):
@@ -452,6 +464,181 @@ def plot_ode(model, title, suffix, problem, report):
     report['ode'][f'{model}_{problem}'] = results
 
 
+FR3_VAL_NAME = re.compile(r'(?P<solver>euler|midpoint)x(?P<steps>\d+)_val$')
+FR3_ANGLE = {'fr3_6d': 'rot_err_deg', 'fr3_5d': 'axis_err_deg'}
+ORACLE_NOISE = 5e-4
+
+
+def fr3_oracle(problem):
+    path = RESULTS / f'{problem}_oracle.json'
+    if not committed(path):
+        raise FileNotFoundError(f'No committed oracle result: {path}')
+    return json.loads(path.read_text(encoding='utf-8')), relative(path)
+
+
+def fr3_val_results(problem, run):
+    """Committed FR3 validation-sweep results of one run, by solver, sorted by NFE."""
+    found = {}
+    stem = f'{problem}_{run}_'
+    for path in sorted(RESULTS.glob(f'{stem}*_val.json')):
+        match = FR3_VAL_NAME.fullmatch(path.stem[len(stem):])
+        if match is None or not committed(path):
+            continue
+        result = json.loads(path.read_text(encoding='utf-8'))
+        if result['benchmark'] != problem or result.get('split') != 'val':
+            raise ValueError(f'Not a {problem} validation result: {path}')
+        if result['n_conditions'] != 200 or result['n_samples'] != 1000:
+            raise ValueError(f'Unexpected validation protocol: {path}')
+        if result['method'] != match['solver'] or result['steps'] != int(match['steps']):
+            raise ValueError(f'File name and contents disagree: {path}')
+        found.setdefault(match['solver'], []).append(dict(
+            nfe=result['nfe'], steps=result['steps'], post=result['err_post']['mean'],
+            pos_median=result['pos_err_mm']['median'], success=result['success_rate']['1mm_1deg'],
+            violation=result['joint_limit_violation_fraction'],
+            redrawn=result.get('n_redrawn_nonfinite'), source=relative(path)))
+    return {solver: sorted(rows, key=lambda row: row['nfe']) for solver, rows in found.items()}
+
+
+def plot_ode_fr3(problem, report, run_suffix='fmpe_s0'):
+    """FR3 ODE progression of FMPE on the validation sweep: Err_post and three pose metrics."""
+    prefix, name = FR3_PROBLEMS[problem]
+    run = f'{prefix}_{run_suffix}'
+    results = fr3_val_results(problem, run)
+    if not results:
+        report['ode_missing'].append({'model': 'fmpe', 'problem': problem})
+        return
+    oracle, oracle_source = fr3_oracle(problem)
+    oracle_post = oracle['err_post']['mean']
+    grid = sorted({row['nfe'] for rows in results.values() for row in rows})
+    panels = (('post', 'Mean Err_post (log scale)', 'Posterior error', 'log'),
+              ('pos_median', 'Median position error, mm (log scale)', 'Position error', 'log'),
+              ('success', "Success rate at 1 mm, 1°", 'Success at 1 mm, 1°', 'linear'),
+              ('violation', 'Fraction of samples outside joint limits', 'Joint-limit violation', 'linear'))
+    fig, axes = plt.subplots(2, 2, figsize=(12.4, 9.4))
+    for ax, (key, ylabel, title, scale) in zip(axes.flat, panels):
+        values = []
+        for solver in ('midpoint', 'euler'):   # Euler on top where the lines overlap
+            if solver not in results:
+                continue
+            display, color, marker = SOLVERS[solver]
+            rows = results[solver]
+            value = [row[key] for row in rows]
+            values.extend(value)
+            ax.plot([row['nfe'] for row in rows], value, color=color, marker=marker,
+                    markersize=7 if solver == 'euler' else 9, linewidth=1.9, label=display)
+        ax.set_xscale('log')
+        fixed_x_ticks(ax, grid)
+        ax.set_xlim(grid[0] / 1.2, grid[-1] * 1.2)
+        if key == 'post':
+            ax.set_yscale('log')
+            upper = oracle_post + ORACLE_NOISE
+            low, high = upper / 3, max(values) * 1.6
+            ax.axhspan(low, upper, color='#8c97a3', alpha=0.22, linewidth=0)
+            ax.axhline(upper, color='#697583', linewidth=0.9, linestyle=':')
+            ax.text(grid[0] / 1.12, upper * 1.12,
+                    f'oracle {oracle_post:+.1e} ± {ORACLE_NOISE:g} (noise floor)',
+                    fontsize=8.5, color=INK_MUTED, va='bottom', ha='left')
+            ax.set_ylim(low, high)
+            ax.yaxis.set_minor_formatter(NullFormatter())
+        elif scale == 'log':
+            ax.set_yscale('log')
+            low, high = log_limits(values, minimum_ratio=1.5)
+            ax.set_ylim(low, high)
+            log_ticks(ax.yaxis, low, high)
+        else:
+            span = max(values) - min(values)
+            pad = max(0.12 * span, 0.002)
+            ax.set_ylim(max(0.0, min(values) - pad), max(values) + pad)
+        ax.set_xlabel('Function evaluations, NFE (log scale)', fontsize=10)
+        ax.set_ylabel(ylabel, fontsize=10)
+        ax.set_title(title, loc='left', fontweight='bold', fontsize=12)
+        style_axis(ax)
+    axes[0, 1].legend(loc='upper right', frameon=False, fontsize=9.5)
+    note = (f'Validation set (200 poses x 1,000 samples, seed 0), not test. The sweep stops at 64 NFE; '
+            f'larger NFE were not run. Values from the committed {run} *_val result JSONs; no sampling '
+            f're-run. The grey band is the oracle Err_post on the test set ({oracle_post:+.1e}) ± 5e-4, '
+            'the oracle noise floor; its lower edge is below zero and is cut off by the log axis. '
+            'Higher success and lower violation are better. NFE is the value recorded in each file.')
+    finish(fig, f'{name}: FMPE sampling progression (validation)',
+           'Err_post and pose metrics by solver and NFE; 3M parameters, alpha = 1, seed 0',
+           note, 9.4, 175)
+    save_figure(fig, FIGURES / 'fmpe' / 'ode_progression' / f'ode_progression_fmpe_{problem}')
+    report['ode'][f'fmpe_{problem}_val'] = dict(results=results, oracle_err_post=oracle_post,
+                                               oracle_source=oracle_source)
+
+
+def plot_size_fr3(problem, report):
+    """FR3 FMPE error against parameter count (test, Euler x 64): Err_post mean and 1 mm / 1° success."""
+    prefix, name = FR3_PROBLEMS[problem]
+    points = []
+    for budget in SIZE_BUDGETS:
+        run = f'{prefix}_fmpe_{budget}s0'
+        path = RESULTS / f'{problem}_{run}_eulerx64.json'
+        if not committed(path) or not committed(RUNS / run / 'log.csv'):
+            report['size_missing'].append({'run': run, 'suffix': '_eulerx64'})
+            continue
+        config = read_config(run)
+        result = json.loads(path.read_text(encoding='utf-8'))
+        if result['benchmark'] != problem or result['n_conditions'] != 1000 or result['n_samples'] != 1000:
+            raise ValueError(f'Unexpected evaluation protocol: {path}')
+        if result['n_params'] != config['n_params'] or config.get('alpha') != 1.0:
+            raise ValueError(f'n_params or alpha mismatch for {run}')
+        epochs, _, val = read_log(run, 'val_loss')
+        points.append(dict(run=run, n_params=config['n_params'], post=result['err_post']['mean'],
+                           success=result['success_rate']['1mm_1deg'],
+                           redrawn=result.get('n_redrawn_nonfinite'),
+                           val_slope_30_50=loglog_slope(epochs, val, 30, 50),
+                           best_val_epoch=int(np.argmin(val)) + 1, source=relative(path)))
+    if len(points) < 2:
+        return
+    points.sort(key=lambda point: point['n_params'])
+    oracle, _ = fr3_oracle(problem)
+    oracle_post = oracle['err_post']['mean']
+    xs = [point['n_params'] for point in points]
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.4))
+    for ax, key, ylabel, title in zip(axes, ('post', 'success'),
+                                      ('Mean Err_post (log scale)', 'Success rate at 1 mm, 1°'),
+                                      ('Posterior error', 'Success at 1 mm, 1°')):
+        ys = [point[key] for point in points]
+        ax.plot(xs, ys, color=COLORS[0], marker='o', markersize=7.5, linewidth=1.9)
+        ax.scatter(xs[-1:], ys[-1:], s=210, facecolor='none', edgecolor=COLORS[0], linewidth=1.6, zorder=3)
+        for x, y in zip(xs, ys):
+            ax.annotate(f'{y:.4f}', (x, y), xytext=(0, 11), textcoords='offset points', ha='center',
+                        fontsize=9, color=VALIDATION_INK)
+        ax.set_xscale('log')
+        ax.set_xlim(2.2e5, 4.2e6)
+        fixed_x_ticks(ax, [3e5, 1e6, 3e6], {3e5: '300k', 1e6: '1M', 3e6: '3M'})
+        if key == 'post':
+            ax.set_yscale('log')
+            upper = oracle_post + ORACLE_NOISE
+            low, high = upper / 3, max(ys) * 2
+            ax.axhspan(low, upper, color='#8c97a3', alpha=0.22, linewidth=0)
+            ax.axhline(upper, color='#697583', linewidth=0.9, linestyle=':')
+            ax.text(2.4e5, upper * 1.12, f'oracle {oracle_post:+.1e} ± {ORACLE_NOISE:g} (noise floor)',
+                    fontsize=8.5, color=INK_MUTED, va='bottom')
+            ax.set_ylim(low, high)
+            ax.yaxis.set_minor_formatter(NullFormatter())
+        else:
+            ax.set_ylim(0, max(ys) * 1.3)
+        ax.set_xlabel('Parameters, n_params from config.json (log scale)', fontsize=10)
+        ax.set_ylabel(ylabel, fontsize=10)
+        ax.set_title(title, loc='left', fontweight='bold', fontsize=12)
+        style_axis(ax)
+    slopes = ', '.join(f"{point['n_params'] / 1e6:.1f}M {point['val_slope_30_50']:+.3f}" for point in points)
+    still = all(point['val_slope_30_50'] < -0.02 and point['best_val_epoch'] == 50 for point in points)
+    note = ('Test set, 1,000 poses x 1,000 samples, FMPE alpha = 1, Euler x 64 (64 NFE), seed 0, 50 epochs at '
+            f'every size. Validation-loss log-log slopes, epochs 30-50: {slopes}. ')
+    if still:
+        note += ('Every size was still improving at epoch 50, so this compares models at a fixed training budget, '
+                 'not at convergence. ')
+    note += ('Circled: the 3M headline run. Grey band: oracle Err_post ± 5e-4; its lower edge is below zero '
+             'and is cut off by the log axis.')
+    finish(fig, f'{name}: FMPE error against model size', 'Lower Err_post and higher success are better',
+           note, 5.4, 175)
+    save_figure(fig, FIGURES / 'shared' / 'comparison' / f'error_vs_size_{problem}')
+    report['size'][problem] = dict(points=points, fixed_budget_not_converged=still)
+
+
 def print_tables(report):
     for key, results in report['ode'].items():
         grid = sorted({row['nfe'] for rows in results.values() for row in rows})
@@ -526,6 +713,16 @@ def main():
                          'text.color': '#273441', 'axes.titlecolor': '#273441'})
     report = dict(loglog_plotted={}, loglog_excluded=[], loglog_missing=[], size={}, size_missing=[],
                   alpha={}, ode={}, ode_missing=[])
+    if '--fr3' in sys.argv[1:]:
+        for problem in FR3_PROBLEMS:
+            plot_loglog('fmpe', problem, report)
+            plot_ode_fr3(problem, report)
+            plot_loglog('fmpe', problem, report, spec=FR3_ALPHA_FAMILY, labels=FR3_ALPHA_LABELS,
+                        out_suffix='_alpha')
+            plot_size_fr3(problem, report)
+        print(json.dumps({key: report[key] for key in ('loglog_plotted', 'loglog_excluded', 'loglog_missing',
+                                                       'ode', 'ode_missing', 'size', 'size_missing')}, indent=2))
+        return
     for problem in PROBLEMS:
         for family in FAMILIES:
             plot_loglog(family, problem, report)

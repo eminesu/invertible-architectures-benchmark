@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from data.toy_data import MODELS
+from experiments.fr3_fif_cfmpe_adapters import fif_latent_dims
 from metrics.benchmarks import forward_fn
 from metrics.ground_truth import GT_SIGMA
 from models.fif import FIF, width_for_budget
@@ -51,7 +52,7 @@ def validation(model, x, y, batch_size, problem):
         observations = y[:64].numpy()
         generator = torch.Generator(device=device).manual_seed(991)
         draws = model.sample(observations, 32, generator=generator).cpu().numpy()
-    simulated = forward_fn(problem)(draws.reshape(-1, 4)).reshape(len(observations), 32, -1)
+    simulated = forward_fn(problem)(draws.reshape(-1, model.x_dims)).reshape(len(observations), 32, -1)
     error = ((simulated - observations[:, None, :])**2).sum(-1)
     totals['resim'] = float(np.where(np.isfinite(error), error, 100.0).mean())
     totals['failed'] = float((~np.isfinite(error)).mean())
@@ -78,7 +79,7 @@ def main(argv=None):
     parser.add_argument('--param-budget', type=int, default=3_000_000)
     parser.add_argument('--beta', type=float, default=100.0)
     parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--sigma', type=float, help='Raw observation-noise std; default: shared GT sigma')
+    parser.add_argument('--sigma', type=float, help='Raw observation-noise std; default: shared GT sigma, or 0 for exact FR3')
     parser.add_argument('--kde-points', type=int, default=1024)
     args = parser.parse_args(argv)
     if min(args.n_train, args.n_val, args.batch_size) < 2 or min(args.epochs, args.threads) < 1:
@@ -96,7 +97,8 @@ def main(argv=None):
     if args.arch == 'paper' and args.blocks is None:
         args.blocks = 2
     suffix = '_p' if args.arch == 'paper' else ''
-    name = args.run or f'{"kin" if args.problem == "kinematics" else "bal"}_fif{suffix}_s{args.seed}'
+    prefix = {'kinematics': 'kin', 'ballistics': 'bal'}.get(args.problem, args.problem)
+    name = args.run or f'{prefix}_fif{suffix}_s{args.seed}'
     if name in ('.', '..') or Path(name).name != name or '/' in name or '\\' in name:
         parser.error('--run must be a folder name, without path components')
     folder = args.out or ROOT / 'experiments' / 'runs' / name
@@ -107,14 +109,16 @@ def main(argv=None):
         parser.error('CUDA requested but unavailable')
     torch.set_num_threads(args.threads)
     torch.manual_seed(args.seed)
-    y_dims = MODELS[args.problem].n_observations
+    problem = MODELS[args.problem]()
+    x_dims, y_dims = problem.n_parameters, problem.n_observations
+    z_dims = fif_latent_dims(args.problem)
     hidden = args.hidden
     if hidden is None:
-        hidden = width_for_budget(y_dims, 4 - y_dims, args.param_budget, args.layers,
-                                  arch=args.arch, blocks=args.blocks or 0)
-    settings = dict(x_dims=4, y_dims=y_dims, z_dims=4 - y_dims, hidden=hidden,
+        hidden = width_for_budget(y_dims, z_dims, args.param_budget, args.layers,
+                                  x_dims=x_dims, arch=args.arch, blocks=args.blocks or 0)
+    settings = dict(x_dims=x_dims, y_dims=y_dims, z_dims=z_dims, hidden=hidden,
                     layers=args.layers, beta=args.beta,
-                    sigma=GT_SIGMA[args.problem] if args.sigma is None else args.sigma,
+                    sigma=GT_SIGMA.get(args.problem, 0.0) if args.sigma is None else args.sigma,
                     kde_points=args.kde_points, discrete_speed=args.problem == 'ballistics',
                     arch=args.arch)
     if args.arch == 'paper':
@@ -177,8 +181,10 @@ def main(argv=None):
             if improved:
                 best, best_epoch = valid['resim'], epoch
                 torch.save(model.state_dict(), folder / 'model.pt')
-            row = {'epoch': epoch, **{f'train_{k}': v for k, v in totals.items()},
-                   **{f'val_{k}': v for k, v in valid.items()}, 'lr': schedule.get_last_lr()[0]}
+            row = {'epoch': epoch, 'step': epoch * steps,
+                   **{f'train_{k}': v for k, v in totals.items()},
+                   **{f'val_{k}': v for k, v in valid.items()}, 'lr': schedule.get_last_lr()[0],
+                   'seconds': time.perf_counter() - started}
             if writer is None:
                 writer = csv.DictWriter(log, fieldnames=list(row))
                 writer.writeheader()

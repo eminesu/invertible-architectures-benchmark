@@ -1,0 +1,13 @@
+{
+  "run": "fr3_5d_fmpe_a0_s0",
+  "problem": "fr3_5d",
+  "n_params": 2995847,
+  "hidden": 496,
+  "blocks": 6,
+  "train_loss": 5.58367347240448,
+  "val_loss": 5.626441240310669,
+  "err_resim_provisional": 0.0018829456919700384,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, rk4 16 steps (64 NFE)",
+  "train_seconds": 453.9853582382202
+}
