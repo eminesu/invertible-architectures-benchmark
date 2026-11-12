@@ -127,7 +127,7 @@ Normalization is fitted on training data. Across **19 main runs and 7 completed 
 
 FIF uses population standard deviation; the other Euclidean models use sample standard deviation. M-FFF stores angular scales and uses circle coordinates instead of centring the angles as Euclidean inputs. CFMPE also standardizes the prior-width context. None of these differences requires a different physical FK dataset.
 
-The comparison therefore has a shared data source, but it is not a comparison with every training choice held fixed. The CFMPE prior family, different noise treatments, IKFlow batch size and ciLNN parameter counts should be stated alongside model results. Reference-cache identity also needs care: our local GT cache hashes differ from Emine's, and the additional Umut records do not establish identical cache files across all runs.
+The comparison therefore has a shared data source, but it is not a comparison with every training choice held fixed. The CFMPE prior family, different noise treatments, IKFlow batch size and ciLNN parameter counts should be stated alongside model results.
 
 ## 7. Local GPU pilot and scaling estimate
 
