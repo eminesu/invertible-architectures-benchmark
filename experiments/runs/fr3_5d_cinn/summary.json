@@ -1,0 +1,16 @@
+{
+  "run": "fr3_5d_cinn",
+  "problem": "fr3_5d",
+  "model": "cinn",
+  "n_params": 2993256,
+  "hidden": 301,
+  "blocks": 8,
+  "layers": 3,
+  "z_dims": 7,
+  "val_loss": -17.12814893722534,
+  "val_nll": -17.12814893722534,
+  "err_resim_provisional": 0.0634669350638457,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 1196.6423835754395,
+  "test_nll": -8.546004295349121
+}

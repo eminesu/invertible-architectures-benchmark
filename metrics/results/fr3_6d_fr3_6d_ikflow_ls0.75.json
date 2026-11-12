@@ -1,0 +1,64 @@
+{
+  "benchmark": "fr3_6d",
+  "model": "fr3_6d_ikflow_ls0.75",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 1000,
+  "err_post": {
+    "mean": 0.06778427301309412,
+    "mean_clamped": 0.06778427301309412,
+    "median": 0.049668465908723675,
+    "q1": 0.0362400743672677,
+    "q3": 0.07284392191587918,
+    "max": 0.7478631768738554,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.07341391378076238,
+    "mean_clamped": 0.07341391378076238,
+    "median": 0.05532383364186927,
+    "q1": 0.04192781034324247,
+    "q3": 0.07829376397004938,
+    "max": 0.7528677178211435,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.32661984315662296,
+    "mean_clamped": 0.32661984315662296,
+    "median": 0.20873769118240415,
+    "q1": 0.11727664383427734,
+    "q3": 0.39156195096706115,
+    "max": 4.500088096555761,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 50.49788889999036,
+  "inference_ms_per_condition": 50.49788889999036,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "pos_err_mm": {
+    "median": 11.958320318724795,
+    "mean": 20.94792989661489,
+    "p95": 60.10757190530146
+  },
+  "rot_err_deg": {
+    "median": 5.693253608824964,
+    "mean": 15.231461621812542,
+    "p95": 73.8135338651308
+  },
+  "success_rate": {
+    "1mm_1deg": 6.3e-05,
+    "10mm_5deg": 0.223111
+  },
+  "joint_limit_violation_fraction": 0.152724,
+  "coverage": {
+    "delta_rad": 0.1,
+    "median": 0.5845,
+    "mean": 0.580491,
+    "p95": 0.95905
+  },
+  "n_params": 2989116,
+  "device": "cpu",
+  "latent_scale": 0.75
+}

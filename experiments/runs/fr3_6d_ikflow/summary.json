@@ -1,0 +1,18 @@
+{
+  "run": "fr3_6d_ikflow",
+  "problem": "fr3_6d",
+  "model": "ikflow",
+  "n_params": 2989116,
+  "hidden": 243,
+  "width": 9,
+  "blocks": 12,
+  "z_dims": 9,
+  "n_train": 1000000,
+  "steps": 390600,
+  "val_loss": -33.976608467102054,
+  "val_nll": -33.976608467102054,
+  "err_resim_provisional": 0.255586568338369,
+  "resim_failed_fraction": 0.0,
+  "latent_scale_resim": 0.25,
+  "train_seconds": 11512.031873464584
+}

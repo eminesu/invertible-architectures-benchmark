@@ -1,0 +1,21 @@
+{
+  "run": "fr3_6d_ikf_p1_width_w24",
+  "problem": "fr3_6d",
+  "model": "ikflow",
+  "n_params": 2999376,
+  "hidden": 238,
+  "width": 24,
+  "blocks": 12,
+  "z_dims": 24,
+  "n_train": 200000,
+  "epochs": 38,
+  "steps": 14820,
+  "ema": 0.0,
+  "schedule": "step",
+  "val_loss": -98.85124359130859,
+  "val_nll": -98.85124359130859,
+  "err_resim_provisional": 0.965936767315599,
+  "resim_failed_fraction": 0.0,
+  "latent_scale_resim": 0.25,
+  "train_seconds": 615.9048340320587
+}

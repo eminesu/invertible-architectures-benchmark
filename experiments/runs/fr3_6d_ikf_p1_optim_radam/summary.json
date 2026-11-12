@@ -1,0 +1,21 @@
+{
+  "run": "fr3_6d_ikf_p1_optim_radam",
+  "problem": "fr3_6d",
+  "model": "ikflow",
+  "n_params": 2989116,
+  "hidden": 243,
+  "width": 9,
+  "blocks": 12,
+  "z_dims": 9,
+  "n_train": 200000,
+  "epochs": 10,
+  "steps": 15620,
+  "ema": 0.0,
+  "schedule": "step",
+  "val_loss": -24.610003662109374,
+  "val_nll": -24.610003662109374,
+  "err_resim_provisional": 0.9827943071977173,
+  "resim_failed_fraction": 0.0,
+  "latent_scale_resim": 0.25,
+  "train_seconds": 478.04318618774414
+}
