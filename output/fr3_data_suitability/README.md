@@ -2,7 +2,7 @@
 
 Generated on 2026-11-12 by [analyze_fr3_data_suitability.py](../../experiments/analyze_fr3_data_suitability.py). Read the [assessment](../../docs/reports/2026-11-12_fr3-data-suitability.md) first.
 
-The original full checks cover the nominal and CFMPE-width-family data on both FR3 tasks. The cross-method extension reviews all saved method families and checks normalization for 19 main runs and 7 completed controls. It replays the shared nominal generator and compares its arrays with the original full audit; the two CFMPE checkpoints retain their existing family-data verification. No training or model sampling is involved.
+The original full checks cover the nominal and CFMPE-width-family data on both FR3 tasks. The cross-method extension reviews all saved method families and checks normalization for 19 main runs and 7 completed controls. It replays the shared nominal generator and compares its arrays with the original full audit; the two CFMPE checkpoints retain their existing family-data verification
 
 | Artifact | Contents |
 |---|---|
