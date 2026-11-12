@@ -11,6 +11,7 @@ Dated status and meeting reports. Technical documentation stays in `docs/*.md`.
 
 Newest first. Add one line per report: date, then topic, linked to the file.
 
+- 2026-11-13: [FR3 log-log analysis of the training curves](2026-11-13_fr3-loglog.md)
 - 2026-11-12: [FR3 data suitability assessment](2026-11-12_fr3-data-suitability.md)
 - 2026-11-12: [FIF and CMFPE benchmark](docs\reports\2026-11-11_fr3-fif-cfmpe-implementation.md)
 - 2026-11-11: [FFF and M-FFF on the FR3 inverse-kinematics benchmark](2026-11-11_fr3-fff-mfff.md)
