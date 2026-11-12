@@ -1,0 +1,68 @@
+{
+  "benchmark": "fr3_6d",
+  "model": "fr3_6d_fmpe_p1000000_s0_eulerx64",
+  "n_conditions": 1000,
+  "n_samples": 1000,
+  "n_gt_min": 1000,
+  "err_post": {
+    "mean": 0.028105116913875097,
+    "mean_clamped": 0.028105116913875097,
+    "median": 0.014607094784872363,
+    "q1": 0.008378549431322033,
+    "q3": 0.026807885969957604,
+    "max": 0.5970736376474719,
+    "n_finite": 1000
+  },
+  "err_post_biased": {
+    "mean": 0.03373369395394612,
+    "mean_clamped": 0.03373369395394612,
+    "median": 0.020259415155023358,
+    "q1": 0.013971541400826612,
+    "q3": 0.032426294712365814,
+    "max": 0.6020122910244996,
+    "n_finite": 1000
+  },
+  "err_resim": {
+    "mean": 0.015442769257588392,
+    "mean_clamped": 0.015442769257588392,
+    "median": 0.004411466798006236,
+    "q1": 0.0025572200719406156,
+    "q3": 0.009186475522112176,
+    "max": 2.172582601955817,
+    "n_finite": 1000
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 50.24123430000327,
+  "inference_ms_per_condition": 50.24123430000327,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "pos_err_mm": {
+    "median": 6.942732501074273,
+    "mean": 9.515438945820648,
+    "p95": 23.59491477668206
+  },
+  "rot_err_deg": {
+    "median": 1.7161659065927592,
+    "mean": 2.662196419627654,
+    "p95": 6.315431389884686
+  },
+  "success_rate": {
+    "1mm_1deg": 0.004261,
+    "10mm_5deg": 0.640515
+  },
+  "joint_limit_violation_fraction": 0.112579,
+  "coverage": {
+    "delta_rad": 0.1,
+    "median": 0.97,
+    "mean": 0.9330519999999999,
+    "p95": 1.0
+  },
+  "method": "euler",
+  "steps": 64,
+  "nfe": 64,
+  "n_params": 993723,
+  "device": "cuda",
+  "split": "test",
+  "n_redrawn_nonfinite": 0
+}

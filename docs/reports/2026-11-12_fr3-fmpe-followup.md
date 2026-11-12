@@ -218,4 +218,99 @@ and share the soft edge at the limits; α = 0 leaks slightly more mass past them
 
 # Part B
 
-(follows)
+## B1. Model size
+
+α = 1, chosen from Part A (α = 0 is clearly worse in pose precision, see above). Both tasks were run.
+
+```
+python experiments/train_fmpe.py --problem <task> --alpha 1 --param-budget 300000  --seed 0 --device cuda --run-name <task>_fmpe_p300000_s0
+python experiments/train_fmpe.py --problem <task> --alpha 1 --param-budget 1000000 --seed 0 --device cuda --run-name <task>_fmpe_p1000000_s0
+python experiments/evaluate_fmpe.py <run> --solver euler:64 --device cuda --redraw-nonfinite
+```
+
+The 3M rows are the headline runs of the first report. Test set, Euler × 64, seed 0. No sample of the
+four new runs was redrawn.
+
+### `fr3_6d`
+
+| Run | Parameters | Hidden width | Train time | Final val loss | Val log-log slope, epochs 30–50 | Err_post mean | median | Err_resim mean | pos_err_mm median / p95 | rot_err_deg median | success 1 mm, 1° | success 10 mm, 5° | joint-limit violation | coverage | Inference time (10⁶ samples) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Oracle | – | – | – | – | – | −0.00008 | −0.00017 | 2.3e-14 | 3.3e-5 / 7.1e-5 | 6.1e-6 | 1.000 | 1.000 | 0.000 | 0.995 | – |
+| `fr3_6d_fmpe_p300000_s0` | 298,613 | 154 | 440 s | 3.783 | −0.108 | 0.04098 | 0.02433 | 0.07056 | 14.85 / 52.36 | 3.79 | 0.0001 | 0.240 | 0.1551 | 0.789 | 23.2 s |
+| `fr3_6d_fmpe_p1000000_s0` | 993,723 | 284 | 426 s | 3.473 | −0.134 | 0.02811 | 0.01461 | 0.01544 | 6.94 / 23.59 | 1.72 | 0.0043 | 0.641 | 0.1126 | 0.933 | 50.2 s |
+| `fr3_6d_fmpe_s0` (3M) | 2,997,335 | 496 | 970 s* | 3.341 | −0.158 | **0.02207** | **0.00989** | **0.00493** | **4.57 / 14.32** | **1.11** | **0.0170** | **0.822** | **0.0841** | **0.967** | 100.1 s |
+
+### `fr3_5d`
+
+| Run | Parameters | Hidden width | Train time | Final val loss | Val log-log slope, epochs 30–50 | Err_post mean | median | Err_resim mean | pos_err_mm median / p95 | axis_err_deg median | success 1 mm, 1° | success 10 mm, 5° | joint-limit violation | coverage | Inference time (10⁶ samples) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Oracle | – | – | – | – | – | 0.000004 | −0.00005 | 1.2e-14 | 3.2e-5 / 7.1e-5 | 4.6e-6 | 1.000 | 1.000 | 0.000 | 0.982 | – |
+| `fr3_5d_fmpe_p300000_s0` | 298,151 | 154 | 431 s | 4.895 | −0.063 | 0.00621 | 0.00325 | 0.00561 | 9.45 / 33.83 | 1.55 | 0.0026 | 0.493 | 0.1331 | 0.957 | 23.8 s |
+| `fr3_5d_fmpe_p1000000_s0` | 999,787 | 285 | 425 s | 4.684 | −0.076 | 0.00414 | 0.00192 | 0.00127 | 4.49 / 15.42 | 0.70 | 0.0241 | 0.821 | 0.0835 | 0.971 | 53.7 s |
+| `fr3_5d_fmpe_s0` (3M) | 2,995,847 | 496 | 930 s* | 4.613 | −0.088 | **0.00319** | **0.00126** | **0.00051** | **3.30 / 10.25** | **0.49** | **0.0506** | **0.902** | **0.0600** | **0.975** | 100.9 s |
+
+\* The 3M runs trained while the GPU was shared (first report). Their train times are not comparable
+with the new runs, which ran alone and take about the same time at 300k and 1M (the data pipeline, not
+the network, seems to set the pace there; not checked further).
+
+Figures (`python experiments/plot_analysis.py --fr3`):
+`experiments/figures/shared/comparison/error_vs_size_fr3_6d.{png,svg}` and `..._fr3_5d.{png,svg}`.
+
+![error vs size fr3_6d](../../experiments/figures/shared/comparison/error_vs_size_fr3_6d.png)
+![error vs size fr3_5d](../../experiments/figures/shared/comparison/error_vs_size_fr3_5d.png)
+
+Every metric improves with size on both tasks, with no sign of saturation at 3M: on `fr3_6d`, Err_post
+goes 0.041 → 0.028 → 0.022 and success at 1 mm / 1° goes 0.01% → 0.43% → 1.70%; on `fr3_5d`, 0.0062 →
+0.0041 → 0.0032 and 0.26% → 2.4% → 5.1%. Even the 3M models stay 40× (6-D) and 6× (5-D) above the
+oracle noise floor.
+
+**Convergence.** All six runs have their lowest validation loss at epoch 50, and all are still falling
+(log-log slopes over epochs 30–50 between −0.06 and −0.16, steeper for the larger models). So this is a
+comparison at a fixed budget of 50 epochs, not at convergence; the figure caption says so. The larger
+models also learn faster per epoch, so a longer budget could widen the gap rather than close it; that
+was not tested.
+
+## B2. Group train/test error figures for FR3
+
+`experiments/plot_group_errors.py --fr3` adds FR3 to the group error plots. FR3 runs use the full task as
+prefix. Included runs: FMPE α = 1 (headline), FMPE α = 0, FMPE 300k, FMPE 1M, Euclidean FFF
+(`fff_b400_s0`) and M-FFF (`mfff_wrapped_b400_s0`). Left out on purpose: the y-noise FFF runs
+(`fr3_6d_fff_b400_ynoise1e-3_stopped_s0`, `fr3_6d_fff_b400_ynoise1e-2_s0`), which are not reported
+models. No other model family has committed FR3 runs. The toy figures are unchanged (the default run
+does not touch FR3, and the `--fr3` run does not touch the toy outputs).
+
+- Training error, one panel per run, each with its own objective and y-axis:
+  `experiments/figures/shared/group_errors/fr3_6d/training_error/all.{png,svg}`, `.../fr3_5d/training_error/all.{png,svg}`
+- Testing error, oracle row first, oracle ± 5e-4 band on the Err_post panel (symlog axis, linear within
+  ±1e-3, because the oracle mean is ≤ 0): `.../fr3_6d/testing_error/all.{png,svg}`, `.../fr3_5d/testing_error/all.{png,svg}`
+- Sources: `.../fr3_6d/sources.json`, `.../fr3_5d/sources.json`
+
+![training error fr3_6d](../../experiments/figures/shared/group_errors/fr3_6d/training_error/all.png)
+![testing error fr3_6d](../../experiments/figures/shared/group_errors/fr3_6d/testing_error/all.png)
+![training error fr3_5d](../../experiments/figures/shared/group_errors/fr3_5d/training_error/all.png)
+![testing error fr3_5d](../../experiments/figures/shared/group_errors/fr3_5d/testing_error/all.png)
+
+The FMPE losses fall smoothly in every run. The FFF / M-FFF objectives rise over the first half of
+training and then fall, with a noisy validation curve; this is the behaviour described in the FFF / M-FFF
+report and not a plotting effect. On test, all four FMPE runs, including the 300k model, have a lower
+Err_post and Err_resim than Euclidean FFF and M-FFF on both tasks: Err_post 0.022–0.041 vs 0.117–0.135
+on 6-D and 0.0032–0.0062 vs 0.017–0.024 on 5-D; Err_resim lower by a factor of 32 (6-D, 300k FMPE vs
+M-FFF) up to about 800 (6-D headline FMPE vs FFF). No model reaches the oracle band.
+
+## Not done
+
+- Nothing in the task list was skipped. One check was added that the task did not ask for: the paired
+  tail stress test (`experiments/fmpe_tail_divergence.py`), because the test sets alone were too small to
+  answer the divergence question.
+- No CPU timing runs.
+
+## Open questions
+
+- **α = 0 on `fr3_6d` with its own sampler.** The validation rule would pick Euler × 32 for α = 0 on 6-D
+  (Euler × 64 for α = 1). The α = 0 test row above uses Euler × 64 so that α is the only difference; an
+  α = 0 test at Euler × 32 was not run.
+- **Epoch budget.** All sizes, and both α, were still improving at epoch 50. The size comparison is at a
+  fixed budget.
+- **Divergence with α = 1.** Rare (~3e-7 per sample on 6-D) and handled by `--redraw-nonfinite`. α = 0
+  removes it but costs pose precision; other remedies (e.g. a time prior with more weight near t = 0 than
+  α = 1 but less than uniform) were not tried.
