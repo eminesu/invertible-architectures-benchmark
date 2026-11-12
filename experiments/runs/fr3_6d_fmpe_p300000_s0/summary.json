@@ -1,0 +1,13 @@
+{
+  "run": "fr3_6d_fmpe_p300000_s0",
+  "problem": "fr3_6d",
+  "n_params": 298613,
+  "hidden": 154,
+  "blocks": 6,
+  "train_loss": 3.767500419855118,
+  "val_loss": 3.783482789993286,
+  "err_resim_provisional": 0.06598121175273391,
+  "resim_failed_fraction": 0.0,
+  "provisional_setup": "200 val y x 100 samples, rk4 16 steps (64 NFE)",
+  "train_seconds": 439.5016508102417
+}

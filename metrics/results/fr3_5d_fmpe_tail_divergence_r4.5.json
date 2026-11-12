@@ -1,0 +1,31 @@
+{
+  "benchmark": "fr3_5d",
+  "solver": "euler:64",
+  "radius": 4.5,
+  "n": 500000,
+  "seed": 0,
+  "draws_needed": 100000000,
+  "tail_probability": 0.005,
+  "x0_norm": {
+    "median": 4.691633224487305,
+    "max": 7.286466598510742
+  },
+  "runs": {
+    "fr3_5d_fmpe_s0": {
+      "alpha": 1.0,
+      "n_nonfinite": 0,
+      "rate": 0.0,
+      "n_finite_but_abs_gt_10rad": 0,
+      "nonfinite_x0_norms": [],
+      "nonfinite_pose_indices": []
+    },
+    "fr3_5d_fmpe_a0_s0": {
+      "alpha": 0.0,
+      "n_nonfinite": 0,
+      "rate": 0.0,
+      "n_finite_but_abs_gt_10rad": 0,
+      "nonfinite_x0_norms": [],
+      "nonfinite_pose_indices": []
+    }
+  }
+}
