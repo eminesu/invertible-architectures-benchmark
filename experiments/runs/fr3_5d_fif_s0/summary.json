@@ -1,0 +1,9 @@
+{
+  "run": "fr3_5d_fif_s0",
+  "problem": "fr3_5d",
+  "prior_mode": "fixed",
+  "best_epoch": 27,
+  "validation_resim": 0.4369482687998547,
+  "n_params": 2994069,
+  "seconds": 3413.6487197000097
+}

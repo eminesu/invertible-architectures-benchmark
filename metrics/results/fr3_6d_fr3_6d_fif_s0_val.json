@@ -1,0 +1,86 @@
+{
+  "benchmark": "fr3_6d",
+  "model": "fr3_6d_fif_s0_val",
+  "n_conditions": 200,
+  "n_samples": 1000,
+  "n_gt_min": 1000,
+  "err_post": {
+    "mean": 0.14994504086121274,
+    "mean_clamped": 0.14994504086121274,
+    "median": 0.13681757485878826,
+    "q1": 0.11084691528895393,
+    "q3": 0.17356634977893381,
+    "max": 0.4504197840761982,
+    "n_finite": 200
+  },
+  "err_post_biased": {
+    "mean": 0.1556053606518323,
+    "mean_clamped": 0.1556053606518323,
+    "median": 0.14253076940090714,
+    "q1": 0.11659915152346327,
+    "q3": 0.17917572549427746,
+    "max": 0.4557959099420076,
+    "n_finite": 200
+  },
+  "err_resim": {
+    "mean": 1.9071013723510797,
+    "mean_clamped": 1.9071013723510797,
+    "median": 1.8559471693616008,
+    "q1": 1.5029393015622248,
+    "q3": 2.300925427804108,
+    "max": 3.457926932522348,
+    "n_finite": 200
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.6191648999956669,
+  "inference_ms_per_condition": 3.0958244999783346,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "split": "val",
+  "pos_err_mm": {
+    "median": 184.54767050817304,
+    "mean": 275.74164929093257,
+    "p95": 852.3382157232753
+  },
+  "rot_err_deg": {
+    "median": 43.34424604835174,
+    "mean": 61.49990309635109,
+    "p95": 161.1525086911312
+  },
+  "success_rate": {
+    "1mm_1deg": 0.0,
+    "10mm_5deg": 0.0001
+  },
+  "joint_limit_violation_fraction": 0.066625,
+  "coverage": {
+    "delta_rad": 0.1,
+    "median": 0.0,
+    "mean": 0.0014700000000000002,
+    "p95": 0.011
+  },
+  "prior_mode": "fixed",
+  "family": "FIF",
+  "method": "conditional FIF",
+  "arch": "mlp",
+  "sampling_sigma": 0.0,
+  "reference_sigma": 0.0,
+  "discrete_speed": false,
+  "evaluation_seed": 0,
+  "device": "cuda",
+  "n_params": 2992038,
+  "latent_dims": 1,
+  "conditioning_dims": 9,
+  "training": {
+    "seed": 0,
+    "n_train": 1000000,
+    "n_val": 20000,
+    "epochs": 50,
+    "batch_size": 1000,
+    "param_budget": 3000000,
+    "lr": 0.001,
+    "beta": 100.0,
+    "layers": 4,
+    "blocks": null
+  }
+}
