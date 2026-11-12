@@ -1,143 +1,159 @@
 # FR3 data suitability assessment
 
-Date: 2026-11-12. Scope: retrospective audit of the data recipes used by the existing FIF and CFMPE runs, covering both FR3 tasks. No models were trained or evaluated again. Shared classes, trained models, evaluation results, conditions and reference caches were left unchanged.
+This report checks the FR3 data used by our FMPE, CFMPE, FIF, FFF, M-FFF, IKFlow, cINN, ciLNN and iLNN experiments. The aim is to understand where the training pairs come from and whether they give us a reasonable basis for comparing the methods. Since training has already taken place, I checked the saved configurations and checkpoints and recreated the relevant data from their seeds. The original full training arrays were not saved, so this cannot establish that every historical array was identical byte for byte.
 
-## Assessment and recommendation
+## 1. Data source and generation procedure
 
-**The reconstructed data is suitable for the current kinematics benchmark.** Across four run recipes, each with 1000000 training and 20000 validation rows, the integrity checks found no non-finite values, limit violations, exact duplicate joint/pose rows, or detected split leakage. Recomputed training-only normalization buffers matched all four checkpoints exactly. An independent 64-configuration JRL fixture also passed.
+We generate our own training pairs using FR3 simulator. The robot description and simulator are provided in the repository; we do not load a separate supplied training dataset. The robot model comes from Franka's official description, reduced to the chain ending at the flange, `fr3_link8`. Its source version and modifications are listed in [PROVENANCE.md](../../robot_ik/assets/fr3/PROVENANCE.md).
 
-This establishes consistency of the current generator and saved training configuration. Original training arrays and their hashes were not saved, so it does not certify historical arrays byte for byte. The two tasks reuse joint draws within each method; the audited 4080000 rows are not all independent joint configurations.
+For the nominal dataset, the procedure is straightforward:
 
-**Recommendation:** generate our own training pairs using the shared, versioned generator and agreed seeds, and record array hashes at generation time. Retain the provided, committed evaluation conditions and agree on one common, verified GT cache per task/split. CFMPE's prior family, observation noise in other methods, and bounded-angle treatment must remain explicit comparison factors. Further scaling should wait for Paul's instructions.
+1. Sample each of the seven joint angles uniformly within its URDF limits.
+2. Run forward kinematics to obtain the flange position and orientation.
+3. Encode the pose for either the 5D or 6D task and keep it paired with the sampled joints.
 
-## Source, generation and representation
+The [shared task](../../robot_ik/tasks.py) computes FK in float64 on CPU. The trainers then use float32 arrays: `x` has shape `(N, 7)`, while `y` has shape `(N, 9)` for 6D or `(N, 6)` for 5D. Joint values are in radians and positions are in metres. This follows the data-generation approach in [IKFlow, Section IV-A](https://arxiv.org/pdf/2111.08933). The simulator does not filter self-collisions or collisions with obstacles, so these are reachable kinematic examples rather than guaranteed collision-free configurations.
 
-Paul introduced the official-description kinematics in commit `93a858b` and registered the tasks in `5026d33`. The source is [Franka's reduced FR3 URDF and provenance](../../robot_ik/assets/fr3/PROVENANCE.md), using `franka_description` commit `7aeeddc449edf8d62b594f9e36a81da53e7796f9`. The flange is `fr3_link8`; units are metres and radians. Visual, collision and inertial data were removed: this is a kinematics benchmark, with no self-collision or obstacle filtering.
+All main runs below use **1000000 training pairs and 20000 validation pairs**, with training seed 10000 and validation seed 20000 for model seed 0. The important differences are what happens around this common generation procedure:
 
-The [shared task](../../robot_ik/tasks.py) samples joint values inside URDF limits, computes float64 FK on the CPU, and encodes the pose. Trainers cast the resulting arrays to float32 in RAM. There is no supplied raw training set used by these runs. This follows the sampling procedure in [IKFlow, Section IV-A](https://arxiv.org/pdf/2111.08933).
+| Method | FR3 tasks with saved main runs | Source of the clean pairs | Additional treatment during training |
+|---|---|---|---|
+| FMPE | 5D, 6D | Shared nominal generator | Flow-matching path; clean FK pairs are retained |
+| FIF | 5D, 6D | Its fixed-prior helper uses the same joint sampler and FK | No observation noise in these runs |
+| FFF | 5D, 6D | Shared nominal generator | Noise added to the encoded pose |
+| M-FFF | 5D, 6D | Shared nominal generator | Same pose noise; angles represented on circles |
+| IKFlow | 5D, 6D | Shared nominal generator | Joint-space padding and SoftFlow noise |
+| cINN | 5D, 6D | Shared nominal generator | Conditional likelihood model; no extra noise added to the clean pairs |
+| ciLNN | 5D, 6D | Shared nominal generator | Conditional liquid-flow model; no extra noise added to the clean pairs |
+| iLNN base | 5D | Shared nominal generator | Unconditional likelihood model |
+| iLNN pad3 | 5D, 6D | Shared nominal generator | Three padding channels, with noise on those channels |
+| CFMPE | 5D, 6D | Width-conditioned joint-prior family | Seven prior-width values are included in the condition |
 
-| Task | Joint target x | Pose condition y | Intrinsic constraints | Regular local posterior dimension |
+Most trainers call [`make_dataset`](../../data/toy_data.py). FIF uses [`train_fif.dataset`](../../experiments/train_fif.py), which also checks for finite observations. No draws were rejected in the audited FR3 runs. Replaying the shared generator reproduced the same nominal training and validation arrays as the earlier full FIF data check, on both tasks. This is why those clean-data checks also apply to the other methods using the same recipe, sizes and seeds.
+
+CFMPE is the exception. Its [adapter](../../experiments/fr3_fif_cfmpe_adapters.py) draws seven interval-width scales between 0.50000 and 1.00000 and samples joints inside the contracted intervals. Each row has probability 0.25000 of using all widths equal to 1.00000. It therefore receives `(x, y, c)` triples, with `c` shaped `(N, 7)`. The audited training set contains 250734 nominal-prior rows, or 25.07340%; it does not give CFMPE the same 1000000 nominal-prior examples as the other methods. Consuming random numbers for the widths also changes the subsequent joint draws, even with the same seed.
+
+The provided data we reuse are the committed **200 model-selection poses and 1000 test poses per task**, under `metrics/conditions/`. Posterior reference samples are held in local GT caches. These are separate from the 20000 pairs used to monitor validation loss.
+
+## 2. Joint values and pose representation
+
+The FR3 arm has **seven joint values**. The name "6D" refers to the six constraints on the end-effector pose, rather than the number of joints.
+
+| Task | Physical joint vector | Encoded pose | Independent pose constraints | Usual local solution dimension |
 |---|---|---|---|---|
-| FR3 6D | 7 angles | 9 values: position, rotation columns r1 and r2 | 6 | 1 |
-| FR3 5D | 7 angles | 6 values: position, flange z-axis | 5 | 2 |
+| FR3 6D | 7 angles | Position and the first two rotation-matrix columns: 9 values | 6 | 1 |
+| FR3 5D | 7 angles | Position and the flange z-axis: 6 values | 5 | 2 |
 
-**The issue's “6 joint values” should be corrected to “7 joint values.”** Six describes the full-pose task. Rotation columns obey unit-length and orthogonality constraints; nine encoded values do not mean nine independent constraints. In 5D, roll is free and joint 7 does not affect the condition.
+The rotation columns and axis are constrained vectors, so the encoded size is larger than the number of independent constraints. In 5D the flange can rotate freely about its axis, and joint 7 does not change the condition.
 
-FIF samples the nominal uniform box. The [CFMPE adapter](../../experiments/fr3_fif_cfmpe_adapters.py) first samples seven width scales c in [0.50000, 1.00000], independently replaces each row with all widths equal to 1 with probability 0.25000, then samples joints in the contracted intervals about their midpoints. Its arrays are `(x, y, c)`, with c shape `(N, 7)`. Both methods use training seed 10000 and validation seed 20000, but CFMPE consumes random numbers for c before drawing joints. Their training examples differ.
+Padding and embeddings change the tensors inside a model, not the robot data. For example, IKFlow works with a padded joint vector, iLNN pad3 adds three channels, and M-FFF embeds seven angles as cosine/sine pairs. The underlying FK target still contains seven physical joint angles.
 
-| Run | Train / validation rows | Float32 training-array size (MiB) | Parameters |
-|---|---|---:|---:|
-| `fr3_6d_fif_s0` | 1000000 / 20000 | 61.03516 | 2992038 |
-| `fr3_6d_cfmpe_s0` | 1000000 / 20000 | 87.73804 | 2988817 |
-| `fr3_5d_fif_s0` | 1000000 / 20000 | 49.59106 | 2994069 |
-| `fr3_5d_cfmpe_s0` | 1000000 / 20000 | 76.29395 | 2999319 |
+## 3. FK consistency and joint limits
 
-Sizes exclude temporary float64 arrays, FK workspaces and model memory. Small GPU-pilot examples are saved as NPZ files; full reconstructed training arrays are discarded. Shapes, dtypes, source/config/checkpoint hashes, array hashes and package versions are in [metadata](../../output/fr3_data_suitability/metadata.json) and [checks](../../output/fr3_data_suitability/checks.json).
+The full data checks covered the nominal and CFMPE-family recipes on both tasks. I then extended the review to the other saved methods by checking the common-generator replay and their stored normalization. The results below describe the reconstructed clean pairs, before training-time noise or padding.
 
-## Correctness and distribution checks
-
-All training and validation rows were re-simulated after float32 storage. The maximum absolute encoded-component discrepancy is shown in micro-units to avoid rounding a small nonzero error to zero. The acceptance threshold was 2.00000 micro-units per component, equivalently 0.000002 in stored units. This mixes metres and dimensionless rotation entries and is a storage-consistency check, not a physical pose metric.
-
-| Run | Maximum train discrepancy (micro-units) | Maximum validation discrepancy (micro-units) | Failed rows |
+| Data recipe | Maximum training discrepancy | Maximum validation discrepancy | Rows failing FK tolerance |
 |---|---:|---:|---:|
-| 6D FIF | 0.41079 | 0.31116 | 0 |
-| 6D CFMPE | 0.40847 | 0.28665 | 0 |
-| 5D FIF | 0.41543 | 0.36795 | 0 |
-| 5D CFMPE | 0.39723 | 0.32155 | 0 |
+| Nominal 6D | 0.41079 | 0.31116 | 0 |
+| CFMPE-family 6D | 0.40847 | 0.28665 | 0 |
+| Nominal 5D | 0.41543 | 0.36795 | 0 |
+| CFMPE-family 5D | 0.39723 | 0.32155 | 0 |
 
-Re-simulation uses the same FK implementation, so an additional independent JRL fixture was checked with its documented flange-to-hand frame rotation. Maximum position-component error was 137.44859 nanometres; maximum rotation-matrix entry error was 0.35031 micro-units. Both passed.
+Discrepancies are maximum absolute encoded-component differences in **micro-units**, with a tolerance of 2.00000 micro-units. This keeps float32 rounding errors visible in the table. It is a consistency check on the stored representation, not a position or rotation accuracy metric for a trained model.
 
-Across all eight reconstructed splits:
+No reconstructed joint vector exceeded its limits, allowing 0.50000 microradians for endpoint rounding. Orientation vectors passed the unit-length and orthogonality checks, and the 6D rotation reconstruction had the expected determinant. All positions stayed inside a conservative reach bound derived from the URDF.
 
-- No NaNs/infinities, out-of-limit joints, conditional-box violations, or exact duplicate joint/encoded-pose rows were found. Joint-limit tolerance was 0.0000005 rad for float32 endpoint rounding.
-- Exact joint-row overlap was zero between training and internal validation, and between either split and committed validation/test generating configurations. Committed validation/test sets also did not overlap. This detects exact configurations, not every possible near-duplicate or shared IK solution.
-- Stored orientation columns/axes passed unit-length, orthogonality and, for 6D, reconstructed determinant checks. The maximum tested defect was 0.17330 micro-units. No position exceeded the conservative URDF reach bound of 1.31926 m.
-- All 56 marginal uniformity checks passed a Bonferroni-corrected family threshold of 0.01000; minimum unadjusted p-value was 0.03878. For CFMPE, uniformity is tested after dividing joint offsets by the actual conditional half-width. Raw CFMPE joint marginals are intentionally more concentrated near interval centres. These checks support the sampling recipe; marginal tests do not prove the complete joint distribution.
-- CFMPE had 250734 nominal training rows (25.07340%) and 4996 nominal validation rows (24.98000%) on each task. The random anchor mask does not enforce exactly one quarter.
+Reusing the same FK code alone would not catch every implementation error. The independent JRL fixture provides an additional check: all 64 configurations passed after accounting for the flange-to-hand frame rotation. Its maximum position-component difference was 137.44859 nanometres.
 
-The [per-dimension statistics](../../output/fr3_data_suitability/statistics.csv) contain ranges, means, standard deviations and tail quantiles for x, y and c. [Histograms](../../output/fr3_data_suitability/README.md) cover every joint and pose component. Uniform joint sampling does not imply uniform Cartesian coverage. Extreme but valid reachable poses were retained.
+The original detailed results remain in [checks.json](../../output/fr3_data_suitability/checks.json). The broader review, including checkpoint and source hashes, is in [method_inventory.json](../../output/fr3_data_suitability/method_inventory.json).
 
-### Periodicity and local degeneracy
+## 4. Distribution, periodicity and difficult configurations
 
-| Joint | Lower limit (rad) | Upper limit (rad) |
-|---|---:|---:|
-| 1 | -2.90070 | 2.90070 |
-| 2 | -1.83610 | 1.83610 |
-| 3 | -2.90070 | 2.90070 |
-| 4 | -3.07700 | -0.11690 |
-| 5 | -2.87630 | 2.87630 |
-| 6 | 0.43980 | 4.62160 |
-| 7 | -3.05080 | 3.05080 |
+The checked clean datasets contain no NaNs, infinities or exact duplicate joint/pose rows. No exact joint configurations overlapped between training and internal validation, or with the generating configurations of the committed validation/test poses. These checks do not exclude every possible near-duplicate or two different joint configurations reaching the same pose.
 
-All seven joints are revolute, and adding a full turn preserves FK numerically. All allowed intervals are shorter than a full turn; none is a continuous joint. Their interval endpoints must not be identified. A torus representation for M-FFF can express angular periodicity, but it must still respect the bounded prior. Joint 6 crosses pi, so blindly returning every angle in (-pi, pi] can produce an equivalent but out-of-limit representative.
+The [statistics](../../output/fr3_data_suitability/statistics.csv) and [histograms](../../output/fr3_data_suitability/README.md) show the ranges and marginal distributions of joints and pose components. The nominal plots were originally produced from FIF's data; the matching shared-generator replay now connects those plots to the other fixed-prior methods as well. Uniform joint sampling does not produce a uniform workspace distribution. CFMPE's raw joint marginals are more concentrated around interval centres, as expected from its width family.
 
-Jacobian conditioning was inspected on 10000 randomly selected training rows per run. Linear rows were scaled by a characteristic length of 1.00000 m; rotational rows use radians. Condition numbers depend on this convention.
+All 56 marginal uniformity checks passed the corrected test threshold. For CFMPE, this was checked after dividing joint offsets by their conditional half-widths. That supports the sampling recipe, although marginal tests cannot prove the whole joint distribution is correct.
 
-| Run | Expected task rank | Rank-deficient rows | Median condition | P95 condition | Condition above 1000 |
+All seven joints are revolute and their FK is periodic over a full turn. However, every allowed interval is shorter than a full turn. The two ends of a joint's allowed interval should therefore not be treated as the same point of the bounded prior. This matters for M-FFF: a circle representation does not remove joint limits. Joint 6 also crosses pi, so returning every angle in the usual (-pi, pi] window can give an equivalent angle outside the permitted interval.
+
+I also checked the task Jacobian on 10000 training configurations per recipe. Position rows were scaled by a characteristic length of 1.00000 m before calculating condition numbers.
+
+| Recipe | Expected rank | Rank-deficient samples | Median condition number | P95 condition number | Condition number above 1000 |
 |---|---:|---:|---:|---:|---:|
-| 6D FIF | 6 | 0 | 19.01227 | 250.68973 | 81 |
-| 6D CFMPE | 6 | 0 | 19.66965 | 194.38361 | 61 |
-| 5D FIF | 5 | 0 | 16.46846 | 213.86534 | 67 |
-| 5D CFMPE | 5 | 0 | 17.07727 | 161.29313 | 53 |
+| Nominal 6D | 6 | 0 | 19.01227 | 250.68973 | 81 |
+| CFMPE-family 6D | 6 | 0 | 19.66965 | 194.38361 | 61 |
+| Nominal 5D | 5 | 0 | 16.46846 | 213.86534 | 67 |
+| CFMPE-family 5D | 5 | 0 | 17.07727 | 161.29313 | 53 |
 
-Rank tolerance was relative 0.0000000001. Poorly conditioned regions exist even though no numerical rank loss was observed in these samples. The regular posteriors are already lower-dimensional manifolds; singularities, boundary collapse and disconnected branches cannot be ruled out globally by this sample. There were no sampled nearest neighbours within 0.000001 in joint-limit-normalized coordinates; that near-duplicate check covers the 10000-row subsets only.
+Most sampled configurations were regular, but some were poorly conditioned. I would keep these valid examples in the benchmark and report the difficult regions rather than quietly filter them out. The posteriors are already lower-dimensional solution sets: normally one-dimensional for 6D and two-dimensional for 5D. The sample does not rule out singularities, boundary collapse or disconnected solution branches elsewhere. Near-duplicate checks on the same 10000-row subsets also found no neighbours within 0.000001 in joint-limit-normalized coordinates.
 
-## Noise and fair comparison
+## 5. Noise and dequantization
 
-**Discrete dequantization is unnecessary:** the targets are continuously sampled angles. Float32 storage alone is not evidence that jitter should be added.
+The sampled angles are continuous, so I do not see a reason to add discrete dequantization to the raw FR3 dataset. The ballistics dequantization option is unrelated to this task. Training noise is a separate question, especially because an exact IK posterior occupies a lower-dimensional set in joint space.
 
-IKFlow uses full-dimensional joint noise and conditions on its magnitude to address singular target distributions; the appendix gives noise scale 0.00100. This differs from perturbing the pose condition. [IKFlow, Section IV-C and Appendix A](https://arxiv.org/pdf/2111.08933).
+The methods handle this differently:
 
-Our assessment is to preserve the noiseless dataset. FIF already uses intrinsic latent dimensions 1 and 2 and observation sigma 0.00000. CFMPE uses `sigma_min=0.00010` in its flow path; that is not a SoftFlow replication. Whether extra smoothing improves either model requires a separate controlled training ablation. Data checks alone cannot establish that benefit or explain existing model errors.
+- **IKFlow** adds full-dimensional noise to the padded joint vector and conditions on its magnitude. The main runs use SoftFlow scale 0.00100, with noise level zero when sampling. This follows the approach in [IKFlow, Section IV-C](https://arxiv.org/pdf/2111.08933).
+- **FFF and M-FFF** add pose noise of 0.00100 to the encoded observation. The 6D FFF control also uses 0.01000. This can move the condition away from an exact valid rotation encoding, even though the underlying clean FK pair is valid.
+- **FMPE and CFMPE** use `sigma_min = 0.00010` in their flow path. This is different from the SoftFlow procedure.
+- **FIF** uses observation sigma 0.00000 in the main FR3 runs and intrinsic latent dimensions 1 and 2.
+- **cINN and ciLNN** use the clean pairs with conditional likelihood training. **iLNN pad3** adds noise of 0.02000 to its padding channels. For unconditional iLNN, `sigma_y = 0.05000` sets a likelihood width; it does not mean that the saved FK poses were perturbed.
 
-The saved FFF, M-FFF and FMPE configs match the budget of 1000000/20000 rows, 50 epochs, batch 1000 and approximately 3000000 parameters; see [FFF/M-FFF](2026-11-11_fr3-fff-mfff.md) and [FMPE](2026-11-11_fr3-fmpe.md). The four audited models fit statistics on training data only; all saved mean/std buffers matched reconstruction with maximum difference 0.00000. FIF uses population standard deviation; CFMPE uses sample standard deviation and includes c in its context. No standard deviation was degenerate. M-FFF represents angles on circles rather than standardizing them as Euclidean coordinates.
+For the iLNN variants I checked the saved configs and [Umut's corresponding training code](https://github.com/eminesu/invertible-architectures-benchmark/blob/d81bc95b4453af794ea60c3ed5961c5dc66670c7/experiments/train_ilnn.py), since the local trainer version does not expose all the recorded conditional/padding options.
 
-Equal compute budgets do not make training objectives/distributions identical: CFMPE uses a prior family, while the other methods use the nominal prior. FFF/M-FFF also add pose noise 0.00100. Comparisons should disclose both differences; a strict nominal-prior-only comparison would need a separately agreed CFMPE control run. No such run was started.
+My recommendation is to retain the clean joint-pose pairs and record each method's noise treatment separately. The existing FFF noise control is useful, but it is not a common SoftFlow ablation across all methods. The data checks alone cannot tell us whether adding more noise would improve a particular model.
 
-Internal loss validation uses 20000 generated pairs. Model-selection evaluation uses 200 committed poses; final evaluation uses 1000 committed poses, with 1000 GT samples per pose in the existing caches. These are different validation purposes.
+## 6. Comparison budget and standardization
 
-## Local GPU pilot and scaling estimate
+The main runs share the 1000000/20000 pair budget and 50 requested epochs. The parameter counts are close to the intended 3000000 budget, with two exceptions worth keeping visible:
 
-Hardware: NVIDIA GeForce GTX 1650 Ti, 4096 MiB. PyTorch 2.14.1+cu126, float64 FK and float32 outputs, four CPU threads. The GPU was idle before the audit. The existing training generator remains on CPU even when training uses CUDA; a local alternate path tested CUDA FK without changing it.
+| Method | 5D parameters | 6D parameters | Batch size |
+|---|---:|---:|---:|
+| FMPE | 2995847 | 2997335 | 1000 |
+| CFMPE | 2999319 | 2988817 | 1000 |
+| FIF | 2994069 | 2992038 | 1000 |
+| FFF | 2996942 | 2999054 | 1000 |
+| M-FFF | 2989846 | 2991952 | 1000 |
+| IKFlow | 2995560 | 2989116 | 128 |
+| cINN | 2993256 | 2988112 | 1000 |
+| ciLNN | 3024112 | 3064432 | 1000 |
+| iLNN base | 2943472 | No base run | 1000 |
+| iLNN pad3 | 2983840 | 2983840 | 1000 |
 
-The pilot used nominal 6D data at four sizes, five repeats each, after three warm-up passes. CUDA synchronization brackets timings. Generation includes joint sampling, transfers, FK, pose encoding and returning float32 poses to CPU. Save timings use uncompressed NPZ; load timings include reading x/y and transferring to CUDA. Read timings are warm filesystem-cache measurements, not cold-disk throughput.
+ciLNN is slightly above the nominal parameter budget. IKFlow's smaller batch also gives about 7.8 times as many optimizer steps per epoch, so equal epoch counts do not imply equal optimization effort. The completed FMPE controls at smaller parameter budgets and alpha 0, and the FFF noise control, use the same clean nominal data. Smoke tests and unfinished IKFlow search/long runs are recorded in the inventory but are excluded from this main-budget comparison.
 
-| Rows | CPU generation (s) | GPU generation (s) | NPZ save (s) | Load + CUDA transfer (s) |
+Normalization is fitted on training data. Across **19 main runs and 7 completed controls**, all 26 checkpoint normalization checks passed, with maximum absolute buffer difference 0.00000. The extension checked 24 checkpoints against a fresh nominal-generator replay and reused the existing full family-data audit for the two CFMPE checkpoints.
+
+FIF uses population standard deviation; the other Euclidean models use sample standard deviation. M-FFF stores angular scales and uses circle coordinates instead of centring the angles as Euclidean inputs. CFMPE also standardizes the prior-width context. None of these differences requires a different physical FK dataset.
+
+The comparison therefore has a shared data source, but it is not a comparison with every training choice held fixed. The CFMPE prior family, different noise treatments, IKFlow batch size and ciLNN parameter counts should be stated alongside model results. Reference-cache identity also needs care: our local GT cache hashes differ from Emine's, and the additional Umut records do not establish identical cache files across all runs.
+
+## 7. Local GPU pilot and scaling estimate
+
+The earlier pilot used our GTX 1650 Ti with 4096 MiB memory. It tested the common nominal 6D generation/loading path at four sizes, with five repeats after warm-up. CUDA was synchronized around the measurements. FK used float64 and the returned arrays were float32.
+
+| Rows | CPU generation (s) | GPU generation (s) | NPZ save (s) | Load and CUDA transfer (s) |
 |---|---:|---:|---:|---:|
 | 1000 | 0.00441 | 0.00554 | 0.00142 | 0.01175 |
 | 5000 | 0.01799 | 0.00879 | 0.00202 | 0.01136 |
 | 10000 | 0.04916 | 0.01682 | 0.00344 | 0.01370 |
 | 20000 | 0.09331 | 0.03014 | 0.00287 | 0.01288 |
 
-Medians are fitted with `log(time) = log(a) + alpha * log(N)`:
+Generation includes joint sampling, FK, pose encoding and transfers needed to return CPU arrays. Loading was measured with a warm filesystem cache. The existing training generators still perform FK on CPU; selecting CUDA for a model does not automatically move data generation to the GPU.
 
-| Operation | Alpha | R-squared in log space | Power-law projection to 1000000 rows (s) | Repeated 20000-row batches projection (s) |
-|---|---:|---:|---:|---:|
-| CPU generation | 1.03159 | 0.99038 | 5.14587 | 4.66558 |
-| GPU generation | 0.55400 | 0.91831 | 0.22106 | 1.50720 |
-| NPZ save | 0.27548 | 0.81304 | 0.00962 | 0.14336 |
-| Load + CUDA transfer | 0.04236 | 0.40302 | 0.01543 | 0.64386 |
+Fitting `log(time) = log(a) + alpha * log(N)` gives CPU exponent 1.03159 and GPU exponent 0.55400. The fitted GPU time at 1000000 rows is 0.22106 s, but I would not use that as a firm estimate: fixed launch overhead strongly affects the small-size measurements. Repeating the measured 20000-row batches instead gives **1.50720 s** for 1000000 rows, or **1.53734 s** including 20000 validation rows, before save/load costs. The earlier full CPU reconstructions took 5.14597-5.79009 s per training dataset.
 
-**Use the repeated-batch estimate for provisional planning**, especially on the GPU: launch and I/O overhead dominate small sizes, and a 50-fold extrapolation of a sublinear fit is optimistic. The load fit has weak explanatory power. Neither estimate is a measured full-dataset CUDA run or a confidence interval. Including 20000 validation rows projects GPU generation to 1.53734 s by repeated batches; save/load costs are additional. Actual reconstruction of the existing 1000000-row CPU training recipes took 5.14597–5.79009 s, consistent with the CPU scale estimate.
+This is a rough generation-cost estimate using log-log fitting, inspired by the scaling approach in [Kaplan et al.](https://arxiv.org/pdf/2001.08361). It does not transfer their language-model loss exponents to robotics. It also does not estimate training time, GT tracing, or the separate cost of each method's stochastic augmentation. The raw [timings](../../output/fr3_data_suitability/timings.csv), [projections](../../output/fr3_data_suitability/projections.csv) and [scaling plot](../../output/fr3_data_suitability/figures/scaling.png) are available for inspection.
 
-This uses the empirical log-log fitting approach only; Kaplan et al.'s language-model loss exponents do not predict robot-data generation cost. [Scaling Laws for Neural Language Models](https://arxiv.org/pdf/2001.08361). The pilot does not estimate model-training time or GT tracing effort, nor separately benchmark 5D or CFMPE-family generation. No new GPU batch exceeded 20000 rows. Full-size CUDA generation and broader scaling await Paul's direction.
+No new GPU batch exceeded 20000 rows. Larger GPU generation and scaling experiments should wait for new instructions; this revision only extended the CPU replay and saved-checkpoint review.
 
-Raw repeats, alternative projections and the plot are available in [timings](../../output/fr3_data_suitability/timings.csv), [projections](../../output/fr3_data_suitability/projections.csv) and [scaling figure](../../output/fr3_data_suitability/figures/scaling.png).
+## 8. Suitability assessment and recommendation
 
-## Reference-cache scope and reproduction
+Based on these checks, I consider the generated FR3 pairs suitable for our current kinematics benchmark. They reproduce the paired poses within storage precision, respect joint limits and show no obvious data corruption. The common-generator replay and normalization checks support using this assessment across the method families, rather than only FIF and CFMPE.
 
-The four existing local GT caches were read without regeneration. All stored `samples` and `oracle` arrays were finite. For each array, 16 evenly spaced samples per pose were checked: 76800 configurations total, all passing FK and joint-limit checks. Cached diagnostics report closed loops, with 4–8 loops per pose. However, they lack a generating-configuration-on-fiber diagnostic, and these checks do not establish branch completeness or correct posterior mass weights. Local cache hashes differ from the original cache hashes documented by the team. Agree on shared verified references before interpreting small cross-machine metric differences.
+I would **generate our own training data with the shared, versioned generator**, while reusing the **provided validation/test pose sets**. The nominal dataset should use agreed seeds, and each run should record its data hashes, prior and noise settings. CFMPE's width-family experiment should remain clearly identified when it is compared with fixed-prior training.
 
-Run the audit again into a new directory:
+For posterior evaluation, we should also agree on shared GT cache files. The existing cache subset checks passed FK and limit checks, but they do not prove that every solution branch was found or correctly weighted. That remains a reference-quality limitation, separate from the correctness of the joint-pose training pairs.
 
-```powershell
-.venv/Scripts/python.exe experiments/analyze_fr3_data_suitability.py --out output/fr3_data_suitability_review
-```
-
-This reconstructs existing training-size data on CPU, reads the four trained models, and runs only the bounded new GPU pilot. It never trains models or generates GT. The first audit's machine-readable results are in [output/fr3_data_suitability](../../output/fr3_data_suitability/README.md). Numerical JSON preserves tiny nonzero errors in decimal notation; report tables and CSV use five decimal places.
-
-Validation: 14 tests passed, covering audit corruption controls, independent FK cross-check and existing kinematics invariants:
-
-```powershell
-.venv/Scripts/python.exe -m pytest tests/test_fr3_data_suitability.py tests/test_robot_ik_crosscheck.py tests/test_robot_ik_kinematics.py -q
-```
+The evidence is collected under [output/fr3_data_suitability](../../output/fr3_data_suitability/README.md). The original numerical audit and its 14 passing tests are retained, and the [method inventory](../../output/fr3_data_suitability/method_inventory.json) adds the broader data-source and normalization review. No models were retrained, no model evaluations were rerun, and no GT caches were regenerated for this revision.
