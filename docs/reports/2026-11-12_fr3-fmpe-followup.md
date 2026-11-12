@@ -297,6 +297,36 @@ Err_post and Err_resim than Euclidean FFF and M-FFF on both tasks: Err_post 0.02
 on 6-D and 0.0032–0.0062 vs 0.017–0.024 on 5-D; Err_resim lower by a factor of 32 (6-D, 300k FMPE vs
 M-FFF) up to about 800 (6-D headline FMPE vs FFF). No model reaches the oracle band.
 
+## B3. Workspace projection figure (added after the task, on request)
+
+The toy posterior figures have a projection panel (arms and f(x) around y*); the FR3 posterior figures
+only show the 7 joint marginals, and always have. The FR3 counterpart is a separate figure, one per
+task, with every FR3 model and the ground truth side by side (one column each) for the same 3 test
+poses as the posterior figures:
+
+`python experiments/plot_fr3_projection.py <task> --device cuda` →
+`experiments/figures/shared/projection/fr3_projection_fr3_6d.{png,svg}` and `..._fr3_5d.{png,svg}`.
+
+- **Arm rows:** 40 sampled configurations per model in the vertical plane through the target, with the
+  target flange position marked. Same limits across a row.
+- **Flange rows:** all 1000 samples, flange position minus target in mm (base x-y plane), with 1 mm and
+  10 mm circles. Axis limits differ per panel (the errors span three orders of magnitude); the median
+  and p95 position error are written above each panel.
+- Samples outside the joint limits are red in both rows.
+
+![projection fr3_6d](../../experiments/figures/shared/projection/fr3_projection_fr3_6d.png)
+![projection fr3_5d](../../experiments/figures/shared/projection/fr3_projection_fr3_5d.png)
+
+All FMPE models reach the same configuration families as the ground truth, and their flange points
+form a cloud of a few mm around the target, stretched along one direction (pose 1: along a diagonal),
+growing as the model gets smaller. FFF and M-FFF also cover the families, but their flange points
+spread over tens to hundreds of mm and up to ~30% of their samples are outside the joint limits.
+
+The samples use the same call and seed as the posterior figures, drawn here on CUDA. They match the α = 0
+posterior figures (also CUDA) exactly; the α = 1 and FFF / M-FFF posterior figures were drawn on CPU, so
+their per-pose "outside limits" shares differ slightly from this figure (e.g. α = 1 pose 0 on 6-D: 2.6%
+there, 3.1% here). The test-set metrics in the tables above are unaffected.
+
 ## Not done
 
 - Nothing in the task list was skipped. One check was added that the task did not ask for: the paired
