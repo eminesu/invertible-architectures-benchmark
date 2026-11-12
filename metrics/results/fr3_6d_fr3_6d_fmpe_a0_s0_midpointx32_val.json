@@ -1,0 +1,67 @@
+{
+  "benchmark": "fr3_6d",
+  "model": "fr3_6d_fmpe_a0_s0_midpointx32_val",
+  "n_conditions": 200,
+  "n_samples": 1000,
+  "n_gt_min": 1000,
+  "err_post": {
+    "mean": 0.02224659593400883,
+    "mean_clamped": 0.02224659593400883,
+    "median": 0.011047121115675629,
+    "q1": 0.006693245962965139,
+    "q3": 0.022716750780825842,
+    "max": 0.2404459949524574,
+    "n_finite": 200
+  },
+  "err_post_biased": {
+    "mean": 0.027877888405553143,
+    "mean_clamped": 0.027877888405553143,
+    "median": 0.016686318603675976,
+    "q1": 0.012236968334508935,
+    "q3": 0.028417854636361192,
+    "max": 0.24591665618078357,
+    "n_finite": 200
+  },
+  "err_resim": {
+    "mean": 0.007083895607077834,
+    "mean_clamped": 0.007083895607077834,
+    "median": 0.004853213345927924,
+    "q1": 0.003519849623011981,
+    "q3": 0.007485685519875456,
+    "max": 0.05492649434152588,
+    "n_finite": 200
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 20.89181539999845,
+  "inference_ms_per_condition": 104.45907699999225,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "split": "val",
+  "pos_err_mm": {
+    "median": 10.405523917887653,
+    "mean": 12.429543771302846,
+    "p95": 27.707349024904936
+  },
+  "rot_err_deg": {
+    "median": 2.346388192347571,
+    "mean": 2.8635444605132028,
+    "p95": 6.292991518844675
+  },
+  "success_rate": {
+    "1mm_1deg": 0.000485,
+    "10mm_5deg": 0.43751
+  },
+  "joint_limit_violation_fraction": 0.0824,
+  "coverage": {
+    "delta_rad": 0.1,
+    "median": 0.975,
+    "mean": 0.93719,
+    "p95": 1.0
+  },
+  "method": "midpoint",
+  "steps": 32,
+  "nfe": 64,
+  "n_params": 2997335,
+  "device": "cuda"
+}
