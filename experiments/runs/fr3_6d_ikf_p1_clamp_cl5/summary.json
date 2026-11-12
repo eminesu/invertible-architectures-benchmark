@@ -1,0 +1,21 @@
+{
+  "run": "fr3_6d_ikf_p1_clamp_cl5",
+  "problem": "fr3_6d",
+  "model": "ikflow",
+  "n_params": 2989116,
+  "hidden": 243,
+  "width": 9,
+  "blocks": 12,
+  "z_dims": 9,
+  "n_train": 200000,
+  "epochs": 10,
+  "steps": 15620,
+  "ema": 0.0,
+  "schedule": "step",
+  "val_loss": -20.458706283569335,
+  "val_nll": -20.458706283569335,
+  "err_resim_provisional": 1.4830605925708324,
+  "resim_failed_fraction": 0.0,
+  "latent_scale_resim": 0.25,
+  "train_seconds": 474.1282148361206
+}

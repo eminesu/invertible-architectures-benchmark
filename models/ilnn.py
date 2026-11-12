@@ -85,16 +85,17 @@ def liquid_params(d_in, d_out, hidden):
             + 2 * d_out * hidden + 2 * d_out)                     # readout
 
 
-def flow_params(dim, n_blocks, hidden):
-    """Trainable parameters of a LiquidFlow, in closed form (checked in tests)."""
+def flow_params(dim, n_blocks, hidden, cond_dim=0):
+    """Trainable parameters of a LiquidFlow, in closed form (checked in tests).
+    cond_dim: size of the condition appended to every cell input (0 = unconditional)."""
     d1, d2 = dim // 2, dim - dim // 2
-    return n_blocks * (liquid_params(d1, d2, hidden) + liquid_params(d2, d1, hidden))
+    return n_blocks * (liquid_params(d1 + cond_dim, d2, hidden) + liquid_params(d2 + cond_dim, d1, hidden))
 
 
-def width_for_budget(dim, n_blocks, target):
+def width_for_budget(dim, n_blocks, target, cond_dim=0):
     """Largest liquid hidden size such that the whole flow stays at or under `target`."""
     h = 1
-    while flow_params(dim, n_blocks, h + 1) <= target:
+    while flow_params(dim, n_blocks, h + 1, cond_dim) <= target:
         h += 1
     return h
 
@@ -102,31 +103,33 @@ def width_for_budget(dim, n_blocks, target):
 class LiquidCouplingBlock(nn.Module):
     """GLOW-style affine coupling block with liquid conditioners; see the module docstring."""
 
-    def __init__(self, dim, hidden, unfolds, dt, clamp, lam_init_std=0.0):
+    def __init__(self, dim, hidden, unfolds, dt, clamp, lam_init_std=0.0, cond_dim=0):
         super().__init__()
         self.d1, self.d2 = dim // 2, dim - dim // 2
         self.clamp = clamp
-        self.net1 = LiquidNet(self.d1, self.d2, hidden, unfolds, dt, lam_init_std)  # v1 -> params of u2
-        self.net2 = LiquidNet(self.d2, self.d1, hidden, unfolds, dt, lam_init_std)  # u2 -> params of u1
+        # cond_dim > 0: the condition c is appended to the input of every liquid cell, in the
+        # forward and the inverse pass (like the cINN, models.inn); 0 = unconditional, as before.
+        self.net1 = LiquidNet(self.d1 + cond_dim, self.d2, hidden, unfolds, dt, lam_init_std)  # v1 (+c) -> params of u2
+        self.net2 = LiquidNet(self.d2 + cond_dim, self.d1, hidden, unfolds, dt, lam_init_std)  # u2 (+c) -> params of u1
 
-    def _params(self, net, inp, d_out):
-        out = net(inp)
+    def _params(self, net, inp, d_out, c=None):
+        out = net(inp if c is None else torch.cat([inp, c], dim=1))
         s, t = out[:, :d_out], out[:, d_out:]
         return self.clamp * 0.636 * torch.atan(s), t  # soft clamp, as in models.inn
 
-    def forward(self, u):
+    def forward(self, u, c=None):
         u1, u2 = u[:, :self.d1], u[:, self.d1:]
-        s2, t2 = self._params(self.net2, u2, self.d1)
+        s2, t2 = self._params(self.net2, u2, self.d1, c)
         v1 = u1 * s2.exp() + t2
-        s1, t1 = self._params(self.net1, v1, self.d2)
+        s1, t1 = self._params(self.net1, v1, self.d2, c)
         v2 = u2 * s1.exp() + t1
         return torch.cat([v1, v2], dim=1), s1.sum(1) + s2.sum(1)
 
-    def inverse(self, v):
+    def inverse(self, v, c=None):
         v1, v2 = v[:, :self.d1], v[:, self.d1:]
-        s1, t1 = self._params(self.net1, v1, self.d2)
+        s1, t1 = self._params(self.net1, v1, self.d2, c)
         u2 = (v2 - t1) * (-s1).exp()
-        s2, t2 = self._params(self.net2, u2, self.d1)
+        s2, t2 = self._params(self.net2, u2, self.d1, c)
         u1 = (v1 - t2) * (-s2).exp()
         return torch.cat([u1, u2], dim=1)
 
@@ -136,12 +139,12 @@ class LiquidFlow(nn.Module):
     (none after the last block); same layout as models.inn.Flow, unconditional."""
 
     def __init__(self, dim, n_blocks=8, hidden=256, unfolds=4, dt=0.25, clamp=2.0, perm_seed=0,
-                 lam_init_std=0.0, perm_mode='random'):
+                 lam_init_std=0.0, perm_mode='random', cond_dim=0):
         super().__init__()
         assert perm_mode in ('random', 'mixing')
-        self.dim = dim
+        self.dim, self.cond_dim = dim, cond_dim
         self.blocks = nn.ModuleList(
-            LiquidCouplingBlock(dim, hidden, unfolds, dt, clamp, lam_init_std) for _ in range(n_blocks))
+            LiquidCouplingBlock(dim, hidden, unfolds, dt, clamp, lam_init_std, cond_dim) for _ in range(n_blocks))
         g = torch.Generator().manual_seed(perm_seed)
         for i in range(n_blocks - 1):
             perm = torch.randperm(dim, generator=g)
@@ -165,21 +168,21 @@ class LiquidFlow(nn.Module):
         return [(i, getattr(self, f'perm{i}').tolist(), self.mixes_halves(getattr(self, f'perm{i}'), self.dim))
                 for i in range(len(self.blocks) - 1)]
 
-    def forward(self, u):
-        """u (B, dim) -> (v (B, dim), log|det dv/du| (B,))."""
+    def forward(self, u, c=None):
+        """u (B, dim) [, condition c (B, cond_dim)] -> (v (B, dim), log|det dv/du| (B,))."""
         log_det = u.new_zeros(len(u))
         for i, block in enumerate(self.blocks):
-            u, ld = block(u)
+            u, ld = block(u, c)
             log_det = log_det + ld
             if i < len(self.blocks) - 1:
                 u = u[:, getattr(self, f'perm{i}')]
         return u, log_det
 
-    def inverse(self, v):
+    def inverse(self, v, c=None):
         for i in reversed(range(len(self.blocks))):
             if i < len(self.blocks) - 1:
                 v = v[:, getattr(self, f'inv_perm{i}')]
-            v = self.blocks[i].inverse(v)
+            v = self.blocks[i].inverse(v, c)
         return v
 
 
@@ -191,11 +194,20 @@ class ILNN(_FlowModel):
 
     def __init__(self, x_dims, y_dims, n_blocks=8, hidden=256, unfolds=4, dt=0.25, clamp=2.0,
                  latent_mmd='joint', perm_seed=0, loss='mmd', sigma_y=0.05,
-                 lam_init_std=0.0, perm_mode='random'):
+                 lam_init_std=0.0, perm_mode='random', pad_dims=0, pad_noise=0.02):
         super().__init__(x_dims, y_dims)
         assert latent_mmd in ('joint', 'marginal')
         assert loss in ('mmd', 'ml')
-        self.z_dims = x_dims - y_dims
+        # pad_dims > 0 (extra, not in the paper): x is extended with pad_dims zero channels (+ N(0, pad_noise^2)
+        # while training) before the flow, so dim(z) = dim(x) + pad_dims - dim(y); the padding is dropped
+        # again when sampling. Needed when dim(x) <= dim(y) (fr3_6d) and still an unconditional model.
+        self.pad_dims, self.pad_noise = pad_dims, pad_noise
+        self.in_dims = x_dims + pad_dims
+        self.z_dims = self.in_dims - y_dims
+        if self.z_dims < 1:
+            raise ValueError(f'ILNN needs dim(x) + pad > dim(y) (got {x_dims} + {pad_dims} and {y_dims}, so dim(z) = '
+                             f'{self.z_dims}); pad x (train_ilnn.py --pad-x N) or use the conditional model, CILNN '
+                             '(train_ilnn.py --conditional)')
         self.latent_mmd = latent_mmd
         # loss='mmd' is the paper's Eq. (16). loss='ml' trains the same flow by maximum likelihood
         # (the INN's Eq. 4: Gaussian y_hat | y with std sigma_y, standard normal z, log-det), which is
@@ -203,8 +215,17 @@ class ILNN(_FlowModel):
         self.loss_kind, self.sigma_y = loss, sigma_y
         if loss == 'ml':
             self.loss_terms = ('nll',)
-        self.flow = LiquidFlow(x_dims, n_blocks, hidden, unfolds, dt, clamp, perm_seed,
+        self.flow = LiquidFlow(self.in_dims, n_blocks, hidden, unfolds, dt, clamp, perm_seed,
                                lam_init_std=lam_init_std, perm_mode=perm_mode)
+
+    def _pad(self, x_n, noise):
+        """Standardized x (B, x_dims) -> flow input (B, x_dims + pad_dims)."""
+        if not self.pad_dims:
+            return x_n
+        pad = x_n.new_zeros(len(x_n), self.pad_dims)
+        if noise and self.pad_noise > 0:
+            pad = pad + self.pad_noise * torch.randn_like(pad)
+        return torch.cat([x_n, pad], dim=1)
 
     @torch.no_grad()
     def cell_stats(self):
@@ -215,12 +236,13 @@ class ILNN(_FlowModel):
 
     def forward(self, x):
         """Raw x -> (y_hat_n, z, log_det), the first two in standardized units."""
-        x_n = (x - self.x_mean) / self.x_std
+        x_n = self._pad((x - self.x_mean) / self.x_std, noise=False)
         out, log_det = self.flow(x_n)
         return out[:, :self.y_dims], out[:, self.y_dims:], log_det
 
     def losses(self, x, y):
         x_n, y_n = self._norm(x, y)
+        x_n = self._pad(x_n, noise=self.training)   # the padded flow input; the x-MMD below compares in this space
         out, log_det = self.flow(x_n)
         y_hat, z = out[:, :self.y_dims], out[:, self.y_dims:]
         y_err = ((y_hat - y_n) ** 2).sum(1).mean()
@@ -232,8 +254,46 @@ class ILNN(_FlowModel):
             a, b = torch.cat([y_hat.detach(), z], 1), torch.cat([y_n, eps], 1)
         else:
             a, b = z, eps
-        x_gen = self._decode(y_n, torch.randn_like(z))   # q_g(y, z) with the data y
+        x_gen = self._decode_full(y_n, torch.randn_like(z))   # q_g(y, z) with the data y (padded space)
         return {'y': y_err, 'z': mmd_torch(a, b), 'x': mmd_torch(x_gen, x_n)}
 
-    def _decode(self, y_n, z):
+    def _decode_full(self, y_n, z):
         return self.flow.inverse(torch.cat([y_n, z], dim=1))
+
+    def _decode(self, y_n, z):
+        return self._decode_full(y_n, z)[:, :self.x_dims]   # drop the padding
+
+
+class CILNN(_FlowModel):
+    """Conditional ILNN: x -> z | y, the liquid analogue of models.inn.CINN, loss Eq. (5)
+    (1/2 |z|^2 - log|det J|, in standardized units). Same LiquidFlow as the ILNN, but y is
+    appended to the input of every liquid cell, forward and inverse, and dim(z) = dim(x),
+    so it also works when dim(y) >= dim(x) (the FR3 6-D pose: 9 numbers for 7 joints).
+
+    Not in the paper (it defines the unconditional ILNN, Eq. 16): this is an extension, to
+    be reported as a separate variant. With the same blocks / hidden / unfolds / dt / clamp
+    it has more parameters than the ILNN because the cell inputs are wider.
+    """
+
+    loss_terms = ('nll',)
+
+    def __init__(self, x_dims, y_dims, n_blocks=8, hidden=256, unfolds=4, dt=0.25, clamp=2.0,
+                 perm_seed=0, lam_init_std=0.0, perm_mode='random'):
+        super().__init__(x_dims, y_dims)
+        self.z_dims = x_dims
+        self.flow = LiquidFlow(x_dims, n_blocks, hidden, unfolds, dt, clamp, perm_seed,
+                               lam_init_std=lam_init_std, perm_mode=perm_mode, cond_dim=y_dims)
+
+    cell_stats = ILNN.cell_stats   # same diagnostic: mean |Lambda| and tau over the liquid cells
+
+    def forward(self, x, y):
+        """Raw (x, y) -> (z, log_det), log_det of the standardized x -> z map."""
+        x_n, y_n = self._norm(x, y)
+        return self.flow(x_n, y_n)
+
+    def losses(self, x, y):
+        z, log_det = self(x, y)
+        return {'nll': (0.5 * (z ** 2).sum(1) - log_det).mean()}
+
+    def _decode(self, y_n, z):
+        return self.flow.inverse(z, y_n)

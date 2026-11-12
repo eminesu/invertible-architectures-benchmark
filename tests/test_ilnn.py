@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from models.ilnn import (ILNN, LiquidFlow, LiquidNet, count_parameters, flow_params, liquid_params,
+from models.ilnn import (CILNN, ILNN, LiquidFlow, LiquidNet, count_parameters, flow_params, liquid_params,
                          width_for_budget)
 
 N, DY, B = 4, 2, 12
@@ -137,3 +137,84 @@ def test_ml_loss_is_finite_differentiable_and_uses_only_nll():
 def test_default_loss_is_the_papers_eq16():
     model = ILNN(N, DY, n_blocks=2, hidden=8, unfolds=2)
     assert model.loss_terms == ('y', 'z', 'x')
+
+
+# ---- conditional variant (CILNN) and the dim(x) <= dim(y) guard ----
+
+def test_ilnn_requires_a_latent_dimension():
+    with pytest.raises(ValueError, match='CILNN'):
+        ILNN(7, 9, n_blocks=2, hidden=8)   # fr3_6d
+    with pytest.raises(ValueError, match='CILNN'):
+        ILNN(6, 6, n_blocks=2, hidden=8)
+
+
+def test_conditional_param_formula_reduces_to_unconditional():
+    assert flow_params(N, 4, 37, cond_dim=0) == flow_params(N, 4, 37)
+    flow = LiquidFlow(N, n_blocks=4, hidden=37, unfolds=2, cond_dim=3)
+    assert count_parameters(flow) == flow_params(N, 4, 37, cond_dim=3)
+    h = width_for_budget(N, 8, 3_000_000, cond_dim=3)
+    assert flow_params(N, 8, h, 3) <= 3_000_000 < flow_params(N, 8, h + 1, 3)
+
+
+def test_conditional_flow_inverts_depends_on_condition_and_log_det():
+    flow = randomize(LiquidFlow(N, n_blocks=3, hidden=16, unfolds=3, perm_seed=1, cond_dim=5).double())
+    u, c = rand(B, N), rand(B, 5, seed=1)
+    v, _ = flow(u, c)
+    assert torch.allclose(flow.inverse(v, c), u, atol=1e-8)
+    assert not torch.allclose(v, flow(u, c + 1.0)[0])
+    u1, c1 = u[:1], c[:1]
+    J = torch.autograd.functional.jacobian(lambda t: flow(t, c1)[0], u1).reshape(N, N)
+    assert torch.allclose(flow(u1, c1)[1], torch.linalg.slogdet(J)[1], atol=1e-8)
+
+
+def test_cilnn_trains_when_y_is_larger_than_x():
+    m = randomize(CILNN(7, 9, n_blocks=2, hidden=8, unfolds=2))   # the FR3 6-D shapes
+    assert m.z_dims == 7
+    x, y = rand(16, 7, dtype=torch.float32), rand(16, 9, seed=1, dtype=torch.float32)
+    t = m.losses(x, y)
+    assert set(t) == {'nll'} == set(m.loss_terms)
+    t['nll'].backward()
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in m.parameters())
+    s = m.sample(y[:3], n_samples=5)
+    assert s.shape == (3, 5, 7) and torch.isfinite(s).all()
+
+
+def test_cilnn_sampling_inverts_the_forward_map():
+    m = randomize(CILNN(N, DY, n_blocks=3, hidden=16, unfolds=3).double())
+    x, y = rand(B, N), rand(B, DY, seed=1)
+    z, _ = m(x, y)
+    x_n, y_n = m._norm(x, y)
+    assert torch.allclose(m._decode(y_n, z), x_n, atol=1e-8)
+
+
+# ---- padded unconditional ILNN (--pad-x) ----
+
+def test_padded_ilnn_dims_and_guard():
+    m = ILNN(7, 9, n_blocks=2, hidden=8, pad_dims=3)   # fr3_6d
+    assert (m.in_dims, m.z_dims) == (10, 1)
+    assert ILNN(7, 6, n_blocks=2, hidden=8, pad_dims=3).z_dims == 4   # fr3_5d with padding
+    with pytest.raises(ValueError, match='pad'):
+        ILNN(7, 9, n_blocks=2, hidden=8, pad_dims=2)   # z would be 0
+
+
+@pytest.mark.parametrize('loss', ['mmd', 'ml'])
+def test_padded_ilnn_losses_and_sampling(loss):
+    m = randomize(ILNN(7, 9, n_blocks=2, hidden=8, unfolds=2, pad_dims=3, loss=loss))
+    x, y = rand(32, 7, dtype=torch.float32), rand(32, 9, seed=1, dtype=torch.float32)
+    t = m.losses(x, y)
+    assert set(t) == set(m.loss_terms) | {'y', 'z'}
+    sum(t[k] for k in m.loss_terms).backward()
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in m.parameters())
+    s = m.sample(y[:3], n_samples=5)
+    assert s.shape == (3, 5, 7) and torch.isfinite(s).all()   # padding dropped
+
+
+def test_padded_ilnn_decode_strips_padding_and_inverts():
+    m = randomize(ILNN(N, DY, n_blocks=3, hidden=16, unfolds=3, pad_dims=2).double()).eval()
+    x, y = rand(B, N), rand(B, DY, seed=1)
+    y_hat, z, _ = m(x)
+    x_n, _ = m._norm(x, y)
+    full = m._decode_full(y_hat, z)
+    assert full.shape == (B, N + 2) and torch.allclose(full[:, :N], x_n, atol=1e-8)
+    assert torch.allclose(full[:, N:], torch.zeros(B, 2, dtype=full.dtype), atol=1e-8)
+    assert m._decode(y_hat, z).shape == (B, N)

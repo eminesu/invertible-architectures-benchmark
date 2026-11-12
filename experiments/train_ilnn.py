@@ -2,6 +2,8 @@
 
     .venv/bin/python experiments/train_ilnn.py --problem kinematics
     .venv/bin/python experiments/train_ilnn.py --problem ballistics --dequantize-v0
+    .venv/bin/python experiments/train_ilnn.py --problem fr3_6d --conditional
+    .venv/bin/python experiments/train_ilnn.py --problem fr3_6d --pad-x 3
 
 ILNN: Zhang et al. (2025), Sci. Rep. 15:42311, doi:10.1038/s41598-025-26422-1; loss Eq. (16).
 Every run writes to experiments/runs/<run-name>/:
@@ -31,7 +33,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from data.toy_data import MODELS, make_dataset
 from experiments.train_mdn import pick_device
 from experiments.train_inn import dequantize, evaluate_losses, provisional_resim
-from models.ilnn import ILNN, count_parameters, width_for_budget
+from models.ilnn import CILNN, ILNN, count_parameters, width_for_budget
 
 RUNS = os.path.join(os.path.dirname(__file__), 'runs')
 TERMS = ('y', 'z', 'x')
@@ -39,11 +41,16 @@ TERMS = ('y', 'z', 'x')
 
 def build_model(cfg, x_dims, y_dims):
     """Model for a config dict (command-line arguments, or a saved config.json)."""
+    if cfg.get('conditional', False):   # old configs: unconditional
+        return CILNN(x_dims, y_dims, n_blocks=cfg['blocks'], hidden=cfg['hidden_resolved'],
+                     unfolds=cfg['unfolds'], dt=cfg['dt'], clamp=cfg['clamp'], perm_seed=cfg['seed'],
+                     lam_init_std=cfg.get('lam_init_std', 0.0), perm_mode=cfg.get('perm_mode', 'random'))
     return ILNN(x_dims, y_dims, n_blocks=cfg['blocks'], hidden=cfg['hidden_resolved'],
                 unfolds=cfg['unfolds'], dt=cfg['dt'], clamp=cfg['clamp'],
                 latent_mmd=cfg['latent_mmd'], perm_seed=cfg['seed'],
                 loss=cfg.get('loss', 'mmd'), sigma_y=cfg.get('sigma_y', 0.05),  # old configs: paper loss
-                lam_init_std=cfg.get('lam_init_std', 0.0), perm_mode=cfg.get('perm_mode', 'random'))
+                lam_init_std=cfg.get('lam_init_std', 0.0), perm_mode=cfg.get('perm_mode', 'random'),
+                pad_dims=cfg.get('pad_x', 0), pad_noise=cfg.get('pad_noise', 0.02))
 
 
 def main():
@@ -60,6 +67,13 @@ def main():
     p.add_argument('--w-y', type=float, default=1.0, help='Eq. (16): weight of L_y')
     p.add_argument('--w-z', type=float, default=100.0, help='Eq. (16): lambda_z, weight of the latent MMD')
     p.add_argument('--w-x', type=float, default=100.0, help='Eq. (16): lambda_x, weight of the backward MMD')
+    p.add_argument('--conditional', action='store_true',
+                   help='CILNN: condition every liquid cell on y, dim z = dim x, cINN likelihood loss (Eq. 5); '
+                        'needed when dim y >= dim x (fr3_6d). Not in the paper; --loss, --w-* and --latent-mmd are ignored')
+    p.add_argument('--pad-x', type=int, default=0,
+                   help='unconditional ILNN: pad x with this many zero channels, dim z = dim x + pad - dim y '
+                        '(fr3_6d needs >= 3); the padding is dropped when sampling. Not in the paper')
+    p.add_argument('--pad-noise', type=float, default=0.02, help='--pad-x: std of the noise added to the padding while training')
     p.add_argument('--loss', choices=['mmd', 'ml'], default='mmd',
                    help="'mmd': the paper's Eq. (16); 'ml': maximum likelihood like the INN (a deviation from the paper)")
     p.add_argument('--sigma-y', type=float, default=0.05, help="--loss ml: std of y_hat around y, as the INN's sigma_y")
@@ -97,8 +111,17 @@ def main():
     device = pick_device(args.device)
     problem = MODELS[args.problem]()
     x_dims, y_dims = problem.n_parameters, problem.n_observations
+    if args.conditional and args.pad_x:
+        p.error('--pad-x is for the unconditional ILNN; the conditional model does not need padding')
+    if not args.conditional and x_dims + args.pad_x <= y_dims:
+        p.error(f'{args.problem}: dim x = {x_dims} + pad {args.pad_x} <= dim y = {y_dims}, so the unconditional ILNN '
+                f'has no latent dimension (z = {x_dims + args.pad_x - y_dims}); use --pad-x {y_dims - x_dims + 1} '
+                'or more, or --conditional')
+    if args.conditional:
+        args.loss = 'ml'   # recorded in config.json: the CILNN always trains by likelihood
 
-    hidden = args.hidden or width_for_budget(x_dims, args.blocks, args.param_budget)
+    hidden = args.hidden or width_for_budget(x_dims + args.pad_x, args.blocks, args.param_budget,
+                                             cond_dim=y_dims if args.conditional else 0)
     cfg = {**vars(args), 'model': 'ilnn', 'hidden_resolved': hidden}
     model = build_model(cfg, x_dims, y_dims)
     n_params = count_parameters(model)

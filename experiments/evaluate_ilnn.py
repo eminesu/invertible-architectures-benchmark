@@ -40,13 +40,17 @@ def main():
     p.add_argument('--name', default=None, help='result name; default: the run name')
     p.add_argument('--device', default='cpu')
     p.add_argument('--seed', type=int, default=0, help='seed for the z draws')
+    p.add_argument('--split', default='test', choices=['test', 'val'],
+                   help="'val' (FR3 tasks only): select models on it, report on 'test'; results are saved as <name>_val")
     args = p.parse_args()
 
     model, cfg = load_run(args.run, args.device)
     torch.manual_seed(args.seed)
     name = args.name or args.run
+    if args.split != 'test':
+        name = f'{name}_{args.split}'   # metrics.evaluate names its files by benchmark and name only: do not overwrite the test result
     summary = evaluate(lambda y, n: model.sample(torch.as_tensor(y, dtype=torch.float32, device=args.device), n),
-                       cfg['problem'], name=name)
+                       cfg['problem'], name=name, split=args.split)
     summary.update(n_params=count_parameters(model), device=args.device)
     (RESULTS_DIR / f"{cfg['problem']}_{name}.json").write_text(json.dumps(summary, indent=2))
 

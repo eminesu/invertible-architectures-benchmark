@@ -1,0 +1,21 @@
+{
+  "run": "fr3_6d_ikf_p1_softflow_sf0",
+  "problem": "fr3_6d",
+  "model": "ikflow",
+  "n_params": 2989116,
+  "hidden": 243,
+  "width": 9,
+  "blocks": 12,
+  "z_dims": 9,
+  "n_train": 200000,
+  "epochs": 10,
+  "steps": 15620,
+  "ema": 0.0,
+  "schedule": "step",
+  "val_loss": -27.300272750854493,
+  "val_nll": -27.300272750854493,
+  "err_resim_provisional": 1.6450933025447783,
+  "resim_failed_fraction": 0.0,
+  "latent_scale_resim": 0.25,
+  "train_seconds": 505.3810541629791
+}

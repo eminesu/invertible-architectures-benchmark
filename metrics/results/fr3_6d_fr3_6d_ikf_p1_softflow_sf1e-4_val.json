@@ -1,0 +1,65 @@
+{
+  "benchmark": "fr3_6d",
+  "model": "fr3_6d_ikf_p1_softflow_sf1e-4_val",
+  "n_conditions": 200,
+  "n_samples": 1000,
+  "n_gt_min": 1000,
+  "err_post": {
+    "mean": 0.11316241329109485,
+    "mean_clamped": 0.11316241329109485,
+    "median": 0.09633215806485691,
+    "q1": 0.07500700331436685,
+    "q3": 0.13102997219099552,
+    "max": 0.4483076156486728,
+    "n_finite": 200
+  },
+  "err_post_biased": {
+    "mean": 0.11887805412498327,
+    "mean_clamped": 0.11887805412498327,
+    "median": 0.10209768161508305,
+    "q1": 0.08074057434510568,
+    "q3": 0.1367719370738863,
+    "max": 0.45372343326520864,
+    "n_finite": 200
+  },
+  "err_resim": {
+    "mean": 2.0737982406282924,
+    "mean_clamped": 2.0737982406282924,
+    "median": 1.9993084236028231,
+    "q1": 1.414426785732513,
+    "q3": 2.5908406503996604,
+    "max": 4.06217476740557,
+    "n_finite": 200
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 8.589609800008475,
+  "inference_ms_per_condition": 42.948049000042374,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "split": "val",
+  "pos_err_mm": {
+    "median": 135.81093799393403,
+    "mean": 173.37431950886398,
+    "p95": 441.9337473570325
+  },
+  "rot_err_deg": {
+    "median": 59.858932121964756,
+    "mean": 71.26315190530592,
+    "p95": 162.26957176966502
+  },
+  "success_rate": {
+    "1mm_1deg": 0.0,
+    "10mm_5deg": 4.5e-05
+  },
+  "joint_limit_violation_fraction": 0.260685,
+  "coverage": {
+    "delta_rad": 0.1,
+    "median": 0.0,
+    "mean": 0.0014399999999999999,
+    "p95": 0.009
+  },
+  "n_params": 2989116,
+  "device": "cpu",
+  "latent_scale": 1.0
+}

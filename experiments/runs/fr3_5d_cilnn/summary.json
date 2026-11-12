@@ -1,0 +1,21 @@
+{
+  "run": "fr3_5d_cilnn",
+  "problem": "fr3_5d",
+  "model": "ilnn",
+  "n_params": 3024112,
+  "hidden": 420,
+  "blocks": 8,
+  "unfolds": 4,
+  "dt": 0.25,
+  "z_dims": 7,
+  "val_loss": -13.67255449295044,
+  "val_nll": -13.67255449295044,
+  "err_resim_provisional": 0.3558845950675068,
+  "resim_failed_fraction": 0.0,
+  "train_seconds": 3173.6616864204407,
+  "lam_init_std": 0.0,
+  "perm_mode": "random",
+  "no_wd_cell_scalars": false,
+  "lam_abs_mean": 0.09460712969303131,
+  "tau_mean": 0.7899570465087891
+}
