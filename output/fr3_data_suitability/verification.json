@@ -1,0 +1,12 @@
+{"status": "passed",
+"audited_run_recipes": 4,
+"audited_splits": 8,
+"source_hashes_match": true,
+"checkpoint_and_config_hashes_match": true,
+"reference_hashes_match": true,
+"reference_conditions_align": true,
+"numerical_checks_pass": true,
+"pngs_decoded": 13,
+"local_report_links_checked": 34,
+"focused_pytest_passed": 14,
+"focused_pytest_command": ".venv/Scripts/python.exe -m pytest tests/test_fr3_data_suitability.py tests/test_robot_ik_crosscheck.py tests/test_robot_ik_kinematics.py -q"}
