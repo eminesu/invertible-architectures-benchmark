@@ -46,7 +46,11 @@ T^k x R^(d-k), embedded in ambient R^(d+k), with ambient layout
     of R^T f'(u) Q, Q and R orthonormal tangent bases at u and f(u).
 Angles come back via atan2 in (-pi, pi]. Re-simulation is periodic in the
 angles anyway; the kinematics ground truth never leaves (-2.8, 2.6), so this
-branch choice does not affect Err_post.
+branch choice does not affect Err_post. For the FR3 tasks the samples must lie
+inside the URDF joint limits, and joint 6's range [0.44, 4.62] crosses pi; there
+`set_angle_lower(lower)` makes angles come back in [lower_j, lower_j + 2 pi)
+instead. Every FR3 range is shorter than 2 pi, so that representative is unique;
+a value that still lies above upper_j is a genuine violation (nothing is clamped).
 
 Both networks start at the identity (zero-initialized output layer, global
 skip connection), as FFF recommends. `sample` takes and returns raw units.
@@ -65,6 +69,8 @@ ACTIVATIONS = {'relu': nn.ReLU, 'silu': nn.SiLU, 'gelu': nn.GELU}
 ANGLE_DIMS = {
     'kinematics': (1, 2, 3),  # the three joint angles; the rail offset x0 stays Euclidean: T^3 x R
     'ballistics': (2,),       # launch angle (bounded to 9-81 deg by the prior): T^1 x R^3
+    'fr3_6d': (0, 1, 2, 3, 4, 5, 6),  # all seven FR3 joints: T^7, no Euclidean part
+    'fr3_5d': (0, 1, 2, 3, 4, 5, 6),
 }
 
 
@@ -147,6 +153,9 @@ class ConditionalFFF(nn.Module):
         self.register_buffer('y_mean', torch.zeros(y_dims))
         self.register_buffer('y_std', torch.ones(y_dims))
         self.register_buffer('angle_std', torch.ones(self.n_angles))  # wrapped-normal latent scale
+        # Lower end of the 2 pi window angles are returned in; None = atan2's (-pi, pi]. Not
+        # persistent: it comes from the task (set_angle_lower), not from training.
+        self.register_buffer('angle_lower', None, persistent=False)
 
     def set_normalization(self, x, y):
         if self.n_euclid:
@@ -155,6 +164,10 @@ class ConditionalFFF(nn.Module):
         if self.n_angles:
             self.angle_std.copy_(x[:, list(self.angle_dims)].std(0))
         self.y_mean.copy_(y.mean(0)); self.y_std.copy_(y.std(0))
+
+    def set_angle_lower(self, lower):
+        """Return angles in [lower_j, lower_j + 2 pi) (e.g. the FR3 lower joint limits)."""
+        self.angle_lower = torch.as_tensor(lower, dtype=torch.float32, device=self.angle_std.device)
 
     # --- the manifold -------------------------------------------------------
 
@@ -167,12 +180,16 @@ class ConditionalFFF(nn.Module):
         return torch.cat([u, torch.stack([torch.cos(phi), torch.sin(phi)], 2).flatten(1)], 1)
 
     def unembed(self, u):
-        """Ambient u -> raw x; angles via atan2 in (-pi, pi]."""
+        """Ambient u -> raw x; angles via atan2 in (-pi, pi], or in
+        [angle_lower, angle_lower + 2 pi) when set."""
         x = u.new_empty(len(u), self.x_dims)
         x[:, list(self.euclid_dims)] = u[:, :self.n_euclid] * self.x_std + self.x_mean
         if self.n_angles:
             pairs = u[:, self.n_euclid:].view(-1, self.n_angles, 2)
-            x[:, list(self.angle_dims)] = torch.atan2(pairs[..., 1], pairs[..., 0])
+            phi = torch.atan2(pairs[..., 1], pairs[..., 0])
+            if self.angle_lower is not None:
+                phi = self.angle_lower + torch.remainder(phi - self.angle_lower, 2 * math.pi)
+            x[:, list(self.angle_dims)] = phi
         return x
 
     def project(self, u):

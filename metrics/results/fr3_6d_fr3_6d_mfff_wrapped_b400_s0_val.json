@@ -1,0 +1,80 @@
+{
+  "benchmark": "fr3_6d",
+  "model": "fr3_6d_mfff_wrapped_b400_s0_val",
+  "n_conditions": 200,
+  "n_samples": 1000,
+  "n_gt_min": 1000,
+  "err_post": {
+    "mean": 0.1129207752786585,
+    "mean_clamped": 0.1129207752786585,
+    "median": 0.09448643058864305,
+    "q1": 0.07114013449635515,
+    "q3": 0.13266335895624293,
+    "max": 0.45677375244791973,
+    "n_finite": 200
+  },
+  "err_post_biased": {
+    "mean": 0.118655585222282,
+    "mean_clamped": 0.118655585222282,
+    "median": 0.1002245388822369,
+    "q1": 0.07691945429281076,
+    "q3": 0.1383751810524521,
+    "max": 0.46221337551600794,
+    "n_finite": 200
+  },
+  "err_resim": {
+    "mean": 2.178622664348215,
+    "mean_clamped": 2.178622664348215,
+    "median": 2.182930569090402,
+    "q1": 1.9078906197221879,
+    "q3": 2.4880150484743075,
+    "max": 3.542316003310659,
+    "n_finite": 200
+  },
+  "resim_failed_fraction": 0.0,
+  "inference_seconds": 0.1835544000059599,
+  "inference_ms_per_condition": 0.9177720000297995,
+  "clamp": 10.0,
+  "evaluation_scope": "full",
+  "gt_options": {},
+  "split": "val",
+  "pos_err_mm": {
+    "median": 105.20304950405739,
+    "mean": 123.54123787935038,
+    "p95": 277.0160352149643
+  },
+  "rot_err_deg": {
+    "median": 61.863633758217915,
+    "mean": 71.93185843763732,
+    "p95": 166.2886671135904
+  },
+  "success_rate": {
+    "1mm_1deg": 1e-05,
+    "10mm_5deg": 0.01298
+  },
+  "joint_limit_violation_fraction": 0.294805,
+  "coverage": {
+    "delta_rad": 0.1,
+    "median": 0.156,
+    "mean": 0.20573999999999998,
+    "p95": 0.54115
+  },
+  "manifold": "torus",
+  "latent": "wrapped",
+  "beta": 400.0,
+  "y_noise": 0.001,
+  "nfe": 1,
+  "n_params": 2991952,
+  "n_params_decoder": 1495976,
+  "device": "cuda",
+  "recon_gt": 0.0017194805145263673,
+  "joint_limit_violation_per_joint": [
+    0.0760900005698204,
+    0.0352649986743927,
+    0.03959500044584274,
+    0.013735000044107437,
+    0.07017499953508377,
+    0.08258499950170517,
+    0.023554999381303787
+  ]
+}
