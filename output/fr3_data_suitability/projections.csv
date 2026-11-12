@@ -1,0 +1,13 @@
+metric,projected_rows,power_law_seconds,largest_size_linear_seconds
+cpu_generation_s,20000,0.09095,0.09331
+cpu_generation_s,1000000,5.14587,4.66558
+cpu_generation_s,1020000,5.25208,4.75890
+gpu_generation_s,20000,0.02531,0.03014
+gpu_generation_s,1000000,0.22106,1.50720
+gpu_generation_s,1020000,0.22350,1.53734
+save_npz_s,20000,0.00327,0.00287
+save_npz_s,1000000,0.00962,0.14336
+save_npz_s,1020000,0.00967,0.14623
+load_and_cuda_transfer_s,20000,0.01307,0.01288
+load_and_cuda_transfer_s,1000000,0.01543,0.64386
+load_and_cuda_transfer_s,1020000,0.01544,0.65673

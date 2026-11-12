@@ -1,0 +1,2 @@
+# Small timing-pilot arrays are reproducible; keep evidence and figures in Git.
+/pilot/*.npz
